@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { 
   getAuth, 
@@ -60,6 +60,9 @@ export default function TheEntity() {
   const [showLogModal, setShowLogModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  
+  // Strict Mode Guard (Prevents the loop)
+  const hasExchangedCode = useRef(false);
   
   // Game State
   const [gameState, setGameState] = useState({
@@ -123,24 +126,42 @@ export default function TheEntity() {
     return () => unsubscribe();
   }, []);
 
-  // --- STRAVA AUTH HANDLER ---
+  // --- STRAVA AUTH HANDLER (FIXED) ---
   useEffect(() => {
     if (!user) return;
     
     const params = new URLSearchParams(window.location.search);
     const stravaCode = params.get('code');
 
-    if (stravaCode) {
+    // Only run if we have a code AND we haven't tried yet (Prevents the loop)
+    if (stravaCode && !hasExchangedCode.current) {
+       hasExchangedCode.current = true; // Mark as processing immediately
+
        const exchangeToken = async () => {
           try {
+             // Check if keys exist
              const clientId = import.meta.env.VITE_STRAVA_CLIENT_ID;
              const clientSecret = import.meta.env.VITE_STRAVA_CLIENT_SECRET;
+
+             if (!clientId || !clientSecret) {
+                 alert("SETUP ERROR: Strava Client ID or Secret is missing in Vercel Settings.");
+                 return;
+             }
              
              const response = await fetch(`https://www.strava.com/oauth/token?client_id=${clientId}&client_secret=${clientSecret}&code=${stravaCode}&grant_type=authorization_code`, { method: 'POST' });
              const data = await response.json();
              
+             if (data.errors) {
+                 alert(`STRAVA ERROR: ${data.message}. Check your callback domain in Strava settings.`);
+                 return;
+             }
+
              if (data.access_token) {
                  const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
+                 // Optimistically update local state
+                 setGameState(prev => ({...prev, isStravaLinked: true, stravaAccessToken: data.access_token}));
+                 
+                 // Save to DB
                  await setDoc(userDocRef, { 
                      isStravaLinked: true,
                      stravaAccessToken: data.access_token,
@@ -148,12 +169,13 @@ export default function TheEntity() {
                      stravaExpiresAt: data.expires_at
                  }, { merge: true });
                  
+                 // Clean URL
                  window.history.replaceState({}, document.title, "/");
                  alert("Strava Connected Successfully!");
              }
           } catch (error) {
              console.error("Strava Auth Failed", error);
-             alert("Failed to connect Strava.");
+             alert("Network Error during Strava connection.");
           }
        };
        exchangeToken();
@@ -198,6 +220,10 @@ export default function TheEntity() {
   // --- Actions ---
   const handleStravaLogin = () => {
       const clientId = import.meta.env.VITE_STRAVA_CLIENT_ID;
+      if (!clientId) {
+          alert("Error: Missing VITE_STRAVA_CLIENT_ID. Please check Vercel settings.");
+          return;
+      }
       const redirectUri = window.location.origin; 
       const scope = "activity:read_all";
       window.location.href = `http://www.strava.com/oauth/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}&approval_prompt=force&scope=${scope}`;
@@ -231,7 +257,6 @@ export default function TheEntity() {
           }
 
           // 2. Fetch Activities
-          // Get activities AFTER the last synced date (or start date if never synced)
           const afterTime = gameState.lastSyncTime ? new Date(gameState.lastSyncTime).getTime() / 1000 : new Date(gameState.startDate).getTime() / 1000;
           
           const response = await fetch(`https://www.strava.com/api/v3/athlete/activities?after=${afterTime}`, {
