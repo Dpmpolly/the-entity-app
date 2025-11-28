@@ -5,7 +5,8 @@ import {
   signInWithCustomToken, 
   signInAnonymously, 
   onAuthStateChanged,
-  deleteUser
+  deleteUser,
+  signOut
 } from 'firebase/auth';
 import { 
   getFirestore, 
@@ -19,11 +20,10 @@ import {
   Link as LinkIcon, RefreshCw, CheckCircle2, BrainCircuit, Zap, Timer, 
   ShieldCheck, Compass, Map as MapIcon, Shield, ChevronRight, ZapOff, 
   Lock, Rocket, Wrench, Cpu, Disc, Award, ArrowRightLeft, HeartPulse, 
-  RotateCcw, ShoppingBag, BarChart3, User, Trash2 
+  RotateCcw, ShoppingBag, BarChart3, User, Trash2, LogOut
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
-// Your specific Firebase Keys (Corrected Syntax)
 const firebaseConfig = {
   apiKey: "AIzaSyAsssP-dGeIbuz29TUKmGMQ51j8GstFlkQ", 
   authDomain: "the-entity-a7c4b.firebaseapp.com",
@@ -62,6 +62,103 @@ const DIFFICULTIES = {
 const formatDate = (date) => {
   return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
+
+// --- SUB-COMPONENTS (FIXED) ---
+
+const LogRunModal = ({ onClose, onSave, activeQuest }) => {
+    const [km, setKm] = useState('');
+    const [notes, setNotes] = useState('');
+    const [isQuestRun, setIsQuestRun] = useState(false);
+  
+    const handleSubmit = () => {
+      if (!km || parseFloat(km) <= 0) return alert("Please enter a valid distance.");
+      onSave(km, notes, isQuestRun);
+      onClose();
+    };
+  
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-6 animate-in fade-in duration-200">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden">
+          <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
+            <h3 className="font-bold text-white flex items-center gap-2"><Plus size={18} className="text-emerald-400"/> Manual Log</h3>
+            <button onClick={onClose} className="text-slate-500 hover:text-white"><X size={20} /></button>
+          </div>
+          <div className="p-6 space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Distance (km)</label>
+              <input type="number" step="0.01" value={km} onChange={(e) => setKm(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white text-2xl font-bold focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="0.0" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Mission Notes</label>
+              <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Morning run..." />
+            </div>
+            
+            {activeQuest && activeQuest.status === 'active' && (
+                <div className={`p-3 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between ${isQuestRun ? 'bg-amber-900/20 border-amber-500/50' : 'bg-slate-950 border-slate-800'}`} onClick={() => setIsQuestRun(!isQuestRun)}>
+                    <div className="flex items-center gap-2">
+                        <div className={`w-5 h-5 rounded border flex items-center justify-center ${isQuestRun ? 'bg-amber-500 border-amber-500 text-black' : 'border-slate-600'}`}>
+                            {isQuestRun && <CheckCircle2 size={14} />}
+                        </div>
+                        <div className="text-sm text-slate-300">Apply to Quest?</div>
+                    </div>
+                    <Award size={16} className={isQuestRun ? 'text-amber-500' : 'text-slate-600'} />
+                </div>
+            )}
+  
+            <button onClick={handleSubmit} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 mt-2">
+              SAVE LOG
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+  
+  const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnectStrava }) => {
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-6 animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden">
+            <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
+              <h3 className="font-bold text-white flex items-center gap-2"><Settings size={18} className="text-slate-400"/> Settings</h3>
+              <button onClick={onClose} className="text-slate-500 hover:text-white"><X size={20} /></button>
+            </div>
+            <div className="p-6 space-y-6">
+              
+              {/* User Info */}
+              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center gap-3">
+                  <div className="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center text-slate-400"><User size={20}/></div>
+                  <div className="overflow-hidden">
+                      <div className="text-white font-bold truncate">{gameState.username || 'Agent'}</div>
+                      <div className="text-xs text-slate-500 truncate">ID: {user?.uid.slice(0,8)}...</div>
+                  </div>
+              </div>
+  
+              {/* Integrations */}
+              <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Integrations</label>
+                  <button onClick={onConnectStrava} className={`w-full p-4 rounded-xl border transition-all flex items-center justify-between ${gameState.isStravaLinked ? 'bg-[#FC4C02]/10 border-[#FC4C02] text-white' : 'bg-slate-950 border-slate-800 text-slate-400'}`}>
+                      <div className="flex items-center gap-3">
+                          <LinkIcon size={18} />
+                          <span>{gameState.isStravaLinked ? 'Strava Connected' : 'Connect Strava'}</span>
+                      </div>
+                      {gameState.isStravaLinked && <CheckCircle2 size={18} className="text-[#FC4C02]" />}
+                  </button>
+              </div>
+  
+              {/* Actions */}
+              <div className="pt-4 border-t border-slate-800 space-y-3">
+                  <button onClick={onLogout} className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2">
+                      <LogOut size={16} /> Disconnect (Logout)
+                  </button>
+                  <button onClick={onDelete} className="w-full py-3 rounded-xl border border-red-900/30 text-red-500 font-bold hover:bg-red-900/10 flex items-center justify-center gap-2">
+                      <Trash2 size={16} /> Burn Identity (Delete)
+                  </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+  };
 
 // --- MAIN COMPONENT ---
 export default function TheEntity() {
@@ -270,6 +367,11 @@ export default function TheEntity() {
       window.location.href = `http://www.strava.com/oauth/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}&approval_prompt=force&scope=${scope}`;
   };
 
+  const handleLogout = async () => {
+    await signOut(auth);
+    window.location.reload();
+  };
+
   const handleDeleteAccount = async () => {
       if (!confirm("DELETE ACCOUNT?\n\nThis will permanently erase your progress and disconnect Strava. This cannot be undone.")) return;
       
@@ -367,11 +469,11 @@ export default function TheEntity() {
               let newUpdateDay = gameState.lastSpeedUpdateDay;
 
               if (gameState.adaptiveMode && daysSinceStart >= 4) {
-                   if (daysSinceStart - gameState.lastSpeedUpdateDay >= 4) {
-                       const daysForCalc = Math.max(1, daysSinceStart); 
-                       newSpeed = calculateAdaptiveSpeed(newTotal, daysForCalc, gameState.difficulty);
-                       newUpdateDay = daysSinceStart; 
-                   }
+                    if (daysSinceStart - gameState.lastSpeedUpdateDay >= 4) {
+                        const daysForCalc = Math.max(1, daysSinceStart); 
+                        newSpeed = calculateAdaptiveSpeed(newTotal, daysForCalc, gameState.difficulty);
+                        newUpdateDay = daysSinceStart; 
+                    }
               }
 
               const newState = {
@@ -637,8 +739,8 @@ export default function TheEntity() {
                       ))}
                     </div>
                     <div className="flex gap-3">
-                         <button onClick={() => setStep(1)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button>
-                         <button onClick={() => setStep(3)} className="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">Next Step <ChevronRight size={20} /></button>
+                          <button onClick={() => setStep(1)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button>
+                          <button onClick={() => setStep(3)} className="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">Next Step <ChevronRight size={20} /></button>
                     </div>
                   </div>
                 )}
@@ -758,8 +860,8 @@ export default function TheEntity() {
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-red-500/30">
       <style jsx global>{`.bg-stripes-slate {background-image: linear-gradient(45deg, #1e293b 25%, transparent 25%, transparent 50%, #1e293b 50%, #1e293b 75%, transparent 75%, transparent);background-size: 10px 10px;}`}</style>
       
-      {showLogModal && <LogRunModal />}
-      {showSettings && <SettingsModal />}
+      {showLogModal && <LogRunModal onClose={() => setShowLogModal(false)} onSave={handleAddRun} activeQuest={gameState.activeQuest} />}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} user={user} gameState={gameState} onLogout={handleLogout} onDelete={handleDeleteAccount} onConnectStrava={handleStravaLogin} />}
       
       <div className="sticky top-0 z-30 bg-slate-950/80 backdrop-blur-md border-b border-slate-800">
           <div className="max-w-xl mx-auto px-4 py-4 flex justify-between items-center">
@@ -780,8 +882,8 @@ export default function TheEntity() {
             </div>
             <div className="absolute top-1/2 -translate-y-1/2 transition-all duration-1000 ease-linear z-10" style={{ left: `${entityPct}%` }}>
               <div className="relative">
-                 {isGracePeriod ? <div className="absolute top-6 -left-6 bg-slate-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap flex items-center gap-1 opacity-75"><Timer size={10} /> INITIALISING</div> : isEmpActive ? <div className="absolute top-6 -left-6 bg-cyan-500 text-slate-900 text-[10px] font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap flex items-center gap-1 animate-pulse"><ZapOff size={10} /> STUNNED</div> : <div className="absolute top-6 -left-6 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap flex items-center gap-1"><Skull size={10} /> IT</div>}
-                 <div className={`w-5 h-5 rotate-45 border-2 border-slate-900 transition-colors ${isGracePeriod ? 'bg-slate-600' : isEmpActive ? 'bg-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.8)]' : 'bg-red-600 shadow-[0_0_20px_rgba(220,38,38,0.8)]'}`}></div>
+                  {isGracePeriod ? <div className="absolute top-6 -left-6 bg-slate-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap flex items-center gap-1 opacity-75"><Timer size={10} /> INITIALISING</div> : isEmpActive ? <div className="absolute top-6 -left-6 bg-cyan-500 text-slate-900 text-[10px] font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap flex items-center gap-1 animate-pulse"><ZapOff size={10} /> STUNNED</div> : <div className="absolute top-6 -left-6 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap flex items-center gap-1"><Skull size={10} /> IT</div>}
+                  <div className={`w-5 h-5 rotate-45 border-2 border-slate-900 transition-colors ${isGracePeriod ? 'bg-slate-600' : isEmpActive ? 'bg-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.8)]' : 'bg-red-600 shadow-[0_0_20px_rgba(220,38,38,0.8)]'}`}></div>
               </div>
             </div>
         </div>
