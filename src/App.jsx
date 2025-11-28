@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
+// Cleaned Config - Ensure this matches your Firebase Console
 const firebaseConfig = {
   apiKey: "AIzaSyAsssP-dGeIbuz29TUKmGMQ51j8GstFlkQ", 
   authDomain: "the-entity-a7c4b.firebaseapp.com",
@@ -211,10 +212,12 @@ export default function TheEntity() {
   const today = new Date();
   const safeStartDate = gameState.startDate ? new Date(gameState.startDate) : new Date();
   
+  // Time Elapsed
   const msElapsed = today.getTime() - safeStartDate.getTime();
   const hoursElapsed = msElapsed / (1000 * 60 * 60); 
   const daysSinceStart = Math.floor(hoursElapsed / 24);
 
+  // Entity Movement Logic
   const gracePeriodHours = 24;
   const activeEntityHours = Math.max(0, hoursElapsed - gracePeriodHours - (gameState.totalPausedHours || 0));
   const speedPerHour = (gameState.entitySpeed || 3) / 24;
@@ -223,10 +226,12 @@ export default function TheEntity() {
   const userDistance = gameState.totalKmRun || 0;
   const distanceGap = userDistance - entityDistance;
   
+  // Status Flags
   const isGracePeriod = hoursElapsed < gracePeriodHours;
   const isCaught = distanceGap <= 0 && !isGracePeriod;
   const isVictory = daysSinceStart >= (gameState.duration || 365) && !isCaught;
   
+  // EMP Status Logic
   const EMP_DURATION_HOURS = 25;
   const EMP_COOLDOWN_DAYS = 90;
   const lastEmpDate = gameState.lastEmpUsage ? new Date(gameState.lastEmpUsage) : null;
@@ -247,10 +252,15 @@ export default function TheEntity() {
         await signInAnonymously(auth);
       } catch (error) {
         console.error("Auth failed", error);
+        // If auth fails due to API key, stop loading so user sees something
+        setLoading(false); 
       }
     };
     initAuth();
-    const unsubscribe = onAuthStateChanged(auth, setUser);
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+        setUser(u);
+        if (!u) setLoading(false); // Stop loading if no user found
+    });
     return () => unsubscribe();
   }, []);
 
@@ -309,6 +319,7 @@ export default function TheEntity() {
     const unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
+        // Merge with defaults to prevent crashes on missing fields
         setGameState(prev => ({ ...prev, ...data }));
       } else {
         setGameState(prev => ({ ...prev, onboardingComplete: false }));
@@ -600,7 +611,6 @@ export default function TheEntity() {
     let newState = { ...gameState };
 
     if (isQuestRun && gameState.activeQuest && gameState.activeQuest.status === 'active') {
-        // Quest Logic
         const newProgress = gameState.activeQuest.progress + dist;
         let updatedQuest = { ...gameState.activeQuest, progress: newProgress };
         let newInventory = { ...gameState.inventory };
@@ -621,7 +631,6 @@ export default function TheEntity() {
         const newRun = { id: Date.now(), date: new Date().toISOString(), km: dist, notes: notes || 'Side Quest Run', type: 'quest' };
         newState = { ...gameState, activeQuest: updatedQuest, inventory: newInventory, badges: newBadges, runHistory: [newRun, ...gameState.runHistory] };
     } else {
-        // Survival Logic
         const newTotal = (gameState.totalKmRun || 0) + dist;
         
         let newSpeed = gameState.entitySpeed;
@@ -676,7 +685,7 @@ export default function TheEntity() {
   };
 
   // --- UI RENDER: LOADING ---
-  if (loading) {
+  if (loading && !user) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-500 animate-pulse">
         <Activity size={48} className="mb-4" />
