@@ -24,7 +24,6 @@ import {
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
-// Fixed Syntax Error Here
 const firebaseConfig = {
   apiKey: "AIzaSyAsssP-dGeIbuz29TUKmGMQ51j8GstFlkQ", 
   authDomain: "the-entity-a7c4b.firebaseapp.com",
@@ -62,11 +61,12 @@ const DIFFICULTIES = {
 // --- HELPER FUNCTIONS ---
 const formatDate = (date) => {
   if (!date) return 'Unknown';
-  return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  try {
+    return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  } catch (e) { return 'Invalid Date'; }
 };
 
 // --- SUB-COMPONENTS ---
-
 const LogRunModal = ({ onClose, onSave, activeQuest }) => {
     const [km, setKm] = useState('');
     const [notes, setNotes] = useState('');
@@ -217,15 +217,15 @@ export default function TheEntity() {
 
   const gracePeriodHours = 24;
   const activeEntityHours = Math.max(0, hoursElapsed - gracePeriodHours - (gameState.totalPausedHours || 0));
-  const speedPerHour = gameState.entitySpeed / 24;
+  const speedPerHour = (gameState.entitySpeed || 3) / 24;
   const entityDistance = activeEntityHours * speedPerHour;
 
-  const userDistance = gameState.totalKmRun;
+  const userDistance = gameState.totalKmRun || 0;
   const distanceGap = userDistance - entityDistance;
   
   const isGracePeriod = hoursElapsed < gracePeriodHours;
   const isCaught = distanceGap <= 0 && !isGracePeriod;
-  const isVictory = daysSinceStart >= gameState.duration && !isCaught;
+  const isVictory = daysSinceStart >= (gameState.duration || 365) && !isCaught;
   
   const EMP_DURATION_HOURS = 25;
   const EMP_COOLDOWN_DAYS = 90;
@@ -237,7 +237,7 @@ export default function TheEntity() {
   const isEmpFree = (gameState.empUsageCount || 0) === 0;
   const isBoostFree = (gameState.boostUsageCount || 0) === 0;
   
-  const daysUntilCaught = distanceGap > 0 ? Math.floor(distanceGap / gameState.entitySpeed) : 0;
+  const daysUntilCaught = distanceGap > 0 ? Math.floor(distanceGap / (gameState.entitySpeed || 3)) : 0;
   const daysToNextUpdate = 4 - (daysSinceStart % 4);
 
   // --- AUTHENTICATION ---
@@ -276,6 +276,11 @@ export default function TheEntity() {
              const response = await fetch(`https://www.strava.com/oauth/token?client_id=${clientId}&client_secret=${clientSecret}&code=${stravaCode}&grant_type=authorization_code`, { method: 'POST' });
              const data = await response.json();
              
+             if (data.errors) {
+                 alert(`Strava Error: ${data.message}. Try disconnecting and reconnecting.`);
+                 return;
+             }
+
              if (data.access_token) {
                  const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
                  await setDoc(userDocRef, { 
@@ -347,7 +352,9 @@ export default function TheEntity() {
   const calculateAdaptiveSpeed = (totalKm, activeDays, diff) => {
     if (activeDays < 1) return 3;
     const avgDaily = totalKm / activeDays;
-    const multiplier = DIFFICULTIES[diff || 'easy'].multiplier;
+    // SAFETY: Default to easy if undefined
+    const difficulty = DIFFICULTIES[diff] || DIFFICULTIES.easy;
+    const multiplier = difficulty.multiplier;
     return parseFloat(Math.max(3, (avgDaily * multiplier)).toFixed(2));
   };
 
@@ -374,7 +381,6 @@ export default function TheEntity() {
 
   const handleDeleteAccount = async () => {
       if (!confirm("DELETE ACCOUNT?\n\nThis will permanently erase your progress and disconnect Strava. This cannot be undone.")) return;
-      
       try {
           await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'));
           await deleteUser(user);
@@ -454,7 +460,7 @@ export default function TheEntity() {
           });
 
           if (newRuns.length > 0) {
-              const newTotal = gameState.totalKmRun + addedDist;
+              const newTotal = (gameState.totalKmRun || 0) + addedDist;
               
               let newSpeed = gameState.entitySpeed;
               let newUpdateDay = gameState.lastSpeedUpdateDay;
@@ -534,7 +540,7 @@ export default function TheEntity() {
     
     if (!confirm(`Activate Nitrous Boost?\n\nCost: ${cost}\nEffect: Adds 15% (+${boostAmount}km) to today's distance.`)) return;
 
-    const newTotal = gameState.totalKmRun + boostAmount;
+    const newTotal = (gameState.totalKmRun || 0) + boostAmount;
     
     const newRun = {
       id: Date.now(),
@@ -586,6 +592,87 @@ export default function TheEntity() {
         difficulty: 'easy'
      };
      await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
+  };
+
+  const handleAddRun = async (km, notes, isQuestRun) => {
+    if (!user) return;
+    const dist = parseFloat(km);
+    let newState = { ...gameState };
+
+    if (isQuestRun && gameState.activeQuest && gameState.activeQuest.status === 'active') {
+        // Quest Logic
+        const newProgress = gameState.activeQuest.progress + dist;
+        let updatedQuest = { ...gameState.activeQuest, progress: newProgress };
+        let newInventory = { ...gameState.inventory };
+        let newBadges = [...gameState.badges];
+
+        if (newProgress >= gameState.activeQuest.distance) {
+            updatedQuest.status = 'completed';
+            newInventory[gameState.activeQuest.rewardPart]++;
+            newBadges.push({
+                id: Date.now(),
+                title: gameState.activeQuest.title,
+                date: new Date().toISOString()
+            });
+            alert(`MISSION COMPLETE!\n\nAcquired: 1x ${EMP_PARTS.find(p => p.id === gameState.activeQuest.rewardPart).name}\nAwarded: Mission Badge`);
+            updatedQuest = null; 
+        }
+
+        const newRun = { id: Date.now(), date: new Date().toISOString(), km: dist, notes: notes || 'Side Quest Run', type: 'quest' };
+        newState = { ...gameState, activeQuest: updatedQuest, inventory: newInventory, badges: newBadges, runHistory: [newRun, ...gameState.runHistory] };
+    } else {
+        // Survival Logic
+        const newTotal = (gameState.totalKmRun || 0) + dist;
+        
+        let newSpeed = gameState.entitySpeed;
+        let newUpdateDay = gameState.lastSpeedUpdateDay;
+
+        if (gameState.adaptiveMode && daysSinceStart >= 4) {
+             if (daysSinceStart - gameState.lastSpeedUpdateDay >= 4) {
+                 const daysForCalc = Math.max(1, daysSinceStart); 
+                 newSpeed = calculateAdaptiveSpeed(newTotal, daysForCalc, gameState.difficulty);
+                 newUpdateDay = daysSinceStart; 
+             }
+        }
+
+        const newRun = { id: Date.now(), date: new Date().toISOString(), km: dist, notes: notes || 'Manual Log', type: 'survival' };
+        newState = { ...gameState, totalKmRun: newTotal, entitySpeed: newSpeed, lastSpeedUpdateDay: newUpdateDay, runHistory: [newRun, ...gameState.runHistory] };
+    }
+
+    await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
+    setShowLogModal(false);
+  };
+
+  const handleCompleteOnboarding = async (setupData) => {
+    if (!user) return;
+    const newState = {
+      ...gameState,
+      startDate: new Date().toISOString(),
+      duration: setupData.duration,
+      avatarId: setupData.avatarId,
+      difficulty: setupData.difficulty,
+      username: setupData.username,
+      entitySpeed: 3,
+      lastSpeedUpdateDay: 0,
+      totalKmRun: 0,
+      runHistory: [],
+      onboardingComplete: true,
+      totalPausedHours: 0,
+      lastEmpUsage: null,
+      empUsageCount: 0,
+      boostUsageCount: 0,
+      inventory: { battery: 0, emitter: 0, casing: 0 },
+      activeQuest: null,
+      badges: [],
+      continuesUsed: 0
+    };
+    await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
+  };
+
+  const toggleStravaLink = async () => {
+    if (!user) return;
+    const newState = { ...gameState, isStravaLinked: !gameState.isStravaLinked };
+    await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
   };
 
   // --- UI RENDER: LOADING ---
@@ -754,7 +841,9 @@ export default function TheEntity() {
   );
 
   // --- UI RENDER: DASHBOARD ---
-  const UserAvatar = AVATARS[gameState.avatarId || 'sprinter'];
+  // Safety Check for Avatar
+  const UserAvatar = AVATARS[gameState.avatarId] || AVATARS['sprinter'];
+  
   const maxDist = Math.max(userDistance, entityDistance) * 1.2 + 10; 
   const userPct = Math.min((userDistance / maxDist) * 100, 100);
   const entityPct = Math.min((entityDistance / maxDist) * 100, 100);
@@ -821,7 +910,7 @@ export default function TheEntity() {
 
         {/* INVENTORY / ACTIONS */}
         <div className="grid grid-cols-2 gap-2 mb-8">
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-3"><h3 className="text-[10px] uppercase font-bold text-slate-500 mb-2 tracking-wider">EMP Components</h3><div className="flex justify-between items-center px-1">{EMP_PARTS.map(part => {const count = gameState.inventory[part.id]; const hasPart = count > 0; const Icon = part.icon; return (<div key={part.id} className={`flex flex-col items-center gap-1 ${hasPart ? 'text-white' : 'text-slate-700'}`}><div className={`w-8 h-8 rounded-full border flex items-center justify-center relative ${hasPart ? `bg-slate-800 ${part.color||'text-white'} border-slate-600` : 'bg-slate-900 border-slate-800'}`}><Icon size={16} />{count > 1 && <span className="absolute -top-1 -right-1 bg-white text-black text-[9px] w-3 h-3 flex items-center justify-center rounded-full font-bold">{count}</span>}</div></div>)})}</div>{hasCraftedEmp && <div className="mt-2 text-center text-[10px] text-emerald-400 animate-pulse font-bold">COMPONENTS ASSEMBLED</div>}</div>
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-3"><h3 className="text-[10px] uppercase font-bold text-slate-500 mb-2 tracking-wider">EMP Components</h3><div className="flex justify-between items-center px-1">{EMP_PARTS.map(part => {const count = gameState.inventory[part.id]; const hasPart = count > 0; const Icon = part.icon; return (<div key={part.id} className={`flex flex-col items-center gap-1 ${hasPart ? 'text-white' : 'text-slate-700'}`}><div className={`w-8 h-8 rounded-full border flex items-center justify-center relative ${hasPart ? `bg-slate-800 ${part.color||'text-white'} border-slate-600` : 'bg-slate-950 border-slate-800'}`}><Icon size={16} />{count > 1 && <span className="absolute -top-1 -right-1 bg-white text-black text-[9px] w-3 h-3 flex items-center justify-center rounded-full font-bold">{count}</span>}</div></div>)})}</div>{hasCraftedEmp && <div className="mt-2 text-center text-[10px] text-emerald-400 animate-pulse font-bold">COMPONENTS ASSEMBLED</div>}</div>
             <div className="space-y-2">
                  <button onClick={handleBuyEMP} disabled={!isEmpAvailable || isGracePeriod} className={`w-full p-2 rounded-lg font-bold text-xs flex flex-col items-center justify-center gap-1 transition-all ${!isEmpAvailable || isGracePeriod ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-cyan-950 text-cyan-400 hover:bg-cyan-900'}`}>{isEmpAvailable ? (<><div className="flex items-center gap-1"><ZapOff size={14} /> EMP Burst</div><span className="text-[9px] bg-slate-950 px-1.5 py-0.5 rounded text-slate-300 border border-slate-800 uppercase tracking-wider">{hasCraftedEmp ? "CRAFTED" : isEmpFree ? "FREE" : "$1.00"}</span></>) : (<><Lock size={14} /> <span className="text-[9px]">{empCooldownRemaining}d Left</span></>)}</button>
                 <button onClick={handleBuyBoost} className="w-full p-2 rounded-lg font-bold text-xs flex flex-col items-center justify-center gap-1 transition-all bg-yellow-950 text-yellow-400 hover:bg-yellow-900"><div className="flex items-center gap-1"><Rocket size={14} /> Boost 15%</div><span className="text-[9px] bg-slate-950 px-1.5 py-0.5 rounded text-slate-300 border border-slate-800 uppercase tracking-wider">{isBoostFree ? "FREE" : "$1.00"}</span></button>
