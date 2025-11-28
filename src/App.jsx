@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
+// Fixed Syntax Error Here
 const firebaseConfig = {
   apiKey: "AIzaSyAsssP-dGeIbuz29TUKmGMQ51j8GstFlkQ", 
   authDomain: "the-entity-a7c4b.firebaseapp.com",
@@ -60,10 +61,11 @@ const DIFFICULTIES = {
 
 // --- HELPER FUNCTIONS ---
 const formatDate = (date) => {
+  if (!date) return 'Unknown';
   return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
-// --- SUB-COMPONENTS (FIXED) ---
+// --- SUB-COMPONENTS ---
 
 const LogRunModal = ({ onClose, onSave, activeQuest }) => {
     const [km, setKm] = useState('');
@@ -114,7 +116,7 @@ const LogRunModal = ({ onClose, onSave, activeQuest }) => {
     );
   };
   
-  const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnectStrava }) => {
+const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnectStrava }) => {
       return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-6 animate-in fade-in duration-200">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden">
@@ -143,6 +145,9 @@ const LogRunModal = ({ onClose, onSave, activeQuest }) => {
                       </div>
                       {gameState.isStravaLinked && <CheckCircle2 size={18} className="text-[#FC4C02]" />}
                   </button>
+                  <div className="text-[10px] text-center text-slate-500 mt-2">
+                      Powered by Strava. <a href="/support.html" className="underline hover:text-white">Privacy & Support</a>
+                  </div>
               </div>
   
               {/* Actions */}
@@ -204,28 +209,24 @@ export default function TheEntity() {
 
   // --- REAL TIME CALCULATIONS (The Engine) ---
   const today = new Date();
-  const gameStart = new Date(gameState.startDate);
+  const safeStartDate = gameState.startDate ? new Date(gameState.startDate) : new Date();
   
-  // Time Elapsed
-  const msElapsed = today.getTime() - gameStart.getTime();
+  const msElapsed = today.getTime() - safeStartDate.getTime();
   const hoursElapsed = msElapsed / (1000 * 60 * 60); 
   const daysSinceStart = Math.floor(hoursElapsed / 24);
 
-  // Entity Movement Logic
   const gracePeriodHours = 24;
-  const activeEntityHours = Math.max(0, hoursElapsed - gracePeriodHours - gameState.totalPausedHours);
+  const activeEntityHours = Math.max(0, hoursElapsed - gracePeriodHours - (gameState.totalPausedHours || 0));
   const speedPerHour = gameState.entitySpeed / 24;
   const entityDistance = activeEntityHours * speedPerHour;
 
   const userDistance = gameState.totalKmRun;
   const distanceGap = userDistance - entityDistance;
   
-  // Status Flags
   const isGracePeriod = hoursElapsed < gracePeriodHours;
   const isCaught = distanceGap <= 0 && !isGracePeriod;
   const isVictory = daysSinceStart >= gameState.duration && !isCaught;
   
-  // EMP Status Logic
   const EMP_DURATION_HOURS = 25;
   const EMP_COOLDOWN_DAYS = 90;
   const lastEmpDate = gameState.lastEmpUsage ? new Date(gameState.lastEmpUsage) : null;
@@ -317,7 +318,6 @@ export default function TheEntity() {
   useEffect(() => {
       if (!user || loading) return;
       
-      // Generate quest every 5 days
       if (daysSinceStart > 0 && daysSinceStart % 5 === 0 && daysSinceStart !== gameState.lastQuestGenerationDay) {
           if (!gameState.activeQuest) {
               const parts = ['battery', 'emitter', 'casing'];
@@ -376,11 +376,8 @@ export default function TheEntity() {
       if (!confirm("DELETE ACCOUNT?\n\nThis will permanently erase your progress and disconnect Strava. This cannot be undone.")) return;
       
       try {
-          // 1. Delete Database Record
           await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'));
-          // 2. Delete Auth User
           await deleteUser(user);
-          // 3. Reload to reset state
           window.location.reload();
       } catch (error) {
           alert("Error deleting data: " + error.message);
@@ -393,7 +390,6 @@ export default function TheEntity() {
           return;
       }
 
-      // --- COOLDOWN CHECK ---
       const COOLDOWN_MINUTES = 15;
       if (gameState.lastSyncTime) {
           const lastSync = new Date(gameState.lastSyncTime).getTime();
@@ -406,14 +402,12 @@ export default function TheEntity() {
               return; 
           }
       }
-      // ----------------------
 
       setIsSyncing(true);
 
       try {
           let token = gameState.stravaAccessToken;
           
-          // 1. Refresh Token logic
           if (gameState.stravaExpiresAt && Date.now() / 1000 > gameState.stravaExpiresAt) {
               const clientId = import.meta.env.VITE_STRAVA_CLIENT_ID;
               const clientSecret = import.meta.env.VITE_STRAVA_CLIENT_SECRET;
@@ -430,7 +424,6 @@ export default function TheEntity() {
               }
           }
 
-          // 2. Fetch Activities
           const afterTime = gameState.lastSyncTime ? new Date(gameState.lastSyncTime).getTime() / 1000 : new Date(gameState.startDate).getTime() / 1000;
           
           const response = await fetch(`https://www.strava.com/api/v3/athlete/activities?after=${afterTime}`, {
@@ -445,7 +438,6 @@ export default function TheEntity() {
               return;
           }
 
-          // 3. Process Data
           let addedDist = 0;
           const newRuns = activities
             .filter(act => act.type === 'Run') 
@@ -464,16 +456,15 @@ export default function TheEntity() {
           if (newRuns.length > 0) {
               const newTotal = gameState.totalKmRun + addedDist;
               
-              // 4. Update AI Speed (4-Day Cycle)
               let newSpeed = gameState.entitySpeed;
               let newUpdateDay = gameState.lastSpeedUpdateDay;
 
               if (gameState.adaptiveMode && daysSinceStart >= 4) {
-                    if (daysSinceStart - gameState.lastSpeedUpdateDay >= 4) {
-                        const daysForCalc = Math.max(1, daysSinceStart); 
-                        newSpeed = calculateAdaptiveSpeed(newTotal, daysForCalc, gameState.difficulty);
-                        newUpdateDay = daysSinceStart; 
-                    }
+                   if (daysSinceStart - gameState.lastSpeedUpdateDay >= 4) {
+                       const daysForCalc = Math.max(1, daysSinceStart); 
+                       newSpeed = calculateAdaptiveSpeed(newTotal, daysForCalc, gameState.difficulty);
+                       newUpdateDay = daysSinceStart; 
+                   }
               }
 
               const newState = {
@@ -488,7 +479,7 @@ export default function TheEntity() {
               await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
               alert(`Synced ${newRuns.length} runs totaling ${addedDist.toFixed(2)}km.`);
           } else {
-              alert("No 'Run' activities found (Walking/Cycling is ignored).");
+              alert("No 'Run' activities found.");
           }
 
       } catch (error) {
@@ -502,7 +493,6 @@ export default function TheEntity() {
   const handleBuyEMP = async () => {
     if (!user || !isEmpAvailable) return;
     const hasCraftedEmp = gameState.inventory.battery > 0 && gameState.inventory.emitter > 0 && gameState.inventory.casing > 0;
-    
     let cost = isEmpFree ? "FREE (First Time Bonus)" : "$1.00";
     if (hasCraftedEmp) cost = "FREE (Crafted)";
     
@@ -529,7 +519,6 @@ export default function TheEntity() {
   const handleBuyBoost = async () => {
     if (!user) return;
     
-    // Check if user ran today
     const startOfDay = new Date();
     startOfDay.setHours(0,0,0,0);
     const todayRuns = gameState.runHistory.filter(run => new Date(run.date) >= startOfDay);
@@ -599,92 +588,6 @@ export default function TheEntity() {
      await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
   };
 
-  const handleAddRun = async (km, notes, isQuestRun) => {
-    if (!user) return;
-    const dist = parseFloat(km);
-    let newState = { ...gameState };
-
-    if (isQuestRun && gameState.activeQuest && gameState.activeQuest.status === 'active') {
-        const newProgress = gameState.activeQuest.progress + dist;
-        let updatedQuest = { ...gameState.activeQuest, progress: newProgress };
-        let newInventory = { ...gameState.inventory };
-        let newBadges = [...gameState.badges];
-
-        if (newProgress >= gameState.activeQuest.distance) {
-            updatedQuest.status = 'completed';
-            newInventory[gameState.activeQuest.rewardPart]++;
-            newBadges.push({
-                id: Date.now(),
-                title: gameState.activeQuest.title,
-                date: new Date().toISOString()
-            });
-            alert(`MISSION COMPLETE!\n\nAcquired: 1x ${EMP_PARTS.find(p => p.id === gameState.activeQuest.rewardPart).name}\nAwarded: Mission Badge`);
-            updatedQuest = null; 
-        }
-
-        const newRun = { id: Date.now(), date: new Date().toISOString(), km: dist, notes: notes || 'Side Quest Run', type: 'quest' };
-        newState = { ...gameState, activeQuest: updatedQuest, inventory: newInventory, badges: newBadges, runHistory: [newRun, ...gameState.runHistory] };
-    } else {
-        const newTotal = gameState.totalKmRun + dist;
-        
-        let newSpeed = gameState.entitySpeed;
-        let newUpdateDay = gameState.lastSpeedUpdateDay;
-
-        if (gameState.adaptiveMode && daysSinceStart >= 4) {
-             if (daysSinceStart - gameState.lastSpeedUpdateDay >= 4) {
-                 const daysForCalc = Math.max(1, daysSinceStart); 
-                 newSpeed = calculateAdaptiveSpeed(newTotal, daysForCalc, gameState.difficulty);
-                 newUpdateDay = daysSinceStart; 
-             }
-        }
-
-        const newRun = { id: Date.now(), date: new Date().toISOString(), km: dist, notes: notes || 'Manual Log', type: 'survival' };
-        newState = { ...gameState, totalKmRun: newTotal, entitySpeed: newSpeed, lastSpeedUpdateDay: newUpdateDay, runHistory: [newRun, ...gameState.runHistory] };
-    }
-
-    await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
-    setShowLogModal(false);
-  };
-
-  const handleCompleteOnboarding = async (setupData) => {
-    if (!user) return;
-    const newState = {
-      ...gameState,
-      startDate: new Date().toISOString(),
-      duration: setupData.duration,
-      avatarId: setupData.avatarId,
-      difficulty: setupData.difficulty,
-      username: setupData.username,
-      entitySpeed: 3,
-      lastSpeedUpdateDay: 0,
-      totalKmRun: 0,
-      runHistory: [],
-      onboardingComplete: true,
-      totalPausedHours: 0,
-      lastEmpUsage: null,
-      empUsageCount: 0,
-      boostUsageCount: 0,
-      inventory: { battery: 0, emitter: 0, casing: 0 },
-      activeQuest: null,
-      badges: [],
-      continuesUsed: 0
-    };
-    await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
-  };
-
-  const handleAcceptQuest = async () => {
-      if (!user || !gameState.activeQuest) return;
-      const updatedQuest = { ...gameState.activeQuest, status: 'active' };
-      const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
-      await setDoc(userDocRef, { ...gameState, activeQuest: updatedQuest });
-  };
-
-  const toggleStravaLink = async () => {
-    if (!user) return;
-    const newState = { ...gameState, isStravaLinked: !gameState.isStravaLinked };
-    await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
-  };
-
   // --- UI RENDER: LOADING ---
   if (loading) {
     return (
@@ -697,7 +600,6 @@ export default function TheEntity() {
 
   // --- UI RENDER: ONBOARDING ---
   if (!gameState.onboardingComplete) {
-    // NOTE: This internal component is fully expanded below
     const OnboardingWizard = () => {
         const [step, setStep] = useState(1);
         const [duration, setDuration] = useState(30);
@@ -739,18 +641,30 @@ export default function TheEntity() {
                       ))}
                     </div>
                     <div className="flex gap-3">
-                          <button onClick={() => setStep(1)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button>
-                          <button onClick={() => setStep(3)} className="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">Next Step <ChevronRight size={20} /></button>
+                         <button onClick={() => setStep(1)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button>
+                         <button onClick={() => setStep(3)} className="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">Next Step <ChevronRight size={20} /></button>
                     </div>
                   </div>
                 )}
                 {step === 3 && (
                     <div className="animate-in fade-in slide-in-from-right-8 duration-300">
                         <h2 className="text-xl font-bold text-white mb-6">3. Operative Codename</h2>
-                        <input type="text" value={codename} onChange={(e) => setCodename(e.target.value)} placeholder="Enter your alias..." className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-white text-center text-lg focus:ring-2 focus:ring-purple-500 outline-none mb-8 uppercase tracking-widest" />
+                        <input 
+                            type="text" 
+                            value={codename}
+                            onChange={(e) => setCodename(e.target.value)}
+                            placeholder="Enter your alias..."
+                            className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-white text-center text-lg focus:ring-2 focus:ring-purple-500 outline-none mb-8 uppercase tracking-widest"
+                        />
                         <div className="flex gap-3">
                             <button onClick={() => setStep(2)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button>
-                            <button disabled={!codename} onClick={() => setStep(4)} className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">Next Step <ChevronRight size={20} /></button>
+                            <button 
+                                disabled={!codename}
+                                onClick={() => setStep(4)} 
+                                className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2"
+                            >
+                                Next Step <ChevronRight size={20} />
+                            </button>
                         </div>
                     </div>
                 )}
@@ -882,8 +796,8 @@ export default function TheEntity() {
             </div>
             <div className="absolute top-1/2 -translate-y-1/2 transition-all duration-1000 ease-linear z-10" style={{ left: `${entityPct}%` }}>
               <div className="relative">
-                  {isGracePeriod ? <div className="absolute top-6 -left-6 bg-slate-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap flex items-center gap-1 opacity-75"><Timer size={10} /> INITIALISING</div> : isEmpActive ? <div className="absolute top-6 -left-6 bg-cyan-500 text-slate-900 text-[10px] font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap flex items-center gap-1 animate-pulse"><ZapOff size={10} /> STUNNED</div> : <div className="absolute top-6 -left-6 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap flex items-center gap-1"><Skull size={10} /> IT</div>}
-                  <div className={`w-5 h-5 rotate-45 border-2 border-slate-900 transition-colors ${isGracePeriod ? 'bg-slate-600' : isEmpActive ? 'bg-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.8)]' : 'bg-red-600 shadow-[0_0_20px_rgba(220,38,38,0.8)]'}`}></div>
+                 {isGracePeriod ? <div className="absolute top-6 -left-6 bg-slate-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap flex items-center gap-1 opacity-75"><Timer size={10} /> INITIALISING</div> : isEmpActive ? <div className="absolute top-6 -left-6 bg-cyan-500 text-slate-900 text-[10px] font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap flex items-center gap-1 animate-pulse"><ZapOff size={10} /> STUNNED</div> : <div className="absolute top-6 -left-6 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap flex items-center gap-1"><Skull size={10} /> IT</div>}
+                 <div className={`w-5 h-5 rotate-45 border-2 border-slate-900 transition-colors ${isGracePeriod ? 'bg-slate-600' : isEmpActive ? 'bg-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.8)]' : 'bg-red-600 shadow-[0_0_20px_rgba(220,38,38,0.8)]'}`}></div>
               </div>
             </div>
         </div>
@@ -907,7 +821,7 @@ export default function TheEntity() {
 
         {/* INVENTORY / ACTIONS */}
         <div className="grid grid-cols-2 gap-2 mb-8">
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-3"><h3 className="text-[10px] uppercase font-bold text-slate-500 mb-2 tracking-wider">EMP Components</h3><div className="flex justify-between items-center px-1">{EMP_PARTS.map(part => {const count = gameState.inventory[part.id]; const hasPart = count > 0; const Icon = part.icon; return (<div key={part.id} className={`flex flex-col items-center gap-1 ${hasPart ? 'text-white' : 'text-slate-700'}`}><div className={`w-8 h-8 rounded-full border flex items-center justify-center relative ${hasPart ? `bg-slate-800 ${part.color||'text-white'} border-slate-600` : 'bg-slate-950 border-slate-800'}`}><Icon size={16} />{count > 1 && <span className="absolute -top-1 -right-1 bg-white text-black text-[9px] w-3 h-3 flex items-center justify-center rounded-full font-bold">{count}</span>}</div></div>)})}</div>{hasCraftedEmp && <div className="mt-2 text-center text-[10px] text-emerald-400 animate-pulse font-bold">COMPONENTS ASSEMBLED</div>}</div>
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-3"><h3 className="text-[10px] uppercase font-bold text-slate-500 mb-2 tracking-wider">EMP Components</h3><div className="flex justify-between items-center px-1">{EMP_PARTS.map(part => {const count = gameState.inventory[part.id]; const hasPart = count > 0; const Icon = part.icon; return (<div key={part.id} className={`flex flex-col items-center gap-1 ${hasPart ? 'text-white' : 'text-slate-700'}`}><div className={`w-8 h-8 rounded-full border flex items-center justify-center relative ${hasPart ? `bg-slate-800 ${part.color||'text-white'} border-slate-600` : 'bg-slate-900 border-slate-800'}`}><Icon size={16} />{count > 1 && <span className="absolute -top-1 -right-1 bg-white text-black text-[9px] w-3 h-3 flex items-center justify-center rounded-full font-bold">{count}</span>}</div></div>)})}</div>{hasCraftedEmp && <div className="mt-2 text-center text-[10px] text-emerald-400 animate-pulse font-bold">COMPONENTS ASSEMBLED</div>}</div>
             <div className="space-y-2">
                  <button onClick={handleBuyEMP} disabled={!isEmpAvailable || isGracePeriod} className={`w-full p-2 rounded-lg font-bold text-xs flex flex-col items-center justify-center gap-1 transition-all ${!isEmpAvailable || isGracePeriod ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-cyan-950 text-cyan-400 hover:bg-cyan-900'}`}>{isEmpAvailable ? (<><div className="flex items-center gap-1"><ZapOff size={14} /> EMP Burst</div><span className="text-[9px] bg-slate-950 px-1.5 py-0.5 rounded text-slate-300 border border-slate-800 uppercase tracking-wider">{hasCraftedEmp ? "CRAFTED" : isEmpFree ? "FREE" : "$1.00"}</span></>) : (<><Lock size={14} /> <span className="text-[9px]">{empCooldownRemaining}d Left</span></>)}</button>
                 <button onClick={handleBuyBoost} className="w-full p-2 rounded-lg font-bold text-xs flex flex-col items-center justify-center gap-1 transition-all bg-yellow-950 text-yellow-400 hover:bg-yellow-900"><div className="flex items-center gap-1"><Rocket size={14} /> Boost 15%</div><span className="text-[9px] bg-slate-950 px-1.5 py-0.5 rounded text-slate-300 border border-slate-800 uppercase tracking-wider">{isBoostFree ? "FREE" : "$1.00"}</span></button>
