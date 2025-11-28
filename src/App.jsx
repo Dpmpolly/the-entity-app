@@ -58,15 +58,7 @@ const DIFFICULTIES = {
     hard:   { id: 'hard',   label: 'Nightmare',multiplier: 0.95, color: 'text-red-500',     desc: 'Entity matches 95% of Avg.' }
 };
 
-// --- HELPER FUNCTIONS ---
-const formatDate = (date) => {
-  if (!date) return 'Unknown';
-  try {
-    return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  } catch (e) { return 'Invalid Date'; }
-};
-
-// --- SUB-COMPONENTS (MOVED OUTSIDE TO PREVENT CRASHES) ---
+// --- SUB-COMPONENTS ---
 
 const OnboardingWizard = ({ onComplete }) => {
     const [step, setStep] = useState(1);
@@ -477,12 +469,15 @@ export default function TheEntity() {
   if (isVictory) return <VictoryScreen duration={gameState.duration} onRestart={handleRestartGame} />;
 
   // --- DASHBOARD CONTENT ---
+  // Safety Checks for Dashboard
   const UserAvatar = AVATARS[gameState.avatarId] || AVATARS['sprinter'];
   const maxDist = Math.max(userDistance, entityDistance) * 1.2 + 10; 
   const userPct = Math.min((userDistance / maxDist) * 100, 100);
   const entityPct = Math.min((entityDistance / maxDist) * 100, 100);
   const hasCraftedEmp = gameState.inventory.battery > 0 && gameState.inventory.emitter > 0 && gameState.inventory.casing > 0;
   const diffLabel = (DIFFICULTIES[gameState.difficulty] || DIFFICULTIES.easy).label;
+
+  const getPartIcon = (partId) => { const part = EMP_PARTS.find(p => p.id === partId); return part ? part.icon : Wrench; };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-red-500/30">
@@ -540,8 +535,8 @@ export default function TheEntity() {
 
         {gameState.isStravaLinked ? (<button onClick={syncStravaActivities} disabled={isSyncing} className="w-full bg-[#FC4C02] hover:bg-[#E34402] disabled:opacity-70 transition-all py-4 rounded-xl font-bold text-lg text-white shadow-lg flex items-center justify-center gap-2 mb-8">{isSyncing ? "Syncing..." : "Sync Strava"}</button>) : (<button onClick={() => setShowSettings(true)} className="w-full bg-slate-800 hover:bg-slate-700 transition-all py-4 rounded-xl font-bold text-lg text-white border border-slate-700 flex items-center justify-center gap-2 mb-8"><LinkIcon size={20} className="text-slate-400" /> Connect Strava</button>)}
         
-        {/* RECENT LOGS */}
-        <div className="mb-8"><h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-4 flex items-center gap-2"><History size={16} /> Recent Logs</h3><div className="space-y-3">{gameState.runHistory.length === 0 ? (<div className="text-center p-8 border-2 border-dashed border-slate-800 rounded-xl text-slate-600">No runs logged yet. Start running.</div>) : (gameState.runHistory.slice(0, 5).map((run) => (<div key={run.id} className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex justify-between items-center"><div><div className="text-white font-bold flex items-center gap-2">{run.km} km{run.source === 'strava' && <span className="text-[10px] bg-[#FC4C02]/20 text-[#FC4C02] px-1.5 py-0.5 rounded border border-[#FC4C02]/30">STRAVA</span>}{run.type === 'boost' && <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded border border-yellow-500/30">BOOST</span>}{run.type === 'quest' && <span className="text-[10px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded border border-amber-500/30">QUEST</span>}</div><div className="text-slate-500 text-xs">{formatDate(new Date(run.date))} &bull; {run.notes}</div></div><div className="bg-slate-800 p-2 rounded-lg text-slate-400">{run.type === 'boost' ? <Rocket size={16} className="text-yellow-400" /> : run.type === 'quest' ? <Award size={16} className="text-amber-400" /> : <Activity size={16} />}</div></div>)))}</div></div>
+        {/* RECENT LOGS (With Safety Checks) */}
+        <div className="mb-8"><h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-4 flex items-center gap-2"><History size={16} /> Recent Logs</h3><div className="space-y-3">{(gameState.runHistory || []).length === 0 ? (<div className="text-center p-8 border-2 border-dashed border-slate-800 rounded-xl text-slate-600">No runs logged yet. Start running.</div>) : ((gameState.runHistory || []).slice(0, 5).map((run) => (<div key={run.id} className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex justify-between items-center"><div><div className="text-white font-bold flex items-center gap-2">{run.km} km{run.source === 'strava' && <span className="text-[10px] bg-[#FC4C02]/20 text-[#FC4C02] px-1.5 py-0.5 rounded border border-[#FC4C02]/30">STRAVA</span>}{run.type === 'boost' && <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded border border-yellow-500/30">BOOST</span>}{run.type === 'quest' && <span className="text-[10px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded border border-amber-500/30">QUEST</span>}</div><div className="text-slate-500 text-xs">{formatDate(new Date(run.date))} &bull; {run.notes}</div></div><div className="bg-slate-800 p-2 rounded-lg text-slate-400">{run.type === 'boost' ? <Rocket size={16} className="text-yellow-400" /> : run.type === 'quest' ? <Award size={16} className="text-amber-400" /> : <Activity size={16} />}</div></div>)))}</div></div>
         
         <div className="text-center text-slate-600 text-xs">Start Date: {formatDate(gameStart)} &bull; Day {daysSinceStart} of {gameState.duration} &bull; Agent: {gameState.username}</div>
       </div>
