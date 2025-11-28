@@ -66,7 +66,7 @@ const formatDate = (date) => {
   } catch (e) { return 'Invalid Date'; }
 };
 
-// --- SUB-COMPONENTS ---
+// --- SUB-COMPONENTS (Defined OUTSIDE to prevent crashes) ---
 
 const OnboardingWizard = ({ onComplete }) => {
     const [step, setStep] = useState(1);
@@ -465,7 +465,9 @@ export default function TheEntity() {
   const calculateAdaptiveSpeed = (totalKm, activeDays, diff) => {
     if (activeDays < 1) return 3;
     const avgDaily = totalKm / activeDays;
-    const multiplier = (DIFFICULTIES[diff || 'easy'] || DIFFICULTIES.easy).multiplier;
+    // SAFETY: Default to easy if undefined
+    const difficulty = DIFFICULTIES[diff] || DIFFICULTIES.easy;
+    const multiplier = difficulty.multiplier;
     return parseFloat(Math.max(3, (avgDaily * multiplier)).toFixed(2));
   };
 
@@ -482,10 +484,21 @@ export default function TheEntity() {
   const maxDist = Math.max(userDistance, entityDistance) * 1.2 + 10; 
   const userPct = Math.min((userDistance / maxDist) * 100, 100);
   const entityPct = Math.min((entityDistance / maxDist) * 100, 100);
-  const hasCraftedEmp = gameState.inventory.battery > 0 && gameState.inventory.emitter > 0 && gameState.inventory.casing > 0;
+  // Safety for inventory
+  const safeInventory = gameState.inventory || { battery: 0, emitter: 0, casing: 0 };
+  const hasCraftedEmp = safeInventory.battery > 0 && safeInventory.emitter > 0 && safeInventory.casing > 0;
   const diffLabel = (DIFFICULTIES[gameState.difficulty] || DIFFICULTIES.easy).label;
 
   const getPartIcon = (partId) => { const part = EMP_PARTS.find(p => p.id === partId); return part ? part.icon : Wrench; };
+
+  let BannerContent;
+  if (isEmpActive) {
+      BannerContent = (<><div className="absolute inset-0 bg-cyan-500/10 animate-pulse pointer-events-none"></div><span className="text-cyan-400 uppercase text-xs font-bold tracking-widest mb-1 block flex items-center justify-center gap-1"><ZapOff size={12} /> Countermeasure Active</span><div className="text-2xl font-black text-white mb-1 uppercase tracking-wider">ENTITY STUNNED</div><p className="text-cyan-200 font-medium text-sm">The Entity is frozen. It will not move for the duration.</p></>);
+  } else if (isGracePeriod) {
+    BannerContent = (<><div className="absolute inset-0 bg-emerald-600/5 pointer-events-none"></div><span className="text-slate-400 uppercase text-xs font-bold tracking-widest mb-1 block flex items-center justify-center gap-1"><ShieldCheck size={12} /> Status</span><div className="text-2xl font-black text-white mb-1 uppercase tracking-wider">ENTITY INITIALISATION</div><p className="text-slate-400 font-medium text-sm">The Entity is dormant. It starts moving in 24h.</p></>);
+  } else {
+    BannerContent = (<><span className="text-slate-400 uppercase text-xs font-bold tracking-widest mb-1 block">Current Status</span><div className="text-4xl font-black text-white mb-1">{Math.abs(distanceGap).toFixed(3)} <span className="text-xl text-slate-500">km</span></div><p className="text-emerald-400 font-medium flex items-center justify-center gap-1">Ahead of the Entity</p>{daysUntilCaught < 10 && (<div className="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-orange-900/30 text-orange-400 rounded-full text-xs font-bold border border-orange-900/50"><AlertTriangle size={12} />{daysUntilCaught === 0 ? "Catch imminent (< 24h)" : `${daysUntilCaught} days of safety remaining`}</div>)}</>);
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-red-500/30">
@@ -534,7 +547,7 @@ export default function TheEntity() {
         </div>
 
         <div className="grid grid-cols-2 gap-2 mb-8">
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-3"><h3 className="text-[10px] uppercase font-bold text-slate-500 mb-2 tracking-wider">EMP Components</h3><div className="flex justify-between items-center px-1">{EMP_PARTS.map(part => {const count = gameState.inventory[part.id]; const hasPart = count > 0; const Icon = part.icon; return (<div key={part.id} className={`flex flex-col items-center gap-1 ${hasPart ? 'text-white' : 'text-slate-700'}`}><div className={`w-8 h-8 rounded-full border flex items-center justify-center relative ${hasPart ? `bg-slate-800 ${part.color||'text-white'} border-slate-600` : 'bg-slate-950 border-slate-800'}`}><Icon size={16} />{count > 1 && <span className="absolute -top-1 -right-1 bg-white text-black text-[9px] w-3 h-3 flex items-center justify-center rounded-full font-bold">{count}</span>}</div></div>)})}</div>{hasCraftedEmp && <div className="mt-2 text-center text-[10px] text-emerald-400 animate-pulse font-bold">COMPONENTS ASSEMBLED</div>}</div>
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-3"><h3 className="text-[10px] uppercase font-bold text-slate-500 mb-2 tracking-wider">EMP Components</h3><div className="flex justify-between items-center px-1">{EMP_PARTS.map(part => {const count = safeInventory[part.id]; const hasPart = count > 0; const Icon = part.icon; return (<div key={part.id} className={`flex flex-col items-center gap-1 ${hasPart ? 'text-white' : 'text-slate-700'}`}><div className={`w-8 h-8 rounded-full border flex items-center justify-center relative ${hasPart ? `bg-slate-800 ${part.color||'text-white'} border-slate-600` : 'bg-slate-950 border-slate-800'}`}><Icon size={16} />{count > 1 && <span className="absolute -top-1 -right-1 bg-white text-black text-[9px] w-3 h-3 flex items-center justify-center rounded-full font-bold">{count}</span>}</div></div>)})}</div>{hasCraftedEmp && <div className="mt-2 text-center text-[10px] text-emerald-400 animate-pulse font-bold">COMPONENTS ASSEMBLED</div>}</div>
             <div className="space-y-2">
                  <button onClick={handleBuyEMP} disabled={!isEmpAvailable || isGracePeriod} className={`w-full p-2 rounded-lg font-bold text-xs flex flex-col items-center justify-center gap-1 transition-all ${!isEmpAvailable || isGracePeriod ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-cyan-950 text-cyan-400 hover:bg-cyan-900'}`}>{isEmpAvailable ? (<><div className="flex items-center gap-1"><ZapOff size={14} /> EMP Burst</div><span className="text-[9px] bg-slate-950 px-1.5 py-0.5 rounded text-slate-300 border border-slate-800 uppercase tracking-wider">{hasCraftedEmp ? "CRAFTED" : isEmpFree ? "FREE" : "$1.00"}</span></>) : (<><Lock size={14} /> <span className="text-[9px]">{empCooldownRemaining}d Left</span></>)}</button>
                 <button onClick={handleBuyBoost} className="w-full p-2 rounded-lg font-bold text-xs flex flex-col items-center justify-center gap-1 transition-all bg-yellow-950 text-yellow-400 hover:bg-yellow-900"><div className="flex items-center gap-1"><Rocket size={14} /> Boost 15%</div><span className="text-[9px] bg-slate-950 px-1.5 py-0.5 rounded text-slate-300 border border-slate-800 uppercase tracking-wider">{isBoostFree ? "FREE" : "$1.00"}</span></button>
