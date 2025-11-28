@@ -60,13 +60,11 @@ const DIFFICULTIES = {
 
 // --- HELPER FUNCTIONS ---
 const formatDate = (date) => {
-  if (!date) return 'Unknown';
-  try {
-    return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  } catch (e) { return 'Invalid Date'; }
+  return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
-// --- SUB-COMPONENTS ---
+// --- SUB-COMPONENTS (FIXED) ---
+
 const LogRunModal = ({ onClose, onSave, activeQuest }) => {
     const [km, setKm] = useState('');
     const [notes, setNotes] = useState('');
@@ -116,7 +114,7 @@ const LogRunModal = ({ onClose, onSave, activeQuest }) => {
     );
   };
   
-const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnectStrava }) => {
+  const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnectStrava }) => {
       return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-6 animate-in fade-in duration-200">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden">
@@ -145,9 +143,6 @@ const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnect
                       </div>
                       {gameState.isStravaLinked && <CheckCircle2 size={18} className="text-[#FC4C02]" />}
                   </button>
-                  <div className="text-[10px] text-center text-slate-500 mt-2">
-                      Powered by Strava. <a href="/support.html" className="underline hover:text-white">Privacy & Support</a>
-                  </div>
               </div>
   
               {/* Actions */}
@@ -209,24 +204,28 @@ export default function TheEntity() {
 
   // --- REAL TIME CALCULATIONS (The Engine) ---
   const today = new Date();
-  const safeStartDate = gameState.startDate ? new Date(gameState.startDate) : new Date();
+  const gameStart = new Date(gameState.startDate);
   
-  const msElapsed = today.getTime() - safeStartDate.getTime();
+  // Time Elapsed
+  const msElapsed = today.getTime() - gameStart.getTime();
   const hoursElapsed = msElapsed / (1000 * 60 * 60); 
   const daysSinceStart = Math.floor(hoursElapsed / 24);
 
+  // Entity Movement Logic
   const gracePeriodHours = 24;
-  const activeEntityHours = Math.max(0, hoursElapsed - gracePeriodHours - (gameState.totalPausedHours || 0));
-  const speedPerHour = (gameState.entitySpeed || 3) / 24;
+  const activeEntityHours = Math.max(0, hoursElapsed - gracePeriodHours - gameState.totalPausedHours);
+  const speedPerHour = gameState.entitySpeed / 24;
   const entityDistance = activeEntityHours * speedPerHour;
 
-  const userDistance = gameState.totalKmRun || 0;
+  const userDistance = gameState.totalKmRun;
   const distanceGap = userDistance - entityDistance;
   
+  // Status Flags
   const isGracePeriod = hoursElapsed < gracePeriodHours;
   const isCaught = distanceGap <= 0 && !isGracePeriod;
-  const isVictory = daysSinceStart >= (gameState.duration || 365) && !isCaught;
+  const isVictory = daysSinceStart >= gameState.duration && !isCaught;
   
+  // EMP Status Logic
   const EMP_DURATION_HOURS = 25;
   const EMP_COOLDOWN_DAYS = 90;
   const lastEmpDate = gameState.lastEmpUsage ? new Date(gameState.lastEmpUsage) : null;
@@ -237,7 +236,7 @@ export default function TheEntity() {
   const isEmpFree = (gameState.empUsageCount || 0) === 0;
   const isBoostFree = (gameState.boostUsageCount || 0) === 0;
   
-  const daysUntilCaught = distanceGap > 0 ? Math.floor(distanceGap / (gameState.entitySpeed || 3)) : 0;
+  const daysUntilCaught = distanceGap > 0 ? Math.floor(distanceGap / gameState.entitySpeed) : 0;
   const daysToNextUpdate = 4 - (daysSinceStart % 4);
 
   // --- AUTHENTICATION ---
@@ -276,11 +275,6 @@ export default function TheEntity() {
              const response = await fetch(`https://www.strava.com/oauth/token?client_id=${clientId}&client_secret=${clientSecret}&code=${stravaCode}&grant_type=authorization_code`, { method: 'POST' });
              const data = await response.json();
              
-             if (data.errors) {
-                 alert(`Strava Error: ${data.message}. Try disconnecting and reconnecting.`);
-                 return;
-             }
-
              if (data.access_token) {
                  const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
                  await setDoc(userDocRef, { 
@@ -323,6 +317,7 @@ export default function TheEntity() {
   useEffect(() => {
       if (!user || loading) return;
       
+      // Generate quest every 5 days
       if (daysSinceStart > 0 && daysSinceStart % 5 === 0 && daysSinceStart !== gameState.lastQuestGenerationDay) {
           if (!gameState.activeQuest) {
               const parts = ['battery', 'emitter', 'casing'];
@@ -352,9 +347,7 @@ export default function TheEntity() {
   const calculateAdaptiveSpeed = (totalKm, activeDays, diff) => {
     if (activeDays < 1) return 3;
     const avgDaily = totalKm / activeDays;
-    // SAFETY: Default to easy if undefined
-    const difficulty = DIFFICULTIES[diff] || DIFFICULTIES.easy;
-    const multiplier = difficulty.multiplier;
+    const multiplier = DIFFICULTIES[diff || 'easy'].multiplier;
     return parseFloat(Math.max(3, (avgDaily * multiplier)).toFixed(2));
   };
 
@@ -381,9 +374,13 @@ export default function TheEntity() {
 
   const handleDeleteAccount = async () => {
       if (!confirm("DELETE ACCOUNT?\n\nThis will permanently erase your progress and disconnect Strava. This cannot be undone.")) return;
+      
       try {
+          // 1. Delete Database Record
           await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'));
+          // 2. Delete Auth User
           await deleteUser(user);
+          // 3. Reload to reset state
           window.location.reload();
       } catch (error) {
           alert("Error deleting data: " + error.message);
@@ -396,6 +393,7 @@ export default function TheEntity() {
           return;
       }
 
+      // --- COOLDOWN CHECK ---
       const COOLDOWN_MINUTES = 15;
       if (gameState.lastSyncTime) {
           const lastSync = new Date(gameState.lastSyncTime).getTime();
@@ -408,12 +406,14 @@ export default function TheEntity() {
               return; 
           }
       }
+      // ----------------------
 
       setIsSyncing(true);
 
       try {
           let token = gameState.stravaAccessToken;
           
+          // 1. Refresh Token logic
           if (gameState.stravaExpiresAt && Date.now() / 1000 > gameState.stravaExpiresAt) {
               const clientId = import.meta.env.VITE_STRAVA_CLIENT_ID;
               const clientSecret = import.meta.env.VITE_STRAVA_CLIENT_SECRET;
@@ -430,6 +430,7 @@ export default function TheEntity() {
               }
           }
 
+          // 2. Fetch Activities
           const afterTime = gameState.lastSyncTime ? new Date(gameState.lastSyncTime).getTime() / 1000 : new Date(gameState.startDate).getTime() / 1000;
           
           const response = await fetch(`https://www.strava.com/api/v3/athlete/activities?after=${afterTime}`, {
@@ -444,6 +445,7 @@ export default function TheEntity() {
               return;
           }
 
+          // 3. Process Data
           let addedDist = 0;
           const newRuns = activities
             .filter(act => act.type === 'Run') 
@@ -460,17 +462,18 @@ export default function TheEntity() {
           });
 
           if (newRuns.length > 0) {
-              const newTotal = (gameState.totalKmRun || 0) + addedDist;
+              const newTotal = gameState.totalKmRun + addedDist;
               
+              // 4. Update AI Speed (4-Day Cycle)
               let newSpeed = gameState.entitySpeed;
               let newUpdateDay = gameState.lastSpeedUpdateDay;
 
               if (gameState.adaptiveMode && daysSinceStart >= 4) {
-                   if (daysSinceStart - gameState.lastSpeedUpdateDay >= 4) {
-                       const daysForCalc = Math.max(1, daysSinceStart); 
-                       newSpeed = calculateAdaptiveSpeed(newTotal, daysForCalc, gameState.difficulty);
-                       newUpdateDay = daysSinceStart; 
-                   }
+                    if (daysSinceStart - gameState.lastSpeedUpdateDay >= 4) {
+                        const daysForCalc = Math.max(1, daysSinceStart); 
+                        newSpeed = calculateAdaptiveSpeed(newTotal, daysForCalc, gameState.difficulty);
+                        newUpdateDay = daysSinceStart; 
+                    }
               }
 
               const newState = {
@@ -485,7 +488,7 @@ export default function TheEntity() {
               await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
               alert(`Synced ${newRuns.length} runs totaling ${addedDist.toFixed(2)}km.`);
           } else {
-              alert("No 'Run' activities found.");
+              alert("No 'Run' activities found (Walking/Cycling is ignored).");
           }
 
       } catch (error) {
@@ -499,6 +502,7 @@ export default function TheEntity() {
   const handleBuyEMP = async () => {
     if (!user || !isEmpAvailable) return;
     const hasCraftedEmp = gameState.inventory.battery > 0 && gameState.inventory.emitter > 0 && gameState.inventory.casing > 0;
+    
     let cost = isEmpFree ? "FREE (First Time Bonus)" : "$1.00";
     if (hasCraftedEmp) cost = "FREE (Crafted)";
     
@@ -525,6 +529,7 @@ export default function TheEntity() {
   const handleBuyBoost = async () => {
     if (!user) return;
     
+    // Check if user ran today
     const startOfDay = new Date();
     startOfDay.setHours(0,0,0,0);
     const todayRuns = gameState.runHistory.filter(run => new Date(run.date) >= startOfDay);
@@ -540,7 +545,7 @@ export default function TheEntity() {
     
     if (!confirm(`Activate Nitrous Boost?\n\nCost: ${cost}\nEffect: Adds 15% (+${boostAmount}km) to today's distance.`)) return;
 
-    const newTotal = (gameState.totalKmRun || 0) + boostAmount;
+    const newTotal = gameState.totalKmRun + boostAmount;
     
     const newRun = {
       id: Date.now(),
@@ -600,7 +605,6 @@ export default function TheEntity() {
     let newState = { ...gameState };
 
     if (isQuestRun && gameState.activeQuest && gameState.activeQuest.status === 'active') {
-        // Quest Logic
         const newProgress = gameState.activeQuest.progress + dist;
         let updatedQuest = { ...gameState.activeQuest, progress: newProgress };
         let newInventory = { ...gameState.inventory };
@@ -621,8 +625,7 @@ export default function TheEntity() {
         const newRun = { id: Date.now(), date: new Date().toISOString(), km: dist, notes: notes || 'Side Quest Run', type: 'quest' };
         newState = { ...gameState, activeQuest: updatedQuest, inventory: newInventory, badges: newBadges, runHistory: [newRun, ...gameState.runHistory] };
     } else {
-        // Survival Logic
-        const newTotal = (gameState.totalKmRun || 0) + dist;
+        const newTotal = gameState.totalKmRun + dist;
         
         let newSpeed = gameState.entitySpeed;
         let newUpdateDay = gameState.lastSpeedUpdateDay;
@@ -669,6 +672,13 @@ export default function TheEntity() {
     await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
   };
 
+  const handleAcceptQuest = async () => {
+      if (!user || !gameState.activeQuest) return;
+      const updatedQuest = { ...gameState.activeQuest, status: 'active' };
+      const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
+      await setDoc(userDocRef, { ...gameState, activeQuest: updatedQuest });
+  };
+
   const toggleStravaLink = async () => {
     if (!user) return;
     const newState = { ...gameState, isStravaLinked: !gameState.isStravaLinked };
@@ -687,6 +697,7 @@ export default function TheEntity() {
 
   // --- UI RENDER: ONBOARDING ---
   if (!gameState.onboardingComplete) {
+    // NOTE: This internal component is fully expanded below
     const OnboardingWizard = () => {
         const [step, setStep] = useState(1);
         const [duration, setDuration] = useState(30);
@@ -728,30 +739,18 @@ export default function TheEntity() {
                       ))}
                     </div>
                     <div className="flex gap-3">
-                         <button onClick={() => setStep(1)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button>
-                         <button onClick={() => setStep(3)} className="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">Next Step <ChevronRight size={20} /></button>
+                          <button onClick={() => setStep(1)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button>
+                          <button onClick={() => setStep(3)} className="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">Next Step <ChevronRight size={20} /></button>
                     </div>
                   </div>
                 )}
                 {step === 3 && (
                     <div className="animate-in fade-in slide-in-from-right-8 duration-300">
                         <h2 className="text-xl font-bold text-white mb-6">3. Operative Codename</h2>
-                        <input 
-                            type="text" 
-                            value={codename}
-                            onChange={(e) => setCodename(e.target.value)}
-                            placeholder="Enter your alias..."
-                            className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-white text-center text-lg focus:ring-2 focus:ring-purple-500 outline-none mb-8 uppercase tracking-widest"
-                        />
+                        <input type="text" value={codename} onChange={(e) => setCodename(e.target.value)} placeholder="Enter your alias..." className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-white text-center text-lg focus:ring-2 focus:ring-purple-500 outline-none mb-8 uppercase tracking-widest" />
                         <div className="flex gap-3">
                             <button onClick={() => setStep(2)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button>
-                            <button 
-                                disabled={!codename}
-                                onClick={() => setStep(4)} 
-                                className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2"
-                            >
-                                Next Step <ChevronRight size={20} />
-                            </button>
+                            <button disabled={!codename} onClick={() => setStep(4)} className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">Next Step <ChevronRight size={20} /></button>
                         </div>
                     </div>
                 )}
@@ -841,9 +840,7 @@ export default function TheEntity() {
   );
 
   // --- UI RENDER: DASHBOARD ---
-  // Safety Check for Avatar
-  const UserAvatar = AVATARS[gameState.avatarId] || AVATARS['sprinter'];
-  
+  const UserAvatar = AVATARS[gameState.avatarId || 'sprinter'];
   const maxDist = Math.max(userDistance, entityDistance) * 1.2 + 10; 
   const userPct = Math.min((userDistance / maxDist) * 100, 100);
   const entityPct = Math.min((entityDistance / maxDist) * 100, 100);
@@ -885,8 +882,8 @@ export default function TheEntity() {
             </div>
             <div className="absolute top-1/2 -translate-y-1/2 transition-all duration-1000 ease-linear z-10" style={{ left: `${entityPct}%` }}>
               <div className="relative">
-                 {isGracePeriod ? <div className="absolute top-6 -left-6 bg-slate-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap flex items-center gap-1 opacity-75"><Timer size={10} /> INITIALISING</div> : isEmpActive ? <div className="absolute top-6 -left-6 bg-cyan-500 text-slate-900 text-[10px] font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap flex items-center gap-1 animate-pulse"><ZapOff size={10} /> STUNNED</div> : <div className="absolute top-6 -left-6 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap flex items-center gap-1"><Skull size={10} /> IT</div>}
-                 <div className={`w-5 h-5 rotate-45 border-2 border-slate-900 transition-colors ${isGracePeriod ? 'bg-slate-600' : isEmpActive ? 'bg-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.8)]' : 'bg-red-600 shadow-[0_0_20px_rgba(220,38,38,0.8)]'}`}></div>
+                  {isGracePeriod ? <div className="absolute top-6 -left-6 bg-slate-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap flex items-center gap-1 opacity-75"><Timer size={10} /> INITIALISING</div> : isEmpActive ? <div className="absolute top-6 -left-6 bg-cyan-500 text-slate-900 text-[10px] font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap flex items-center gap-1 animate-pulse"><ZapOff size={10} /> STUNNED</div> : <div className="absolute top-6 -left-6 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap flex items-center gap-1"><Skull size={10} /> IT</div>}
+                  <div className={`w-5 h-5 rotate-45 border-2 border-slate-900 transition-colors ${isGracePeriod ? 'bg-slate-600' : isEmpActive ? 'bg-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.8)]' : 'bg-red-600 shadow-[0_0_20px_rgba(220,38,38,0.8)]'}`}></div>
               </div>
             </div>
         </div>
