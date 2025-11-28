@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { 
   getAuth, 
+  signInWithCustomToken, 
   signInAnonymously, 
   onAuthStateChanged,
-  signOut,
-  deleteUser
+  deleteUser,
+  signOut
 } from 'firebase/auth';
 import { 
   getFirestore, 
@@ -37,7 +38,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-// --- DEFINITIONS ---
+// --- GAME DEFINITIONS ---
 const AVATARS = {
   sprinter: { id: 'sprinter', name: 'The Sprinter', icon: Zap, color: 'text-yellow-400', bg: 'bg-yellow-500', desc: 'Fast and explosive.' },
   ranger:   { id: 'ranger',   name: 'The Ranger',   icon: MapIcon, color: 'text-emerald-400', bg: 'bg-emerald-500', desc: 'Steady and enduring.' },
@@ -414,20 +415,11 @@ export default function TheEntity() {
           try {
              const clientId = import.meta.env.VITE_STRAVA_CLIENT_ID;
              const clientSecret = import.meta.env.VITE_STRAVA_CLIENT_SECRET;
+             if (!clientId) return alert("Missing VITE_STRAVA_CLIENT_ID");
 
-             if (!clientId) {
-                 alert("Setup Error: VITE_STRAVA_CLIENT_ID missing in Vercel.");
-                 return;
-             }
-             
              const response = await fetch(`https://www.strava.com/oauth/token?client_id=${clientId}&client_secret=${clientSecret}&code=${stravaCode}&grant_type=authorization_code`, { method: 'POST' });
              const data = await response.json();
              
-             if (data.errors) {
-                 alert(`Strava Error: ${data.message}. Try disconnecting and reconnecting.`);
-                 return;
-             }
-
              if (data.access_token) {
                  const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
                  await setDoc(userDocRef, { 
@@ -436,23 +428,19 @@ export default function TheEntity() {
                      stravaRefreshToken: data.refresh_token,
                      stravaExpiresAt: data.expires_at
                  }, { merge: true });
-                 
                  window.history.replaceState({}, document.title, "/");
-                 alert("Strava Connected Successfully!");
+                 alert("Strava Connected!");
              }
-          } catch (error) {
-             console.error("Strava Auth Failed", error);
-          }
+          } catch (error) { console.error(error); }
        };
        exchangeToken();
     }
   }, [user]);
 
-  // --- DATABASE LISTENER ---
+  // --- DB SYNC ---
   useEffect(() => {
     if (!user) return;
     const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
-
     const unsubscribeSnapshot = onSnapshot(userDocRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
@@ -463,380 +451,29 @@ export default function TheEntity() {
       }
       setLoading(false);
     });
-
     return () => unsubscribeSnapshot();
   }, [user]);
 
-  // --- GAME LOOP: QUEST GENERATION ---
-  useEffect(() => {
-      if (!user || loading) return;
-      
-      if (daysSinceStart > 0 && daysSinceStart % 5 === 0 && daysSinceStart !== gameState.lastQuestGenerationDay) {
-          if (!gameState.activeQuest) {
-              const parts = ['battery', 'emitter', 'casing'];
-              const randomPart = parts[Math.floor(Math.random() * parts.length)];
-              const randomDist = Math.floor(Math.random() * 8) + 5; 
-              
-              const newQuest = {
-                  id: Date.now(),
-                  title: `Scavenge Mission ${gameState.badges.length + 1}`,
-                  distance: randomDist,
-                  progress: 0,
-                  rewardPart: randomPart,
-                  status: 'available'
-              };
+  // --- ACTIONS ---
+  const handleCompleteOnboarding = async (setupData) => {
+      if (!user) return;
+      const newState = { ...gameState, ...setupData, startDate: new Date().toISOString(), onboardingComplete: true };
+      await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
+  };
 
-              const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
-              setDoc(userDocRef, {
-                  ...gameState,
-                  activeQuest: newQuest,
-                  lastQuestGenerationDay: daysSinceStart
-              });
-          }
-      }
-  }, [daysSinceStart, user, loading]);
-
-  // --- CORE FUNCTIONS ---
+  // --- HELPER LOGIC ---
   const calculateAdaptiveSpeed = (totalKm, activeDays, diff) => {
     if (activeDays < 1) return 3;
     const avgDaily = totalKm / activeDays;
-    const multiplier = (DIFFICULTIES[diff || 'easy'] || DIFFICULTIES.easy).multiplier;
+    // SAFETY: Default to easy if undefined
+    const difficulty = DIFFICULTIES[diff] || DIFFICULTIES.easy;
+    const multiplier = difficulty.multiplier;
     return parseFloat(Math.max(3, (avgDaily * multiplier)).toFixed(2));
   };
 
-  const getPartIcon = (partId) => {
-      const part = EMP_PARTS.find(p => p.id === partId);
-      return part ? part.icon : Wrench;
-  };
-
-  const handleStravaLogin = () => {
-      const clientId = import.meta.env.VITE_STRAVA_CLIENT_ID;
-      if (!clientId) {
-          alert("Error: VITE_STRAVA_CLIENT_ID not found.");
-          return;
-      }
-      const redirectUri = window.location.origin; 
-      const scope = "activity:read_all";
-      window.location.href = `http://www.strava.com/oauth/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}&approval_prompt=force&scope=${scope}`;
-  };
-
-  const handleLogout = async () => {
-    await signOut(auth);
-    window.location.reload();
-  };
-
-  const handleDeleteAccount = async () => {
-      if (!confirm("DELETE ACCOUNT?\n\nThis will permanently erase your progress and disconnect Strava. This cannot be undone.")) return;
-      
-      try {
-          await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'));
-          await deleteUser(user);
-          window.location.reload();
-      } catch (error) {
-          alert("Error deleting data: " + error.message);
-      }
-  };
-
-  const syncStravaActivities = async () => {
-      if (!user || !gameState.stravaAccessToken) {
-          alert("Please connect Strava first.");
-          return;
-      }
-
-      // --- COOLDOWN CHECK ---
-      const COOLDOWN_MINUTES = 15;
-      if (gameState.lastSyncTime) {
-          const lastSync = new Date(gameState.lastSyncTime).getTime();
-          const now = new Date().getTime();
-          const diffMinutes = (now - lastSync) / (1000 * 60);
-          
-          if (diffMinutes < COOLDOWN_MINUTES) {
-              const waitTime = Math.ceil(COOLDOWN_MINUTES - diffMinutes);
-              alert(`SATELLITE RECHARGING.\n\nPlease wait ${waitTime} minutes before syncing again to avoid detection.`);
-              return; 
-          }
-      }
-      // ----------------------
-
-      setIsSyncing(true);
-
-      try {
-          let token = gameState.stravaAccessToken;
-          
-          // Refresh Token Logic
-          if (gameState.stravaExpiresAt && Date.now() / 1000 > gameState.stravaExpiresAt) {
-              const clientId = import.meta.env.VITE_STRAVA_CLIENT_ID;
-              const clientSecret = import.meta.env.VITE_STRAVA_CLIENT_SECRET;
-              const refreshRes = await fetch(`https://www.strava.com/oauth/token?client_id=${clientId}&client_secret=${clientSecret}&grant_type=refresh_token&refresh_token=${gameState.stravaRefreshToken}`, { method: 'POST' });
-              const refreshData = await refreshRes.json();
-              
-              if (refreshData.access_token) {
-                  token = refreshData.access_token;
-                  await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), { 
-                      stravaAccessToken: token, 
-                      stravaRefreshToken: refreshData.refresh_token, 
-                      stravaExpiresAt: refreshData.expires_at 
-                  }, { merge: true });
-              }
-          }
-
-          // Fetch Activities
-          const afterTime = gameState.lastSyncTime ? new Date(gameState.lastSyncTime).getTime() / 1000 : new Date(gameState.startDate).getTime() / 1000;
-          
-          const response = await fetch(`https://www.strava.com/api/v3/athlete/activities?after=${afterTime}`, {
-              headers: { 'Authorization': `Bearer ${token}` }
-          });
-          
-          const activities = await response.json();
-
-          if (!Array.isArray(activities) || activities.length === 0) {
-              alert("No new runs found on Strava since last sync.");
-              setIsSyncing(false);
-              return;
-          }
-
-          let addedDist = 0;
-          const newRuns = activities
-            .filter(act => act.type === 'Run') 
-            .map(act => {
-              const km = parseFloat((act.distance / 1000).toFixed(2));
-              addedDist += km;
-              return {
-                  id: act.id,
-                  date: act.start_date,
-                  km: km,
-                  notes: act.name,
-                  source: 'strava'
-              };
-          });
-
-          if (newRuns.length > 0) {
-              const newTotal = (gameState.totalKmRun || 0) + addedDist;
-              
-              let newSpeed = gameState.entitySpeed;
-              let newUpdateDay = gameState.lastSpeedUpdateDay;
-
-              if (gameState.adaptiveMode && daysSinceStart >= 4) {
-                   if (daysSinceStart - gameState.lastSpeedUpdateDay >= 4) {
-                       const daysForCalc = Math.max(1, daysSinceStart); 
-                       newSpeed = calculateAdaptiveSpeed(newTotal, daysForCalc, gameState.difficulty);
-                       newUpdateDay = daysSinceStart; 
-                   }
-              }
-
-              const newState = {
-                  ...gameState,
-                  totalKmRun: newTotal,
-                  entitySpeed: newSpeed,
-                  lastSpeedUpdateDay: newUpdateDay,
-                  runHistory: [...newRuns, ...gameState.runHistory],
-                  lastSyncTime: new Date().toISOString()
-              };
-              
-              await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
-              alert(`Synced ${newRuns.length} runs totaling ${addedDist.toFixed(2)}km.`);
-          } else {
-              alert("No 'Run' activities found.");
-          }
-
-      } catch (error) {
-          console.error("Sync Error", error);
-          alert("Error syncing Strava. Please check connection.");
-      }
-      setIsSyncing(false);
-  };
-
-  // --- ITEM HANDLERS ---
-  const handleBuyEMP = async () => {
-    if (!user || !isEmpAvailable) return;
-    const hasCraftedEmp = gameState.inventory.battery > 0 && gameState.inventory.emitter > 0 && gameState.inventory.casing > 0;
-    let cost = isEmpFree ? "FREE (First Time Bonus)" : "$1.00";
-    if (hasCraftedEmp) cost = "FREE (Crafted)";
-    
-    if (!confirm(`Deploy EMP Burst?\n\nCost: ${cost}\nEffect: Stops the Entity for ${EMP_DURATION_HOURS} hours.\nCooldown: ${EMP_COOLDOWN_DAYS} days.`)) return;
-    
-    let newInventory = { ...gameState.inventory };
-    if (hasCraftedEmp) {
-        newInventory.battery--;
-        newInventory.emitter--;
-        newInventory.casing--;
-    }
-
-    const newState = {
-        ...gameState,
-        lastEmpUsage: new Date().toISOString(),
-        totalPausedHours: (gameState.totalPausedHours || 0) + EMP_DURATION_HOURS,
-        empUsageCount: (gameState.empUsageCount || 0) + 1,
-        inventory: newInventory
-    };
-    await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
-    alert("EMP DEPLOYED. The Entity is stunned for 25 hours.");
-  };
-
-  const handleBuyBoost = async () => {
-    if (!user) return;
-    
-    const startOfDay = new Date();
-    startOfDay.setHours(0,0,0,0);
-    const todayRuns = gameState.runHistory.filter(run => new Date(run.date) >= startOfDay);
-    const todayKm = todayRuns.reduce((acc, run) => acc + run.km, 0);
-
-    if (todayKm <= 0) {
-        alert("System Error: No movement detected today.\n\nYou must log a run today before you can boost it.");
-        return;
-    }
-
-    const cost = isBoostFree ? "FREE" : "$1.00";
-    const boostAmount = parseFloat((todayKm * 0.15).toFixed(2));
-    
-    if (!confirm(`Activate Nitrous Boost?\n\nCost: ${cost}\nEffect: Adds 15% (+${boostAmount}km) to today's distance.`)) return;
-
-    const newTotal = (gameState.totalKmRun || 0) + boostAmount;
-    
-    const newRun = {
-      id: Date.now(),
-      date: new Date().toISOString(),
-      km: boostAmount,
-      notes: 'Nitrous Boost (+15%)',
-      type: 'boost'
-    };
-
-    const newState = {
-        ...gameState,
-        totalKmRun: newTotal,
-        runHistory: [newRun, ...gameState.runHistory],
-        boostUsageCount: (gameState.boostUsageCount || 0) + 1
-    };
-    await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
-  };
-
-  const handleContinueGame = async () => {
-    if (!user) return;
-    if (!confirm("ACTIVATE ADRENALINE SHOT?\n\nCost: $1.00\nEffect: Pushes the Entity back by 48 hours. You will survive... for now.")) return;
-
-    const newState = {
-        ...gameState,
-        totalPausedHours: (gameState.totalPausedHours || 0) + 48,
-        continuesUsed: (gameState.continuesUsed || 0) + 1
-    };
-    await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
-  };
-
-  const handleRestartGame = async () => {
-     if (!user || !confirm("CONFIRM RESET?\n\nThis will restart the challenge from Day 1.")) return;
-     const newState = {
-        onboardingComplete: false, 
-        startDate: new Date().toISOString(),
-        duration: 365,
-        totalKmRun: 0,
-        runHistory: [],
-        totalPausedHours: 0,
-        lastEmpUsage: null,
-        empUsageCount: 0,
-        boostUsageCount: 0,
-        inventory: { battery: 0, emitter: 0, casing: 0 },
-        activeQuest: null,
-        badges: [],
-        continuesUsed: 0,
-        entitySpeed: 3,
-        lastSpeedUpdateDay: 0,
-        difficulty: 'easy'
-     };
-     await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
-  };
-
-  const handleAddRun = async (km, notes, isQuestRun) => {
-    if (!user) return;
-    const dist = parseFloat(km);
-    let newState = { ...gameState };
-
-    if (isQuestRun && gameState.activeQuest && gameState.activeQuest.status === 'active') {
-        // Quest Logic
-        const newProgress = gameState.activeQuest.progress + dist;
-        let updatedQuest = { ...gameState.activeQuest, progress: newProgress };
-        let newInventory = { ...gameState.inventory };
-        let newBadges = [...gameState.badges];
-
-        if (newProgress >= gameState.activeQuest.distance) {
-            updatedQuest.status = 'completed';
-            newInventory[gameState.activeQuest.rewardPart]++;
-            newBadges.push({
-                id: Date.now(),
-                title: gameState.activeQuest.title,
-                date: new Date().toISOString()
-            });
-            alert(`MISSION COMPLETE!\n\nAcquired: 1x ${EMP_PARTS.find(p => p.id === gameState.activeQuest.rewardPart).name}\nAwarded: Mission Badge`);
-            updatedQuest = null; 
-        }
-
-        const newRun = { id: Date.now(), date: new Date().toISOString(), km: dist, notes: notes || 'Side Quest Run', type: 'quest' };
-        newState = { ...gameState, activeQuest: updatedQuest, inventory: newInventory, badges: newBadges, runHistory: [newRun, ...gameState.runHistory] };
-    } else {
-        // Survival Logic
-        const newTotal = (gameState.totalKmRun || 0) + dist;
-        
-        let newSpeed = gameState.entitySpeed;
-        let newUpdateDay = gameState.lastSpeedUpdateDay;
-
-        if (gameState.adaptiveMode && daysSinceStart >= 4) {
-             if (daysSinceStart - gameState.lastSpeedUpdateDay >= 4) {
-                 const daysForCalc = Math.max(1, daysSinceStart); 
-                 newSpeed = calculateAdaptiveSpeed(newTotal, daysForCalc, gameState.difficulty);
-                 newUpdateDay = daysSinceStart; 
-             }
-        }
-
-        const newRun = { id: Date.now(), date: new Date().toISOString(), km: dist, notes: notes || 'Manual Log', type: 'survival' };
-        newState = { ...gameState, totalKmRun: newTotal, entitySpeed: newSpeed, lastSpeedUpdateDay: newUpdateDay, runHistory: [newRun, ...gameState.runHistory] };
-    }
-
-    await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
-    setShowLogModal(false);
-  };
-
-  const handleCompleteOnboarding = async (setupData) => {
-    if (!user) return;
-    const newState = {
-      ...gameState,
-      startDate: new Date().toISOString(),
-      duration: setupData.duration,
-      avatarId: setupData.avatarId,
-      difficulty: setupData.difficulty,
-      username: setupData.username,
-      entitySpeed: 3,
-      lastSpeedUpdateDay: 0,
-      totalKmRun: 0,
-      runHistory: [],
-      onboardingComplete: true,
-      totalPausedHours: 0,
-      lastEmpUsage: null,
-      empUsageCount: 0,
-      boostUsageCount: 0,
-      inventory: { battery: 0, emitter: 0, casing: 0 },
-      activeQuest: null,
-      badges: [],
-      continuesUsed: 0
-    };
-    await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
-  };
-
-  const toggleStravaLink = async () => {
-    if (!user) return;
-    const newState = { ...gameState, isStravaLinked: !gameState.isStravaLinked };
-    await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
-  };
-
-  // --- UI RENDER: LOADING ---
-  if (loading && !user) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-500 animate-pulse">
-        <Activity size={48} className="mb-4" />
-        <p>Syncing with satellite...</p>
-      </div>
-    );
-  }
-
-  // --- UI RENDER: ONBOARDING ---
+  // --- VIEW RENDER ---
+  if (loading && !user) return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-500"><Activity className="animate-spin mb-2"/></div>;
+  
   if (!gameState.onboardingComplete) return <OnboardingWizard onComplete={handleCompleteOnboarding} />;
   if (isCaught) return <GameOverScreen userDistance={userDistance} daysSinceStart={daysSinceStart} entitySpeed={gameState.entitySpeed} onContinue={handleContinueGame} onRestart={handleRestartGame} />;
   if (isVictory) return <VictoryScreen duration={gameState.duration} onRestart={handleRestartGame} />;
@@ -900,13 +537,7 @@ export default function TheEntity() {
             <div className="bg-slate-900 p-4 rounded-xl border border-slate-800"><div className="flex items-center gap-2 mb-2 text-slate-400 text-xs font-bold uppercase tracking-wider"><MapPin size={12} /> Your Distance</div><div className="text-2xl font-bold text-emerald-400">{userDistance.toFixed(1)}k</div></div>
             <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 relative overflow-hidden"><div className="absolute -right-4 -top-4 text-purple-900/20"><Skull size={64} /></div><div className="flex items-center gap-2 mb-2 text-slate-400 text-xs font-bold uppercase tracking-wider relative z-10"><Zap size={12} /> Entity Speed</div><div className="text-2xl font-bold text-purple-400 relative z-10">{gameState.entitySpeed}k<span className="text-sm text-slate-500">/day</span></div><div className="text-xs text-slate-500 mt-1 relative z-10 flex items-center gap-1"><BarChart3 size={10} /> {diffLabel} Mode</div></div>
         </div>
-        {gameState.adaptiveMode && (
-             <div className="text-center text-xs text-slate-600 mb-8 flex items-center justify-center gap-1">
-                <Timer size={10} /> Next evolution in {daysToNextUpdate} days
-             </div>
-        )}
 
-        {/* QUESTS */}
         <div className="mb-6">
             <div className="flex justify-between items-center mb-4"><h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider flex items-center gap-2"><Award size={16} /> Current Mission</h3>{gameState.badges.length > 0 && <span className="text-xs bg-slate-800 px-2 py-1 rounded-full text-slate-400">{gameState.badges.length} Badges</span>}</div>
             {!gameState.activeQuest ? (<div className="bg-slate-900/50 border border-slate-800 border-dashed rounded-xl p-6 text-center text-slate-500 text-sm">No signals detected. Next mission available in {5 - (daysSinceStart % 5)} days.</div>) : (<div className={`bg-gradient-to-r from-slate-900 to-slate-900 border rounded-xl p-4 relative overflow-hidden ${gameState.activeQuest.status === 'active' ? 'border-amber-600' : 'border-slate-700'}`}>{gameState.activeQuest.status === 'active' && <div className="absolute top-0 right-0 bg-amber-600 text-black text-[10px] font-bold px-2 py-1 rounded-bl">ACTIVE</div>}<div className="flex justify-between items-start mb-2"><div><h4 className="font-bold text-white flex items-center gap-2"><ArrowRightLeft className="text-amber-500" size={16} /> {gameState.activeQuest.title}</h4><p className="text-xs text-slate-400 mt-1 max-w-[80%]">Run {gameState.activeQuest.distance}km off-track to recover parts. Entity continues moving.</p></div><div className="flex flex-col items-end"><span className="text-xs text-slate-500 uppercase tracking-wide">Reward</span><div className="flex items-center gap-1 text-amber-400 text-sm font-bold">{React.createElement(getPartIcon(gameState.activeQuest.rewardPart), {size: 14})}{EMP_PARTS.find(p => p.id === gameState.activeQuest.rewardPart).name}</div></div></div>{gameState.activeQuest.status === 'active' ? (<div className="mt-4"><div className="flex justify-between text-xs text-slate-400 mb-1"><span>Progress</span><span>{gameState.activeQuest.progress.toFixed(1)} / {gameState.activeQuest.distance} km</span></div><div className="h-2 bg-slate-800 rounded-full overflow-hidden"><div className="h-full bg-amber-500 transition-all" style={{width: `${(gameState.activeQuest.progress / gameState.activeQuest.distance) * 100}%`}}></div></div></div>) : (<button onClick={handleAcceptQuest} className="mt-4 w-full bg-slate-800 hover:bg-slate-700 text-amber-500 border border-slate-700 font-bold py-2 rounded-lg text-sm transition-colors">Accept Mission</button>)}</div>)}
