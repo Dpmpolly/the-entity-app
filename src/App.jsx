@@ -56,6 +56,8 @@ const DIFFICULTIES = {
     medium: { id: 'medium', label: 'Intense',  multiplier: 0.90, color: 'text-yellow-400',  desc: 'Entity matches 90% of Avg.' },
     hard:   { id: 'hard',   label: 'Nightmare',multiplier: 0.95, color: 'text-red-500',     desc: 'Entity matches 95% of Avg.' }
 };
+// --- GAME BALANCE SETTINGS ---
+const MIN_ENTITY_SPEED = 3.0; // The Entity will NEVER go slower than this per day
 
 // --- HELPER FUNCTIONS ---
 const formatDate = (date) => {
@@ -204,8 +206,9 @@ export default function TheEntity() {
     avatarId: 'sprinter',
     difficulty: 'easy',
     username: 'Runner',
-    entitySpeed: 3, 
+    entitySpeed: MIN_ENTITY_SPEED, // <--- CHANGE THIS (It used to say 3)
     lastSpeedUpdateDay: 0,
+    // ... rest of state
     adaptiveMode: true,
     totalKmRun: 0,
     runHistory: [],
@@ -348,11 +351,17 @@ export default function TheEntity() {
   }, [daysSinceStart, user, loading]);
 
   // --- CORE FUNCTIONS ---
+  // --- CORE FUNCTIONS ---
   const calculateAdaptiveSpeed = (totalKm, activeDays, diff) => {
-    if (activeDays < 1) return 3;
+    // 1. Use the constant here for the default start speed
+    if (activeDays < 1) return MIN_ENTITY_SPEED; 
+    
     const avgDaily = totalKm / activeDays;
     const multiplier = DIFFICULTIES[diff || 'easy'].multiplier;
-    return parseFloat(Math.max(3, (avgDaily * multiplier)).toFixed(2));
+    const calculatedSpeed = avgDaily * multiplier; // e.g. 5km * 0.9 = 4.5km
+
+    // 2. Use the constant here to enforce the floor (max means "pick the bigger number")
+    return parseFloat(Math.max(MIN_ENTITY_SPEED, calculatedSpeed).toFixed(2));
   };
   const getPartIcon = (partId) => { const part = EMP_PARTS.find(p => p.id === partId); return part ? part.icon : Wrench; };
   const handleLogout = async () => { await signOut(auth); window.location.reload(); };
