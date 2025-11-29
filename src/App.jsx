@@ -165,13 +165,17 @@ const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnect
               </div>
             </div>
 
-            {/* Footer: Compliant Branding Area */}
-            <div className="bg-slate-950 p-4 border-t border-slate-800 flex flex-col items-center justify-center gap-1">
+            {/* Footer: Compliant "Powered By" Section (Manually Constructed) */}
+            <div className="bg-slate-950 p-4 border-t border-slate-800 flex flex-col items-center justify-center gap-1 opacity-60">
                 <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Powered by</span>
-                {/* Clean, Vector-drawn Strava Wordmark */}
-                <svg className="h-4 w-auto fill-slate-400" viewBox="0 0 170 30" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M22.7 18.2L15.3 3.5 8 18.2H12l3.3-6.6 3.4 6.6zM28.7 18.2h4l2.4-4.8 2.3 4.8h4.1L35 6.6zM48 11.2h-3.8v7h-4v-7h-3.8V8H48zM57.4 12.6c1.1-.4 1.8-1 1.8-2.2 0-1.6-1.4-2.5-3.3-2.5h-5.9v10.3h4v-3.4h.8l2.6 3.4h4.9l-3.2-4.1c-.6-.7-1.1-1.2-1.7-1.5zm-3.4-1.6h-1.9V10h1.9c.7 0 1 .2 1 .6 0 .5-.3.7-.9.7zM73.8 18.2h4l.6-1.6h4.3l.7 1.6h4.3l-5-11.6h-3.8zm5.7-4.5l1.2-3.4 1.3 3.4h-2.5zM91 6.6l-6.5 11.6h4l2.5-4.8 2.4 4.8h4.1zM108.7 6.6l-3.5 7.9-1.9-3.9-2.3-4H97l6.2 11.6L109.4 6.6z"/>
-                </svg>
+                <div className="flex items-center gap-1.5">
+                    {/* The Official Icon */}
+                    <svg role="img" viewBox="0 0 24 24" className="w-4 h-4 fill-[#FC4C02]" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
+                    </svg>
+                    {/* The Wordmark constructed with Text */}
+                    <span className="text-sm font-black text-slate-300 tracking-tight leading-none">STRAVA</span>
+                </div>
             </div>
 
           </div>
