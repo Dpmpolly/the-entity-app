@@ -110,20 +110,17 @@ const LogRunModal = ({ onClose, onSave, activeQuest }) => {
   
 const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnectStrava }) => {
       
-      // INTERNAL COMPONENT: Draws the "Strava" wordmark using crisp vector paths
-      const StravaLogo = ({ className = "h-4" }) => (
-        <svg viewBox="0 0 800 170" className={`${className} fill-white`} xmlns="http://www.w3.org/2000/svg">
-            <path d="M125.9 101.9L84.8 19.3 43.8 101.9h22.6l18.4-37.1 18.9 37.1zM159.5 101.9h22.7L195.6 75.2 208.3 101.9h22.8L196.1 36.9zM267.7 62.7h-21.2v39.2h-22.7V23.7h-21.2V4.5h65.1zM320.1 70.4c6.1-2.2 10.1-5.7 10.1-12.4 0-9.1-7.7-14.2-18.4-14.2h-32.9v58.1h22.7V82.7h4.3l14.7 19.2h27.2l-17.9-22.9c-3.3-3.8-6.3-6.6-9.8-8.6zm-18.9-8.8h-10.7V23.7h10.7c3.9 0 5.5 1.1 5.5 3.3 0 2.8-1.7 4.1-5.1 4.1zM411.3 101.9h22.6l3.3-9.1h24.1l3.7 9.1h24.1l-27.9-65h-21.3zm31.7-25.2l6.7-18.9 7.2 18.9h-13.9zM507.4 36.9L471.2 101.9h22.7l14-27.1 13.4 27.1h22.8zM606.3 36.9L586.9 81.3 576 59.4 563.3 36.9 542 101.9l34.8-65z"/>
-        </svg>
-      );
-  
       return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-6 animate-in fade-in duration-200">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden relative">
+            
+            {/* Header */}
             <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
               <h3 className="font-bold text-white flex items-center gap-2"><Settings size={18} className="text-slate-400"/> Settings</h3>
               <button onClick={onClose} className="text-slate-500 hover:text-white"><X size={20} /></button>
             </div>
+
+            {/* Body */}
             <div className="p-6 space-y-6">
               
               {/* User Info */}
@@ -140,31 +137,25 @@ const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnect
                   <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Data Source</label>
                   
                   {gameState.isStravaLinked ? (
-                      <div className="w-full p-4 rounded-xl border bg-[#FC4C02]/10 border-[#FC4C02] text-white flex flex-col items-center justify-center gap-3">
-                          <div className="flex items-center gap-2 mb-1">
-                              <CheckCircle2 size={18} className="text-[#FC4C02]" />
-                              <span className="font-bold text-sm">Strava Connected</span>
-                          </div>
-                          {/* CRISP COMPLIANCE LOGO */}
-                          <div className="flex items-center gap-2 opacity-90">
-                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Powered by</span>
-                              <StravaLogo className="h-5" />
-                          </div>
+                      // Clean, simple Connected Status
+                      <div className="w-full p-4 rounded-xl border bg-emerald-900/10 border-emerald-900/50 text-emerald-400 flex items-center justify-center gap-2 shadow-inner">
+                          <CheckCircle2 size={18} />
+                          <span className="font-bold text-sm">Strava Connected</span>
                       </div>
                   ) : (
+                      // Official Connect Button
                       <button onClick={onConnectStrava} className="w-full bg-[#FC4C02] hover:bg-[#E34402] transition-all py-3 rounded-lg flex items-center justify-center gap-3 shadow-lg group">
-                          {/* Inline SVG Strava Icon (Chicklet) */}
-                          <svg role="img" viewBox="0 0 24 24" className="w-6 h-6 fill-white" xmlns="http://www.w3.org/2000/svg">
-                            <title>Strava</title>
+                          {/* Strava Icon */}
+                          <svg role="img" viewBox="0 0 24 24" className="w-5 h-5 fill-white" xmlns="http://www.w3.org/2000/svg">
                             <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
                           </svg>
-                          <span className="text-white font-bold text-lg">Connect with Strava</span>
+                          <span className="text-white font-bold text-sm">Connect with Strava</span>
                       </button>
                   )}
               </div>
   
               {/* Actions */}
-              <div className="pt-4 border-t border-slate-800 space-y-3">
+              <div className="pt-2 space-y-3">
                   <button onClick={onLogout} className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2">
                       <LogOut size={16} /> Disconnect (Logout)
                   </button>
@@ -172,13 +163,17 @@ const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnect
                       <Trash2 size={16} /> Burn Identity (Delete)
                   </button>
               </div>
-              
-              {/* Compliance Footer */}
-              <div className="text-center pt-2 flex items-center justify-center gap-1.5 opacity-30">
-                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Powered by</span>
-                  <StravaLogo className="h-3" />
-              </div>
             </div>
+
+            {/* Footer: Compliant Branding Area */}
+            <div className="bg-slate-950 p-4 border-t border-slate-800 flex flex-col items-center justify-center gap-1">
+                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Powered by</span>
+                {/* Clean, Vector-drawn Strava Wordmark */}
+                <svg className="h-4 w-auto fill-slate-400" viewBox="0 0 170 30" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M22.7 18.2L15.3 3.5 8 18.2H12l3.3-6.6 3.4 6.6zM28.7 18.2h4l2.4-4.8 2.3 4.8h4.1L35 6.6zM48 11.2h-3.8v7h-4v-7h-3.8V8H48zM57.4 12.6c1.1-.4 1.8-1 1.8-2.2 0-1.6-1.4-2.5-3.3-2.5h-5.9v10.3h4v-3.4h.8l2.6 3.4h4.9l-3.2-4.1c-.6-.7-1.1-1.2-1.7-1.5zm-3.4-1.6h-1.9V10h1.9c.7 0 1 .2 1 .6 0 .5-.3.7-.9.7zM73.8 18.2h4l.6-1.6h4.3l.7 1.6h4.3l-5-11.6h-3.8zm5.7-4.5l1.2-3.4 1.3 3.4h-2.5zM91 6.6l-6.5 11.6h4l2.5-4.8 2.4 4.8h4.1zM108.7 6.6l-3.5 7.9-1.9-3.9-2.3-4H97l6.2 11.6L109.4 6.6z"/>
+                </svg>
+            </div>
+
           </div>
         </div>
       );
