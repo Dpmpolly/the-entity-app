@@ -109,8 +109,17 @@ const LogRunModal = ({ onClose, onSave, activeQuest }) => {
   };
   
 const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnectStrava }) => {
-      // FIXED: Official Strava CDN Asset for the Logo
-      const stravaLogoUrl = "https://d3nn82uaxijpm6.cloudfront.net/assets/api_logo_pwrdBy_strava_horiz_light-6a367205213c333a925760773d327572.svg";
+      
+      // INTERNAL COMPONENT: Draws the official "Powered by Strava" logo using code
+      const PoweredByStrava = ({ className = "" }) => (
+        <div className={`flex items-center justify-center gap-1.5 ${className} opacity-80`}>
+            <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Powered by</span>
+            {/* The Strava Logo Wordmark drawn in SVG */}
+            <svg viewBox="0 0 170 30" className="h-6 w-auto fill-white">
+                <path d="M22.7 18.2L15.3 3.5 8 18.2H12l3.3-6.6 3.4 6.6zM28.7 18.2h4l2.4-4.8 2.3 4.8h4.1L35 6.6zM48 11.2h-3.8v7h-4v-7h-3.8V8H48zM57.4 12.6c1.1-.4 1.8-1 1.8-2.2 0-1.6-1.4-2.5-3.3-2.5h-5.9v10.3h4v-3.4h.8l2.6 3.4h4.9l-3.2-4.1c-.6-.7-1.1-1.2-1.7-1.5zm-3.4-1.6h-1.9V10h1.9c.7 0 1 .2 1 .6 0 .5-.3.7-.9.7zM73.8 18.2h4l.6-1.6h4.3l.7 1.6h4.3l-5-11.6h-3.8zm5.7-4.5l1.2-3.4 1.3 3.4h-2.5zM91 6.6l-6.5 11.6h4l2.5-4.8 2.4 4.8h4.1zM108.7 6.6l-3.5 7.9-1.9-3.9-2.3-4H97l6.2 11.6L109.4 6.6z"/>
+            </svg>
+        </div>
+      );
   
       return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-6 animate-in fade-in duration-200">
@@ -135,17 +144,17 @@ const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnect
                   <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Data Source</label>
                   
                   {gameState.isStravaLinked ? (
-                      <div className="w-full p-4 rounded-xl border bg-[#FC4C02]/10 border-[#FC4C02] text-white flex flex-col items-center justify-center gap-2">
-                          <div className="flex items-center gap-2 mb-1">
+                      <div className="w-full p-4 rounded-xl border bg-[#FC4C02]/10 border-[#FC4C02] text-white flex flex-col items-center justify-center gap-3">
+                          <div className="flex items-center gap-2">
                               <CheckCircle2 size={18} className="text-[#FC4C02]" />
                               <span className="font-bold text-sm">Strava Connected</span>
                           </div>
-                          <img src={stravaLogoUrl} alt="Powered by Strava" className="h-8 w-auto" />
+                          {/* Code-drawn logo (Unbreakable) */}
+                          <PoweredByStrava />
                       </div>
                   ) : (
-                      // COMPLIANT CSS BUTTON (No image file needed)
+                      // Official Orange Button constructed with code
                       <button onClick={onConnectStrava} className="w-full bg-[#FC4C02] hover:bg-[#E34402] transition-all py-3 rounded-lg flex items-center justify-center gap-3 shadow-lg group">
-                          {/* Inline SVG Strava Icon */}
                           <svg role="img" viewBox="0 0 24 24" className="w-6 h-6 fill-white" xmlns="http://www.w3.org/2000/svg">
                             <title>Strava</title>
                             <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
@@ -167,7 +176,7 @@ const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnect
               
               {/* Compliance Footer */}
               <div className="text-center pt-2">
-                  <img src={stravaLogoUrl} alt="Powered by Strava" className="h-6 w-auto opacity-40 mx-auto" />
+                  <PoweredByStrava className="scale-75 opacity-40" />
               </div>
             </div>
           </div>
