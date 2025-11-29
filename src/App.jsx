@@ -198,31 +198,7 @@ export default function TheEntity() {
   const [showSettings, setShowSettings] = useState(false);
   const hasExchangedCode = useRef(false);
   
-  // Game Data State
-  const [gameState, setGameState] = useState({
-    onboardingComplete: false,
-    startDate: new Date().toISOString(),
-    duration: 365,
-    avatarId: 'sprinter',
-    difficulty: 'easy',
-    username: 'Runner',
-    entitySpeed: MIN_ENTITY_SPEED, // <--- CHANGE THIS (It used to say 3)
-    lastSpeedUpdateDay: 0,
-    // ... rest of state
-    adaptiveMode: true,
-    totalKmRun: 0,
-    runHistory: [],
-    isStravaLinked: false,
-    lastEmpUsage: null,
-    totalPausedHours: 0,
-    empUsageCount: 0,
-    boostUsageCount: 0,
-    inventory: { battery: 0, emitter: 0, casing: 0 },
-    activeQuest: null,
-    badges: [], 
-    lastQuestGenerationDay: 0,
-    continuesUsed: 0
-  });
+ 
 
   // --- REAL TIME CALCULATIONS ---
   const today = new Date();
@@ -558,8 +534,26 @@ export default function TheEntity() {
         </div>
 
         {/* SYNC BUTTON */}
-        {gameState.isStravaLinked ? (<button disabled className="w-full bg-[#FC4C02]/20 border border-[#FC4C02] text-[#FC4C02] py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 mb-8"><CheckCircle2 size={20} /> Strava Linked (Auto-Sync)</button>) : (<button onClick={() => setShowSettings(true)} className="w-full bg-slate-800 hover:bg-slate-700 transition-all py-4 rounded-xl font-bold text-lg text-white border border-slate-700 flex items-center justify-center gap-2 mb-8"><LinkIcon size={20} className="text-slate-400" /> Connect Strava</button>)}
-        
+        {/* SYNC / STRAVA STATUS SECTION */}
+        {gameState.isStravaLinked ? (
+            // LINKED STATE: Pro "Active" Badge with Logo
+            <div className="w-full bg-[#FC4C02]/10 border border-[#FC4C02] text-[#FC4C02] py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-3 mb-8 shadow-[0_0_15px_rgba(252,76,2,0.15)]">
+                {/* Official Strava Icon (SVG) */}
+                <svg role="img" viewBox="0 0 24 24" className="w-6 h-6 fill-[#FC4C02]" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
+                </svg>
+                <span>Strava Active</span>
+                <div className="animate-pulse w-2 h-2 rounded-full bg-[#FC4C02] ml-1"></div>
+            </div>
+        ) : (
+            // UNLINKED STATE: Official "Connect" Button (Direct Action)
+            <button onClick={handleStravaLogin} className="w-full bg-[#FC4C02] hover:bg-[#E34402] transition-all py-4 rounded-xl flex items-center justify-center gap-3 mb-8 shadow-lg group">
+                <svg role="img" viewBox="0 0 24 24" className="w-6 h-6 fill-white" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
+                </svg>
+                <span className="text-white font-bold text-lg">Connect with Strava</span>
+            </button>
+        )}
         {/* RECENT LOGS */}
         <div className="mb-8"><h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-4 flex items-center gap-2"><History size={16} /> Recent Logs</h3><div className="space-y-3">{gameState.runHistory.length === 0 ? (<div className="text-center p-8 border-2 border-dashed border-slate-800 rounded-xl text-slate-600">No runs logged yet. Start running.</div>) : (gameState.runHistory.slice(0, 5).map((run) => (<div key={run.id} className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex justify-between items-center"><div><div className="text-white font-bold flex items-center gap-2">{run.km} km{run.source?.includes('strava') && <span className="text-[10px] bg-[#FC4C02]/20 text-[#FC4C02] px-1.5 py-0.5 rounded border border-[#FC4C02]/30">STRAVA</span>}{run.type === 'boost' && <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded border border-yellow-500/30">BOOST</span>}{run.type === 'quest' && <span className="text-[10px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded border border-amber-500/30">QUEST</span>}</div><div className="text-slate-500 text-xs">{formatDate(new Date(run.date))} &bull; {run.notes}</div></div><div className="bg-slate-800 p-2 rounded-lg text-slate-400">{run.type === 'boost' ? <Rocket size={16} className="text-yellow-400" /> : run.type === 'quest' ? <Award size={16} className="text-amber-400" /> : <Activity size={16} />}</div></div>)))}</div></div>
         
