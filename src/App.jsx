@@ -137,11 +137,13 @@ const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnect
                   <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Data Source</label>
                   
                   {gameState.isStravaLinked ? (
+                      // Clean, simple Connected Status
                       <div className="w-full p-4 rounded-xl border bg-emerald-900/10 border-emerald-900/50 text-emerald-400 flex items-center justify-center gap-2 shadow-inner">
                           <CheckCircle2 size={18} />
                           <span className="font-bold text-sm">Strava Connected</span>
                       </div>
                   ) : (
+                      // Official Connect Button
                       <button onClick={onConnectStrava} className="w-full bg-[#FC4C02] hover:bg-[#E34402] transition-all py-3 rounded-lg flex items-center justify-center gap-3 shadow-lg group">
                           {/* Strava Icon */}
                           <svg role="img" viewBox="0 0 24 24" className="w-5 h-5 fill-white" xmlns="http://www.w3.org/2000/svg">
@@ -155,8 +157,7 @@ const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnect
               {/* Actions */}
               <div className="pt-2 space-y-3">
                   {/* SUPPORT BUTTON (Added for Compliance) */}
-                  <a href="mailto:your-email@example.com?subject=The Entity Support" className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2">
-                      {/* You might need to import LifeBuoy from 'lucide-react' at the top of your file */}
+                  <a href="mailto:russellpollard77@gmail.com?subject=The Entity Support" className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2">
                       <HeartPulse size={16} /> Contact Support
                   </a>
 
@@ -169,7 +170,7 @@ const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnect
               </div>
             </div>
 
-            {/* Footer */}
+            {/* Footer: Compliant "Powered By" Section */}
             <div className="bg-slate-950 p-4 border-t border-slate-800 flex flex-col items-center justify-center gap-1 opacity-60">
                 <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Powered by</span>
                 <div className="flex items-center gap-1.5">
