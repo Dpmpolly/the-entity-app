@@ -212,11 +212,22 @@ const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnect
             </div>
             <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Data Source</label>
-                {gameState.isStravaLinked ? (
-                    <div className="w-full p-4 rounded-xl border bg-emerald-900/10 border-emerald-900/50 text-emerald-400 flex items-center justify-center gap-2 shadow-inner"><CheckCircle2 size={18} /><span className="font-bold text-sm">Strava Connected</span></div>
-                ) : (
-                    <button onClick={onConnectStrava} className="w-full bg-[#FC4C02] hover:bg-[#E34402] transition-all py-3 rounded-lg flex items-center justify-center gap-3 shadow-lg group"><svg role="img" viewBox="0 0 24 24" className="w-5 h-5 fill-white" xmlns="http://www.w3.org/2000/svg"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg><span className="text-white font-bold text-sm">Connect with Strava</span></button>
-                )}
+               {gameState.isStravaLinked ? (
+                      // COMPLIANT: Uses Strava Orange (#FC4C02) for the "Active" state
+                      <div className="w-full p-4 rounded-xl border bg-[#FC4C02]/10 border-[#FC4C02] text-[#FC4C02] flex items-center justify-center gap-2 shadow-[0_0_10px_rgba(252,76,2,0.15)]">
+                          <CheckCircle2 size={18} />
+                          <span className="font-bold text-sm">Strava Connected</span>
+                      </div>
+                  ) : (
+                      // Official Connect Button
+                      <button onClick={onConnectStrava} className="w-full bg-[#FC4C02] hover:bg-[#E34402] transition-all py-3 rounded-lg flex items-center justify-center gap-3 shadow-lg group">
+                          {/* Strava Icon */}
+                          <svg role="img" viewBox="0 0 24 24" className="w-5 h-5 fill-white" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
+                          </svg>
+                          <span className="text-white font-bold text-sm">Connect with Strava</span>
+                      </button>
+                  )}
             </div>
             <div className="pt-2 space-y-3">
                 <a href="mailto:russellpollard77@gmail.com?subject=The Entity Support" className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2"><HeartPulse size={16} /> Contact Support</a>
