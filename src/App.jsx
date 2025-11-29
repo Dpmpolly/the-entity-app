@@ -24,7 +24,6 @@ import {
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
-// Your specific Firebase Keys
 const firebaseConfig = {
   apiKey: "AIzaSyAsssP-dGeIbuz29TUKmGMQ51j8GstFlkQ", 
   authDomain: "the-entity-a7c4b.firebaseapp.com",
@@ -543,7 +542,13 @@ export default function TheEntity() {
             <div className="bg-slate-900 p-4 rounded-xl border border-slate-800"><div className="flex items-center gap-2 mb-2 text-slate-400 text-xs font-bold uppercase tracking-wider"><MapPin size={12} /> Your Distance</div><div className="text-2xl font-bold text-emerald-400">{userDistance.toFixed(1)}k</div></div>
             <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 relative overflow-hidden"><div className="absolute -right-4 -top-4 text-purple-900/20"><Skull size={64} /></div><div className="flex items-center gap-2 mb-2 text-slate-400 text-xs font-bold uppercase tracking-wider relative z-10"><Zap size={12} /> Entity Speed</div><div className="text-2xl font-bold text-purple-400 relative z-10">{gameState.entitySpeed}k<span className="text-sm text-slate-500">/day</span></div><div className="text-xs text-slate-500 mt-1 relative z-10 flex items-center gap-1"><BarChart3 size={10} /> {diffLabel} Mode</div></div>
         </div>
+        {gameState.adaptiveMode && (
+             <div className="text-center text-xs text-slate-600 mb-8 flex items-center justify-center gap-1">
+                <Timer size={10} /> Next evolution in {daysToNextUpdate} days
+             </div>
+        )}
 
+        {/* QUESTS */}
         <div className="mb-6">
             <div className="flex justify-between items-center mb-4"><h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider flex items-center gap-2"><Award size={16} /> Current Mission</h3>{gameState.badges.length > 0 && <span className="text-xs bg-slate-800 px-2 py-1 rounded-full text-slate-400">{gameState.badges.length} Badges</span>}</div>
             {!gameState.activeQuest ? (<div className="bg-slate-900/50 border border-slate-800 border-dashed rounded-xl p-6 text-center text-slate-500 text-sm">No signals detected. Next mission available in {5 - (daysSinceStart % 5)} days.</div>) : (<div className={`bg-gradient-to-r from-slate-900 to-slate-900 border rounded-xl p-4 relative overflow-hidden ${gameState.activeQuest.status === 'active' ? 'border-amber-600' : 'border-slate-700'}`}>{gameState.activeQuest.status === 'active' && <div className="absolute top-0 right-0 bg-amber-600 text-black text-[10px] font-bold px-2 py-1 rounded-bl">ACTIVE</div>}<div className="flex justify-between items-start mb-2"><div><h4 className="font-bold text-white flex items-center gap-2"><ArrowRightLeft className="text-amber-500" size={16} /> {gameState.activeQuest.title}</h4><p className="text-xs text-slate-400 mt-1 max-w-[80%]">Run {gameState.activeQuest.distance}km off-track to recover parts. Entity continues moving.</p></div><div className="flex flex-col items-end"><span className="text-xs text-slate-500 uppercase tracking-wide">Reward</span><div className="flex items-center gap-1 text-amber-400 text-sm font-bold">{React.createElement(getPartIcon(gameState.activeQuest.rewardPart), {size: 14})}{EMP_PARTS.find(p => p.id === gameState.activeQuest.rewardPart).name}</div></div></div>{gameState.activeQuest.status === 'active' ? (<div className="mt-4"><div className="flex justify-between text-xs text-slate-400 mb-1"><span>Progress</span><span>{gameState.activeQuest.progress.toFixed(1)} / {gameState.activeQuest.distance} km</span></div><div className="h-2 bg-slate-800 rounded-full overflow-hidden"><div className="h-full bg-amber-500 transition-all" style={{width: `${(gameState.activeQuest.progress / gameState.activeQuest.distance) * 100}%`}}></div></div></div>) : (<button onClick={handleAcceptQuest} className="mt-4 w-full bg-slate-800 hover:bg-slate-700 text-amber-500 border border-slate-700 font-bold py-2 rounded-lg text-sm transition-colors">Accept Mission</button>)}</div>)}
