@@ -108,10 +108,10 @@ const LogRunModal = ({ onClose, onSave, activeQuest }) => {
     );
   };
   
- const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnectStrava }) => {
-      // FIXED: Stable URLs for Strava Assets
-      const stravaButtonUrl = "https://raw.githubusercontent.com/barryclark/strava-visualizer/master/public/img/btn_strava_connectwith_orange.svg";
-      const stravaLogoUrl = "https://raw.githubusercontent.com/barryclark/strava-visualizer/master/public/img/api_logo_pwrdBy_strava_horiz_light.svg";
+const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnectStrava }) => {
+      // FIXED: High-Speed CDN URLs
+      const stravaButtonUrl = "https://cdn.jsdelivr.net/gh/barryclark/strava-visualizer@master/public/img/btn_strava_connectwith_orange.svg";
+      const stravaLogoUrl = "https://cdn.jsdelivr.net/gh/barryclark/strava-visualizer@master/public/img/api_logo_pwrdBy_strava_horiz_light.svg";
   
       return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-6 animate-in fade-in duration-200">
@@ -141,12 +141,12 @@ const LogRunModal = ({ onClose, onSave, activeQuest }) => {
                               <CheckCircle2 size={18} className="text-[#FC4C02]" />
                               <span className="font-bold text-sm">Strava Connected</span>
                           </div>
-                          {/* Mandatory 'Powered by Strava' display */}
-                          <img src={stravaLogoUrl} alt="Powered by Strava" className="h-8 opacity-90" />
+                          {/* Powered by Strava */}
+                          <img src={stravaLogoUrl} alt="Powered by Strava" className="h-8 w-auto" />
                       </div>
                   ) : (
                       <button onClick={onConnectStrava} className="w-full flex justify-center transition-transform hover:scale-105">
-                          <img src={stravaButtonUrl} alt="Connect with Strava" className="h-12" />
+                          <img src={stravaButtonUrl} alt="Connect with Strava" className="h-12 w-auto" />
                       </button>
                   )}
               </div>
@@ -162,8 +162,8 @@ const LogRunModal = ({ onClose, onSave, activeQuest }) => {
               </div>
               
               {/* Compliance Footer */}
-              <div className="text-center">
-                  <img src={stravaLogoUrl} alt="Powered by Strava" className="h-6 opacity-30 mx-auto" />
+              <div className="text-center pt-2">
+                  <img src={stravaLogoUrl} alt="Powered by Strava" className="h-6 w-auto opacity-40 mx-auto" />
               </div>
             </div>
           </div>
