@@ -109,70 +109,74 @@ const LogRunModal = ({ onClose, onSave, activeQuest }) => {
   };
   
 const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnectStrava }) => {
-      // FIXED: Official Image from Strava's GitHub (Stable & Correct)
-      const stravaLogoUrl = "https://github.com/strava/api/blob/master/static/img/api_logo_pwrdBy_strava_horiz_light.png?raw=true";
-  
-      return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-6 animate-in fade-in duration-200">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden">
-            <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
-              <h3 className="font-bold text-white flex items-center gap-2"><Settings size={18} className="text-slate-400"/> Settings</h3>
-              <button onClick={onClose} className="text-slate-500 hover:text-white"><X size={20} /></button>
+    // FIXED: Image data is embedded directly (Cannot break or be blocked)
+    const stravaLogoData = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNzAgMzAiPjxwYXRoIGZpbGw9IiNmZmYiIGQ9Ik0yMi43IDE4LjJMMTUuMyAzLjUgOCAxOC4ySDEybDMuMy02LjYgMy40IDYuNnpNMjguNyAxOC4yaDRsMi40LTQuOCAyLjMgNC44aDQuMUwzNSA2LjZ6TTQ4IDExLjJoLTMuOHY3aC00di03aC0zLjhWOEg0OHpNNTcuNCAxMi42YzEuMS0uNCAxLjgtMSAxLjgtMi4yIDAtMS42LTEuNC0yLjUtMy4zLTIuNWgtNS45djEwLjNoNHYtMy40aC44bDIuNiAzLjRoNC45bC0zLjItNC4xYy0uNi0uNy0xLjEtMS4yLTEuNy0xLjV6bS0zLjQtMS42aC0xLjlWMTBoMS45Yy43IDAgMSAuMiAxIC42IDAgLjUtLjMuNy0uOS43ek03My44IDE4LjJoNGwuNi0xLjZoNC4zbC43IDEuNmg0LjNsLTUtMTEuNmgtMy44em01LjctNC41bDEuMi0zLjQgMS4zIDMuNGgtMi41ek05MSA2LjZsLTYuNSAxMS42aDRsMi41LTQuOCAyLjQgNC44aDQuMXpNMTA4LjcgNi42bC0zLjUgNy45LTEuOS0zLjktMi4zLTRIOTdsNi4yIDExLjZMMTA5LjQgNi42eiIvPjxwYXRoIGZpbGw9IiNmZmYiIGQ9Ik0xMjAuOSA2LjZMMTE1IDE4LjJoMy42bDMuNC03LjEgMy41IDcuMWgzLjZMMTIzIDYuNnoiLz48cGF0aCBmaWxsPSIjRkM0QzAyIiBkPSJNMTM3LjYgNi42bC01LjkgMTEuNmgzLjlMMTM3LjYgMTNsMi4xIDUuMmgzLjl6Ii8+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTE1My43IDYuNmwtNS45IDExLjZoMy45bDIuMS01LjIgMi4xIDUuMmgzLjl6Ii8+PC9zdmc+";
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-6 animate-in fade-in duration-200">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden">
+          <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
+            <h3 className="font-bold text-white flex items-center gap-2"><Settings size={18} className="text-slate-400"/> Settings</h3>
+            <button onClick={onClose} className="text-slate-500 hover:text-white"><X size={20} /></button>
+          </div>
+          <div className="p-6 space-y-6">
+            
+            {/* User Info */}
+            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center gap-3">
+                <div className="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center text-slate-400"><User size={20}/></div>
+                <div className="overflow-hidden">
+                    <div className="text-white font-bold truncate">{gameState.username || 'Agent'}</div>
+                    <div className="text-xs text-slate-500 truncate">ID: {user?.uid.slice(0,8)}...</div>
+                </div>
             </div>
-            <div className="p-6 space-y-6">
-              
-              {/* User Info */}
-              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center gap-3">
-                  <div className="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center text-slate-400"><User size={20}/></div>
-                  <div className="overflow-hidden">
-                      <div className="text-white font-bold truncate">{gameState.username || 'Agent'}</div>
-                      <div className="text-xs text-slate-500 truncate">ID: {user?.uid.slice(0,8)}...</div>
-                  </div>
-              </div>
-  
-              {/* Integrations */}
-              <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Data Source</label>
-                  
-                  {gameState.isStravaLinked ? (
-                      <div className="w-full p-4 rounded-xl border bg-[#FC4C02]/10 border-[#FC4C02] text-white flex flex-col items-center justify-center gap-3">
-                          <div className="flex items-center gap-2">
-                              <CheckCircle2 size={18} className="text-[#FC4C02]" />
-                              <span className="font-bold text-sm">Strava Connected</span>
-                          </div>
-                          {/* Official Image */}
-                          <img src={stravaLogoUrl} alt="Powered by Strava" className="h-10 w-auto opacity-90" />
-                      </div>
-                  ) : (
-                      <button onClick={onConnectStrava} className="w-full bg-[#FC4C02] hover:bg-[#E34402] transition-all py-3 rounded-lg flex items-center justify-center gap-3 shadow-lg group">
-                          <svg role="img" viewBox="0 0 24 24" className="w-6 h-6 fill-white" xmlns="http://www.w3.org/2000/svg">
-                            <title>Strava</title>
-                            <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
-                          </svg>
-                          <span className="text-white font-bold text-lg">Connect with Strava</span>
-                      </button>
-                  )}
-              </div>
-  
-              {/* Actions */}
-              <div className="pt-4 border-t border-slate-800 space-y-3">
-                  <button onClick={onLogout} className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2">
-                      <LogOut size={16} /> Disconnect (Logout)
-                  </button>
-                  <button onClick={onDelete} className="w-full py-3 rounded-xl border border-red-900/30 text-red-500 font-bold hover:bg-red-900/10 flex items-center justify-center gap-2">
-                      <Trash2 size={16} /> Burn Identity (Delete)
-                  </button>
-              </div>
-              
-              {/* Compliance Footer */}
-              <div className="text-center pt-2">
-                  <img src={stravaLogoUrl} alt="Powered by Strava" className="h-6 w-auto opacity-30 mx-auto" />
-              </div>
+
+            {/* Integrations */}
+            <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Data Source</label>
+                
+                {gameState.isStravaLinked ? (
+                    <div className="w-full p-4 rounded-xl border bg-[#FC4C02]/10 border-[#FC4C02] text-white flex flex-col items-center justify-center gap-3">
+                        <div className="flex items-center gap-2 mb-1">
+                            <CheckCircle2 size={18} className="text-[#FC4C02]" />
+                            <span className="font-bold text-sm">Strava Connected</span>
+                        </div>
+                        {/* COMPLIANCE: Official Logo Embedded */}
+                        <div className="flex items-center gap-1 opacity-90">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Powered by</span>
+                            <img src={stravaLogoData} alt="Strava" className="h-5 w-auto" />
+                        </div>
+                    </div>
+                ) : (
+                    <button onClick={onConnectStrava} className="w-full bg-[#FC4C02] hover:bg-[#E34402] transition-all py-3 rounded-lg flex items-center justify-center gap-3 shadow-lg group">
+                        <svg role="img" viewBox="0 0 24 24" className="w-6 h-6 fill-white" xmlns="http://www.w3.org/2000/svg">
+                          <title>Strava</title>
+                          <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
+                        </svg>
+                        <span className="text-white font-bold text-lg">Connect with Strava</span>
+                    </button>
+                )}
+            </div>
+
+            {/* Actions */}
+            <div className="pt-4 border-t border-slate-800 space-y-3">
+                <button onClick={onLogout} className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2">
+                    <LogOut size={16} /> Disconnect (Logout)
+                </button>
+                <button onClick={onDelete} className="w-full py-3 rounded-xl border border-red-900/30 text-red-500 font-bold hover:bg-red-900/10 flex items-center justify-center gap-2">
+                    <Trash2 size={16} /> Burn Identity (Delete)
+                </button>
+            </div>
+            
+            {/* Compliance Footer */}
+            <div className="text-center pt-2 flex items-center justify-center gap-1 opacity-30">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Powered by</span>
+                <img src={stravaLogoData} alt="Strava" className="h-4 w-auto" />
             </div>
           </div>
         </div>
-      );
-  };
+      </div>
+    );
+};
 
 // --- MAIN COMPONENT ---
 export default function TheEntity() {
