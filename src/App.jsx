@@ -109,9 +109,8 @@ const LogRunModal = ({ onClose, onSave, activeQuest }) => {
   };
   
 const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnectStrava }) => {
-      // FIXED: High-Speed CDN URLs
-      const stravaButtonUrl = "https://cdn.jsdelivr.net/gh/barryclark/strava-visualizer@master/public/img/btn_strava_connectwith_orange.svg";
-      const stravaLogoUrl = "https://cdn.jsdelivr.net/gh/barryclark/strava-visualizer@master/public/img/api_logo_pwrdBy_strava_horiz_light.svg";
+      // FIXED: Official Strava CDN Asset for the Logo
+      const stravaLogoUrl = "https://d3nn82uaxijpm6.cloudfront.net/assets/api_logo_pwrdBy_strava_horiz_light-6a367205213c333a925760773d327572.svg";
   
       return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-6 animate-in fade-in duration-200">
@@ -131,7 +130,7 @@ const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnect
                   </div>
               </div>
   
-              {/* Integrations (COMPLIANCE UPDATE) */}
+              {/* Integrations */}
               <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Data Source</label>
                   
@@ -141,12 +140,17 @@ const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnect
                               <CheckCircle2 size={18} className="text-[#FC4C02]" />
                               <span className="font-bold text-sm">Strava Connected</span>
                           </div>
-                          {/* Powered by Strava */}
                           <img src={stravaLogoUrl} alt="Powered by Strava" className="h-8 w-auto" />
                       </div>
                   ) : (
-                      <button onClick={onConnectStrava} className="w-full flex justify-center transition-transform hover:scale-105">
-                          <img src={stravaButtonUrl} alt="Connect with Strava" className="h-12 w-auto" />
+                      // COMPLIANT CSS BUTTON (No image file needed)
+                      <button onClick={onConnectStrava} className="w-full bg-[#FC4C02] hover:bg-[#E34402] transition-all py-3 rounded-lg flex items-center justify-center gap-3 shadow-lg group">
+                          {/* Inline SVG Strava Icon */}
+                          <svg role="img" viewBox="0 0 24 24" className="w-6 h-6 fill-white" xmlns="http://www.w3.org/2000/svg">
+                            <title>Strava</title>
+                            <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
+                          </svg>
+                          <span className="text-white font-bold text-lg">Connect with Strava</span>
                       </button>
                   )}
               </div>
