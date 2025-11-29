@@ -19,7 +19,7 @@ import {
   Link as LinkIcon, CheckCircle2, Zap, Timer, 
   ShieldCheck, Compass, Map as MapIcon, Shield, ChevronRight, ZapOff, 
   Lock, Rocket, Wrench, Cpu, Disc, Award, ArrowRightLeft, HeartPulse, 
-  RotateCcw, ShoppingBag, BarChart3, User, Trash2, LogOut
+  RotateCcw, ShoppingBag, BarChart3, User, Trash2, LogOut, Footprints
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
@@ -56,8 +56,9 @@ const DIFFICULTIES = {
     medium: { id: 'medium', label: 'Intense',  multiplier: 0.90, color: 'text-yellow-400',  desc: 'Entity matches 90% of Avg.' },
     hard:   { id: 'hard',   label: 'Nightmare',multiplier: 0.95, color: 'text-red-500',     desc: 'Entity matches 95% of Avg.' }
 };
+
 // --- GAME BALANCE SETTINGS ---
-const MIN_ENTITY_SPEED = 3.0; // The Entity will NEVER go slower than this per day
+const MIN_ENTITY_SPEED = 3.0; 
 
 // --- HELPER FUNCTIONS ---
 const formatDate = (date) => {
@@ -108,85 +109,71 @@ const LogRunModal = ({ onClose, onSave, activeQuest }) => {
         </div>
       </div>
     );
-  };
+};
   
 const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnectStrava }) => {
-      
-      return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-6 animate-in fade-in duration-200">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden relative">
-            
-            {/* Header */}
-            <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
-              <h3 className="font-bold text-white flex items-center gap-2"><Settings size={18} className="text-slate-400"/> Settings</h3>
-              <button onClick={onClose} className="text-slate-500 hover:text-white"><X size={20} /></button>
-            </div>
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-6 animate-in fade-in duration-200">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden relative">
+          
+          <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
+            <h3 className="font-bold text-white flex items-center gap-2"><Settings size={18} className="text-slate-400"/> Settings</h3>
+            <button onClick={onClose} className="text-slate-500 hover:text-white"><X size={20} /></button>
+          </div>
 
-            {/* Body */}
-            <div className="p-6 space-y-6">
-              
-              {/* User Info */}
-              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center gap-3">
-                  <div className="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center text-slate-400"><User size={20}/></div>
-                  <div className="overflow-hidden">
-                      <div className="text-white font-bold truncate">{gameState.username || 'Agent'}</div>
-                      <div className="text-xs text-slate-500 truncate">ID: {user?.uid.slice(0,8)}...</div>
-                  </div>
-              </div>
-  
-              {/* Integrations */}
-              <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Data Source</label>
-                  
-                  {gameState.isStravaLinked ? (
-                      // Clean, simple Connected Status
-                      <div className="w-full p-4 rounded-xl border bg-emerald-900/10 border-emerald-900/50 text-emerald-400 flex items-center justify-center gap-2 shadow-inner">
-                          <CheckCircle2 size={18} />
-                          <span className="font-bold text-sm">Strava Connected</span>
-                      </div>
-                  ) : (
-                      // Official Connect Button
-                      <button onClick={onConnectStrava} className="w-full bg-[#FC4C02] hover:bg-[#E34402] transition-all py-3 rounded-lg flex items-center justify-center gap-3 shadow-lg group">
-                          {/* Strava Icon */}
-                          <svg role="img" viewBox="0 0 24 24" className="w-5 h-5 fill-white" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
-                          </svg>
-                          <span className="text-white font-bold text-sm">Connect with Strava</span>
-                      </button>
-                  )}
-              </div>
-  
-              {/* Actions */}
-              <div className="pt-2 space-y-3">
-                  {/* SUPPORT BUTTON (Added for Compliance) */}
-                  <a href="mailto:russellpollard77@gmail.com?subject=The Entity Support" className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2">
-                      <HeartPulse size={16} /> Contact Support
-                  </a>
-
-                  <button onClick={onLogout} className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2">
-                      <LogOut size={16} /> Disconnect (Logout)
-                  </button>
-                  <button onClick={onDelete} className="w-full py-3 rounded-xl border border-red-900/30 text-red-500 font-bold hover:bg-red-900/10 flex items-center justify-center gap-2">
-                      <Trash2 size={16} /> Burn Identity (Delete)
-                  </button>
-              </div>
-            </div>
-
-            {/* Footer: Compliant "Powered By" Section */}
-            <div className="bg-slate-950 p-4 border-t border-slate-800 flex flex-col items-center justify-center gap-1 opacity-60">
-                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Powered by</span>
-                <div className="flex items-center gap-1.5">
-                    <svg role="img" viewBox="0 0 24 24" className="w-4 h-4 fill-[#FC4C02]" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
-                    </svg>
-                    <span className="text-sm font-black text-slate-300 tracking-tight leading-none">STRAVA</span>
+          <div className="p-6 space-y-6">
+            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center gap-3">
+                <div className="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center text-slate-400"><User size={20}/></div>
+                <div className="overflow-hidden">
+                    <div className="text-white font-bold truncate">{gameState.username || 'Agent'}</div>
+                    <div className="text-xs text-slate-500 truncate">ID: {user?.uid.slice(0,8)}...</div>
                 </div>
             </div>
 
+            <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Data Source</label>
+                {gameState.isStravaLinked ? (
+                    <div className="w-full p-4 rounded-xl border bg-emerald-900/10 border-emerald-900/50 text-emerald-400 flex items-center justify-center gap-2 shadow-inner">
+                        <CheckCircle2 size={18} />
+                        <span className="font-bold text-sm">Strava Connected</span>
+                    </div>
+                ) : (
+                    <button onClick={onConnectStrava} className="w-full bg-[#FC4C02] hover:bg-[#E34402] transition-all py-3 rounded-lg flex items-center justify-center gap-3 shadow-lg group">
+                        <svg role="img" viewBox="0 0 24 24" className="w-5 h-5 fill-white" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
+                        </svg>
+                        <span className="text-white font-bold text-sm">Connect with Strava</span>
+                    </button>
+                )}
+            </div>
+
+            <div className="pt-2 space-y-3">
+                <a href="mailto:russellpollard77@gmail.com?subject=The Entity Support" className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2">
+                    <HeartPulse size={16} /> Contact Support
+                </a>
+                <button onClick={onLogout} className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2">
+                    <LogOut size={16} /> Disconnect (Logout)
+                </button>
+                <button onClick={onDelete} className="w-full py-3 rounded-xl border border-red-900/30 text-red-500 font-bold hover:bg-red-900/10 flex items-center justify-center gap-2">
+                    <Trash2 size={16} /> Burn Identity (Delete)
+                </button>
+            </div>
           </div>
+
+          <div className="bg-slate-950 p-4 border-t border-slate-800 flex flex-col items-center justify-center gap-1 opacity-60">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Powered by</span>
+              <div className="flex items-center gap-1.5">
+                  <svg role="img" viewBox="0 0 24 24" className="w-4 h-4 fill-[#FC4C02]" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
+                  </svg>
+                  <span className="text-sm font-black text-slate-300 tracking-tight leading-none">STRAVA</span>
+              </div>
+          </div>
+
         </div>
-      );
-  };
+      </div>
+    );
+};
 
 // --- MAIN COMPONENT ---
 export default function TheEntity() {
@@ -198,7 +185,30 @@ export default function TheEntity() {
   const [showSettings, setShowSettings] = useState(false);
   const hasExchangedCode = useRef(false);
   
- 
+  // Game Data State
+  const [gameState, setGameState] = useState({
+    onboardingComplete: false,
+    startDate: new Date().toISOString(),
+    duration: 365,
+    avatarId: 'sprinter',
+    difficulty: 'easy',
+    username: 'Runner',
+    entitySpeed: MIN_ENTITY_SPEED, 
+    lastSpeedUpdateDay: 0,
+    adaptiveMode: true,
+    totalKmRun: 0,
+    runHistory: [],
+    isStravaLinked: false,
+    lastEmpUsage: null,
+    totalPausedHours: 0,
+    empUsageCount: 0,
+    boostUsageCount: 0,
+    inventory: { battery: 0, emitter: 0, casing: 0 },
+    activeQuest: null,
+    badges: [], 
+    lastQuestGenerationDay: 0,
+    continuesUsed: 0
+  });
 
   // --- REAL TIME CALCULATIONS ---
   const today = new Date();
@@ -252,7 +262,7 @@ export default function TheEntity() {
        hasExchangedCode.current = true;
        const exchangeToken = async () => {
           try {
-             // HARDCODED KEYS FOR TESTING
+             // HARDCODED KEYS FOR TESTING (Make sure these match exactly)
              const clientId = "187205"; 
              const clientSecret = "cfb204ddcafd2f99c0ff4f96815026968ad56da3"; 
              
@@ -260,7 +270,6 @@ export default function TheEntity() {
              const data = await response.json();
              
              if (data.access_token) {
-                 // 1. Save User Data
                  const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
                  await setDoc(userDocRef, { 
                      isStravaLinked: true,
@@ -269,7 +278,6 @@ export default function TheEntity() {
                      stravaExpiresAt: data.expires_at
                  }, { merge: true });
 
-                 // 2. Save Mapping (CRITICAL FOR WEBHOOKS)
                  await setDoc(doc(db, 'strava_mappings', data.athlete.id.toString()), {
                     firebaseUid: user.uid,
                     appId: appId
@@ -310,16 +318,7 @@ export default function TheEntity() {
               const parts = ['battery', 'emitter', 'casing'];
               const randomPart = parts[Math.floor(Math.random() * parts.length)];
               const randomDist = Math.floor(Math.random() * 8) + 5; 
-              
-              const newQuest = {
-                  id: Date.now(),
-                  title: `Scavenge Mission ${gameState.badges.length + 1}`,
-                  distance: randomDist,
-                  progress: 0,
-                  rewardPart: randomPart,
-                  status: 'available'
-              };
-
+              const newQuest = { id: Date.now(), title: `Scavenge Mission ${gameState.badges.length + 1}`, distance: randomDist, progress: 0, rewardPart: randomPart, status: 'available' };
               const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
               setDoc(userDocRef, { ...gameState, activeQuest: newQuest, lastQuestGenerationDay: daysSinceStart });
           }
@@ -327,16 +326,11 @@ export default function TheEntity() {
   }, [daysSinceStart, user, loading]);
 
   // --- CORE FUNCTIONS ---
-  // --- CORE FUNCTIONS ---
   const calculateAdaptiveSpeed = (totalKm, activeDays, diff) => {
-    // 1. Use the constant here for the default start speed
-    if (activeDays < 1) return MIN_ENTITY_SPEED; 
-    
+    if (activeDays < 1) return MIN_ENTITY_SPEED;
     const avgDaily = totalKm / activeDays;
     const multiplier = DIFFICULTIES[diff || 'easy'].multiplier;
-    const calculatedSpeed = avgDaily * multiplier; // e.g. 5km * 0.9 = 4.5km
-
-    // 2. Use the constant here to enforce the floor (max means "pick the bigger number")
+    const calculatedSpeed = avgDaily * multiplier;
     return parseFloat(Math.max(MIN_ENTITY_SPEED, calculatedSpeed).toFixed(2));
   };
   const getPartIcon = (partId) => { const part = EMP_PARTS.find(p => p.id === partId); return part ? part.icon : Wrench; };
@@ -346,14 +340,45 @@ export default function TheEntity() {
       try { await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save')); await deleteUser(user); window.location.reload(); } catch (error) { alert("Error deleting data: " + error.message); }
   };
   const handleStravaLogin = () => {
-      // HARDCODED KEYS FOR TESTING
-      const clientId = "187205"; 
+      const clientId = "187205"; // Hardcoded for reliability
       const redirectUri = window.location.origin; 
       const scope = "activity:read_all";
       window.location.href = `http://www.strava.com/oauth/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}&approval_prompt=force&scope=${scope}`;
   };
 
-  // --- ITEM HANDLERS ---
+  const handleConvertRunToQuest = async (runId) => {
+      if (!user || !gameState.activeQuest || gameState.activeQuest.status !== 'active') {
+          alert("No active mission to assign this run to.");
+          return;
+      }
+      const runIndex = gameState.runHistory.findIndex(r => r.id === runId);
+      if (runIndex === -1) return;
+      const run = gameState.runHistory[runIndex];
+      if (run.type === 'quest') return; 
+      if (!confirm(`REROUTE SUPPLIES?\n\nConvert this ${run.km}km run to the Scavenge Mission?\n\nWARNING: This distance will be removed from your escape total. The Entity will get closer.`)) return;
+
+      const newTotalKm = gameState.totalKmRun - run.km; 
+      const newQuestProgress = gameState.activeQuest.progress + run.km;
+      
+      let updatedQuest = { ...gameState.activeQuest, progress: newQuestProgress };
+      let newInventory = { ...gameState.inventory };
+      let newBadges = [...gameState.badges];
+
+      if (newQuestProgress >= gameState.activeQuest.distance) {
+          updatedQuest.status = 'completed';
+          newInventory[gameState.activeQuest.rewardPart]++;
+          newBadges.push({ id: Date.now(), title: gameState.activeQuest.title, date: new Date().toISOString() });
+          alert(`MISSION COMPLETE!\n\nAcquired: 1x ${EMP_PARTS.find(p => p.id === gameState.activeQuest.rewardPart).name}\nAwarded: Mission Badge`);
+          updatedQuest = null; 
+      }
+
+      const newRunHistory = [...gameState.runHistory];
+      newRunHistory[runIndex] = { ...run, type: 'quest', notes: `${run.notes} (Re-routed)` };
+
+      const newState = { ...gameState, totalKmRun: newTotalKm, activeQuest: updatedQuest, inventory: newInventory, badges: newBadges, runHistory: newRunHistory };
+      await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
+  };
+
   const handleBuyEMP = async () => {
     if (!user || !isEmpAvailable) return;
     const hasCraftedEmp = gameState.inventory.battery > 0 && gameState.inventory.emitter > 0 && gameState.inventory.casing > 0;
@@ -392,7 +417,7 @@ export default function TheEntity() {
 
   const handleRestartGame = async () => {
      if (!user || !confirm("CONFIRM RESET?\n\nThis will restart the challenge from Day 1.")) return;
-     const newState = { onboardingComplete: false, startDate: new Date().toISOString(), duration: 365, totalKmRun: 0, runHistory: [], totalPausedHours: 0, lastEmpUsage: null, empUsageCount: 0, boostUsageCount: 0, inventory: { battery: 0, emitter: 0, casing: 0 }, activeQuest: null, badges: [], continuesUsed: 0, entitySpeed: 3, lastSpeedUpdateDay: 0, difficulty: 'easy' };
+     const newState = { onboardingComplete: false, startDate: new Date().toISOString(), duration: 365, totalKmRun: 0, runHistory: [], totalPausedHours: 0, lastEmpUsage: null, empUsageCount: 0, boostUsageCount: 0, inventory: { battery: 0, emitter: 0, casing: 0 }, activeQuest: null, badges: [], continuesUsed: 0, entitySpeed: MIN_ENTITY_SPEED, lastSpeedUpdateDay: 0, difficulty: 'easy' };
      await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
   };
 
@@ -434,7 +459,7 @@ export default function TheEntity() {
 
   const handleCompleteOnboarding = async (setupData) => {
     if (!user) return;
-    const newState = { ...gameState, startDate: new Date().toISOString(), duration: setupData.duration, avatarId: setupData.avatarId, difficulty: setupData.difficulty, username: setupData.username, entitySpeed: 3, lastSpeedUpdateDay: 0, totalKmRun: 0, runHistory: [], onboardingComplete: true, totalPausedHours: 0, lastEmpUsage: null, empUsageCount: 0, boostUsageCount: 0, inventory: { battery: 0, emitter: 0, casing: 0 }, activeQuest: null, badges: [], continuesUsed: 0 };
+    const newState = { ...gameState, startDate: new Date().toISOString(), duration: setupData.duration, avatarId: setupData.avatarId, difficulty: setupData.difficulty, username: setupData.username, entitySpeed: MIN_ENTITY_SPEED, lastSpeedUpdateDay: 0, totalKmRun: 0, runHistory: [], onboardingComplete: true, totalPausedHours: 0, lastEmpUsage: null, empUsageCount: 0, boostUsageCount: 0, inventory: { battery: 0, emitter: 0, casing: 0 }, activeQuest: null, badges: [], continuesUsed: 0 };
     await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
   };
 
@@ -533,7 +558,6 @@ export default function TheEntity() {
             </div>
         </div>
 
-        {/* SYNC BUTTON */}
         {/* SYNC / STRAVA STATUS SECTION */}
         {gameState.isStravaLinked ? (
             // LINKED STATE: Pro "Active" Badge with Logo
@@ -554,8 +578,47 @@ export default function TheEntity() {
                 <span className="text-white font-bold text-lg">Connect with Strava</span>
             </button>
         )}
+        
         {/* RECENT LOGS */}
-        <div className="mb-8"><h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-4 flex items-center gap-2"><History size={16} /> Recent Logs</h3><div className="space-y-3">{gameState.runHistory.length === 0 ? (<div className="text-center p-8 border-2 border-dashed border-slate-800 rounded-xl text-slate-600">No runs logged yet. Start running.</div>) : (gameState.runHistory.slice(0, 5).map((run) => (<div key={run.id} className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex justify-between items-center"><div><div className="text-white font-bold flex items-center gap-2">{run.km} km{run.source?.includes('strava') && <span className="text-[10px] bg-[#FC4C02]/20 text-[#FC4C02] px-1.5 py-0.5 rounded border border-[#FC4C02]/30">STRAVA</span>}{run.type === 'boost' && <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded border border-yellow-500/30">BOOST</span>}{run.type === 'quest' && <span className="text-[10px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded border border-amber-500/30">QUEST</span>}</div><div className="text-slate-500 text-xs">{formatDate(new Date(run.date))} &bull; {run.notes}</div></div><div className="bg-slate-800 p-2 rounded-lg text-slate-400">{run.type === 'boost' ? <Rocket size={16} className="text-yellow-400" /> : run.type === 'quest' ? <Award size={16} className="text-amber-400" /> : <Activity size={16} />}</div></div>)))}</div></div>
+        <div className="mb-8">
+            <h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-4 flex items-center gap-2"><History size={16} /> Recent Logs</h3>
+            <div className="space-y-3">
+                {gameState.runHistory.length === 0 ? (
+                    <div className="text-center p-8 border-2 border-dashed border-slate-800 rounded-xl text-slate-600">No runs logged yet. Start running.</div>
+                ) : (
+                    gameState.runHistory.slice(0, 5).map((run) => (
+                        <div key={run.id} className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex justify-between items-center group">
+                            <div>
+                                <div className="text-white font-bold flex items-center gap-2">
+                                    {run.km} km
+                                    {run.source?.includes('strava') && <span className="text-[10px] bg-[#FC4C02]/20 text-[#FC4C02] px-1.5 py-0.5 rounded border border-[#FC4C02]/30">STRAVA</span>}
+                                    {run.type === 'boost' && <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded border border-yellow-500/30">BOOST</span>}
+                                    {run.type === 'quest' && <span className="text-[10px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded border border-amber-500/30">QUEST</span>}
+                                </div>
+                                <div className="text-slate-500 text-xs">{formatDate(new Date(run.date))} &bull; {run.notes}</div>
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                                {/* QUEST CONVERT BUTTON */}
+                                {run.type !== 'quest' && run.type !== 'boost' && gameState.activeQuest?.status === 'active' && (
+                                    <button 
+                                        onClick={() => handleConvertRunToQuest(run.id)}
+                                        className="p-2 rounded-lg bg-slate-800 text-slate-500 hover:bg-amber-900/30 hover:text-amber-500 transition-colors"
+                                        title="Assign to Mission"
+                                    >
+                                        <ArrowRightLeft size={16} />
+                                    </button>
+                                )}
+                                
+                                <div className="bg-slate-800 p-2 rounded-lg text-slate-400">
+                                    {run.type === 'boost' ? <Rocket size={16} className="text-yellow-400" /> : run.type === 'quest' ? <Award size={16} className="text-amber-400" /> : <Activity size={16} />}
+                                </div>
+                            </div>
+                        </div>
+                    ))
+                )}
+            </div>
+        </div>
         
         <div className="text-center text-slate-600 text-xs">Start Date: {formatDate(gameStart)} &bull; Day {daysSinceStart} of {gameState.duration} &bull; Agent: {gameState.username}</div>
       </div>
