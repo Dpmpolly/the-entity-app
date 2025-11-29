@@ -66,6 +66,91 @@ const formatDate = (date) => {
 };
 
 // --- SUB-COMPONENTS ---
+
+// 1. Secret Store (E-Commerce Logic)
+const SecretStore = ({ duration, onClose }) => {
+    // CONFIGURATION: Replace hashtags with real Shopify links
+    const LINKS = {
+        tee30: "#",
+        sticker: "#",
+        hoodie90: "#",
+        cap: "#",
+        jacket: "#",
+        medal: "#",
+    };
+
+    let theme = {
+        title: "SURVIVOR SUPPLY",
+        color: "text-emerald-400",
+        border: "border-emerald-500/50",
+        bg: "bg-emerald-950",
+        items: [
+            { id: 1, name: "Survivor Tee", price: "$28.00", icon: "Shirt", desc: "Moisture-wicking. 'I Survived' back print.", link: LINKS.tee30 },
+            { id: 2, name: "Entity Decal Pack", price: "$8.00", icon: "Sticker", desc: "Reflective vinyl for night runs.", link: LINKS.sticker }
+        ]
+    };
+
+    if (duration === 90) {
+        theme = {
+            title: "OPERATIVE ARMORY",
+            color: "text-amber-400",
+            border: "border-amber-500/50",
+            bg: "bg-amber-950",
+            items: [
+                { id: 3, name: "Tech-Fleece Hoodie", price: "$65.00", icon: "Hoodie", desc: "Thermal regulation. Stealth black.", link: LINKS.hoodie90 },
+                { id: 4, name: "5-Panel Mission Cap", price: "$30.00", icon: "Cap", desc: "Water-resistant. Embroidered logo.", link: LINKS.cap },
+                { id: 1, name: "Survivor Tee", price: "$28.00", icon: "Shirt", desc: "Unlocked from previous tier.", link: LINKS.tee30 }
+            ]
+        };
+    } else if (duration === 365) {
+        theme = {
+            title: "GHOST PROTOCOL",
+            color: "text-purple-400",
+            border: "border-purple-500/50",
+            bg: "bg-purple-950",
+            items: [
+                { id: 5, name: "Alpha Bomber Jacket", price: "$120.00", icon: "Jacket", desc: "Ballistic nylon. Limited Edition.", link: LINKS.jacket },
+                { id: 6, name: "1-Year Medal", price: "$45.00", icon: "Coin", desc: "Heavy brass. Engraved with completion date.", link: LINKS.medal },
+                { id: 3, name: "Tech-Fleece Hoodie", price: "$65.00", icon: "Hoodie", desc: "Unlocked from previous tier.", link: LINKS.hoodie90 }
+            ]
+        };
+    }
+
+    const ItemIcon = ({ type }) => {
+        if (type === 'Shirt') return <svg className={`w-8 h-8 ${theme.color}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M20.38 3.4a2 2 0 0 0-1.79-1.11c-.55 0-1.07.25-1.41.66L15 6 12 3 9 6 6.82 2.95A2.03 2.03 0 0 0 3.62 4.5v15a2 2 0 0 0 2 2h12.76a2 2 0 0 0 2-2v-15a2 2 0 0 0-.05-.33z"/></svg>;
+        if (type === 'Hoodie') return <svg className={`w-8 h-8 ${theme.color}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2a9 9 0 0 1 9 9v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-9a9 9 0 0 1 9-9z"/><path d="M12 14v-4"/><path d="M12 14h4"/><path d="M12 14H8"/></svg>;
+        if (type === 'Coin') return <div className={`w-8 h-8 rounded-full border-2 ${theme.border} flex items-center justify-center font-black ${theme.color}`}>365</div>;
+        return <ShoppingBag className={`w-8 h-8 ${theme.color}`} />;
+    };
+
+    return (
+        <div className="fixed inset-0 z-[60] bg-black flex flex-col animate-in fade-in duration-500 overflow-hidden">
+            <div className={`p-6 border-b border-slate-800 flex justify-between items-center ${theme.bg}`}>
+                <div>
+                    <div className={`text-[10px] uppercase tracking-[0.2em] text-white/60 mb-1`}>Clearance Level: {duration} Days</div>
+                    <h2 className={`text-2xl font-black uppercase tracking-wider ${theme.color} flex items-center gap-2`}>
+                        <Lock size={20} className="mb-1" /> {theme.title}
+                    </h2>
+                </div>
+                <button onClick={onClose} className="p-2 bg-black/30 rounded-full text-white hover:bg-white/10 transition-colors"><X size={24}/></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 bg-slate-950">
+                <div className="grid grid-cols-1 gap-4">
+                    {theme.items.map(item => (
+                        <div key={item.id} className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center gap-4 group hover:border-slate-600 transition-all">
+                            <div className={`w-16 h-16 rounded-lg ${theme.bg} ${theme.border} border flex items-center justify-center shrink-0`}><ItemIcon type={item.icon} /></div>
+                            <div className="flex-1"><div className="flex justify-between items-start"><h3 className="text-white font-bold uppercase tracking-wide">{item.name}</h3><span className="text-slate-400 font-mono text-sm">{item.price}</span></div><p className="text-xs text-slate-500 mt-1">{item.desc}</p></div>
+                            <a href={item.link} target="_blank" rel="noopener noreferrer" className={`px-4 py-2 rounded-lg font-bold text-xs uppercase bg-slate-800 text-white hover:${theme.bg} transition-colors border border-slate-700 flex flex-col items-center justify-center`}>BUY</a>
+                        </div>
+                    ))}
+                </div>
+                <div className="mt-8 p-6 rounded-xl border border-dashed border-slate-800 text-center"><p className="text-slate-500 text-xs mb-2">ACCESS CODE: ENTITY-{duration}-VICTOR</p><p className="text-slate-600 text-[10px]">This store is hidden from the public. Only survivors with verified completion logs can access these items.</p></div>
+            </div>
+        </div>
+    );
+};
+
+// 2. Log Run Modal
 const LogRunModal = ({ onClose, onSave, activeQuest }) => {
     const [km, setKm] = useState('');
     const [notes, setNotes] = useState('');
@@ -111,65 +196,38 @@ const LogRunModal = ({ onClose, onSave, activeQuest }) => {
     );
 };
   
+// 3. Settings Modal (Strava Compliant)
 const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnectStrava }) => {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-6 animate-in fade-in duration-200">
         <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden relative">
-          
           <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
             <h3 className="font-bold text-white flex items-center gap-2"><Settings size={18} className="text-slate-400"/> Settings</h3>
             <button onClick={onClose} className="text-slate-500 hover:text-white"><X size={20} /></button>
           </div>
-
           <div className="p-6 space-y-6">
             <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center gap-3">
                 <div className="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center text-slate-400"><User size={20}/></div>
-                <div className="overflow-hidden">
-                    <div className="text-white font-bold truncate">{gameState.username || 'Agent'}</div>
-                    <div className="text-xs text-slate-500 truncate">ID: {user?.uid.slice(0,8)}...</div>
-                </div>
+                <div className="overflow-hidden"><div className="text-white font-bold truncate">{gameState.username || 'Agent'}</div><div className="text-xs text-slate-500 truncate">ID: {user?.uid.slice(0,8)}...</div></div>
             </div>
-
             <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Data Source</label>
                 {gameState.isStravaLinked ? (
-                    <div className="w-full p-4 rounded-xl border bg-emerald-900/10 border-emerald-900/50 text-emerald-400 flex items-center justify-center gap-2 shadow-inner">
-                        <CheckCircle2 size={18} />
-                        <span className="font-bold text-sm">Strava Connected</span>
-                    </div>
+                    <div className="w-full p-4 rounded-xl border bg-emerald-900/10 border-emerald-900/50 text-emerald-400 flex items-center justify-center gap-2 shadow-inner"><CheckCircle2 size={18} /><span className="font-bold text-sm">Strava Connected</span></div>
                 ) : (
-                    <button onClick={onConnectStrava} className="w-full bg-[#FC4C02] hover:bg-[#E34402] transition-all py-3 rounded-lg flex items-center justify-center gap-3 shadow-lg group">
-                        <svg role="img" viewBox="0 0 24 24" className="w-5 h-5 fill-white" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
-                        </svg>
-                        <span className="text-white font-bold text-sm">Connect with Strava</span>
-                    </button>
+                    <button onClick={onConnectStrava} className="w-full bg-[#FC4C02] hover:bg-[#E34402] transition-all py-3 rounded-lg flex items-center justify-center gap-3 shadow-lg group"><svg role="img" viewBox="0 0 24 24" className="w-5 h-5 fill-white" xmlns="http://www.w3.org/2000/svg"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg><span className="text-white font-bold text-sm">Connect with Strava</span></button>
                 )}
             </div>
-
             <div className="pt-2 space-y-3">
-                <a href="mailto:russellpollard77@gmail.com?subject=The Entity Support" className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2">
-                    <HeartPulse size={16} /> Contact Support
-                </a>
-                <button onClick={onLogout} className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2">
-                    <LogOut size={16} /> Disconnect (Logout)
-                </button>
-                <button onClick={onDelete} className="w-full py-3 rounded-xl border border-red-900/30 text-red-500 font-bold hover:bg-red-900/10 flex items-center justify-center gap-2">
-                    <Trash2 size={16} /> Burn Identity (Delete)
-                </button>
+                <a href="mailto:russellpollard77@gmail.com?subject=The Entity Support" className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2"><HeartPulse size={16} /> Contact Support</a>
+                <button onClick={onLogout} className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2"><LogOut size={16} /> Disconnect (Logout)</button>
+                <button onClick={onDelete} className="w-full py-3 rounded-xl border border-red-900/30 text-red-500 font-bold hover:bg-red-900/10 flex items-center justify-center gap-2"><Trash2 size={16} /> Burn Identity (Delete)</button>
             </div>
           </div>
-
           <div className="bg-slate-950 p-4 border-t border-slate-800 flex flex-col items-center justify-center gap-1 opacity-60">
               <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Powered by</span>
-              <div className="flex items-center gap-1.5">
-                  <svg role="img" viewBox="0 0 24 24" className="w-4 h-4 fill-[#FC4C02]" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
-                  </svg>
-                  <span className="text-sm font-black text-slate-300 tracking-tight leading-none">STRAVA</span>
-              </div>
+              <div className="flex items-center gap-1.5"><svg role="img" viewBox="0 0 24 24" className="w-4 h-4 fill-[#FC4C02]" xmlns="http://www.w3.org/2000/svg"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg><span className="text-sm font-black text-slate-300 tracking-tight leading-none">STRAVA</span></div>
           </div>
-
         </div>
       </div>
     );
@@ -183,6 +241,7 @@ export default function TheEntity() {
   // UI State
   const [showLogModal, setShowLogModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showStore, setShowStore] = useState(false); // STORE VISIBILITY STATE
   const hasExchangedCode = useRef(false);
   
   // Game Data State
@@ -262,7 +321,6 @@ export default function TheEntity() {
        hasExchangedCode.current = true;
        const exchangeToken = async () => {
           try {
-             // HARDCODED KEYS FOR TESTING (Make sure these match exactly)
              const clientId = "187205"; 
              const clientSecret = "cfb204ddcafd2f99c0ff4f96815026968ad56da3"; 
              
@@ -340,7 +398,7 @@ export default function TheEntity() {
       try { await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save')); await deleteUser(user); window.location.reload(); } catch (error) { alert("Error deleting data: " + error.message); }
   };
   const handleStravaLogin = () => {
-      const clientId = "187205"; // Hardcoded for reliability
+      const clientId = "187205"; 
       const redirectUri = window.location.origin; 
       const scope = "activity:read_all";
       window.location.href = `http://www.strava.com/oauth/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}&approval_prompt=force&scope=${scope}`;
@@ -499,7 +557,32 @@ export default function TheEntity() {
   if (isCaught) return (<div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-1000"><div className="mb-8 relative"><div className="absolute inset-0 bg-red-600 blur-3xl opacity-20 animate-pulse"></div><Skull size={120} className="text-red-600 relative z-10 animate-bounce" /></div><h1 className="text-5xl font-black text-white uppercase tracking-widest mb-2" style={{textShadow: '0 0 20px red'}}>CAUGHT</h1><p className="text-red-400 font-bold text-lg mb-8 uppercase tracking-widest">Signal Lost &bull; Day {daysSinceStart}</p><div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-sm mb-8"><div className="flex justify-between items-center text-slate-400 text-sm mb-4 pb-4 border-b border-slate-800"><span>Distance Run</span><span className="text-white font-bold">{userDistance.toFixed(1)} km</span></div><div className="flex justify-between items-center text-slate-400 text-sm mb-4 pb-4 border-b border-slate-800"><span>Days Survived</span><span className="text-white font-bold">{daysSinceStart} days</span></div><div className="flex justify-between items-center text-slate-400 text-sm"><span>Entity Speed</span><span className="text-red-400 font-bold">{gameState.entitySpeed} km/day</span></div></div><div className="w-full max-w-sm space-y-4"><button onClick={handleContinueGame} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl text-lg flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(16,185,129,0.3)] transition-all transform hover:scale-105"><HeartPulse size={24} /> CONTINUE ($1.00)</button><p className="text-xs text-slate-500">Rewinds the Entity by 48 hours. Resume immediately.</p><button onClick={handleRestartGame} className="w-full bg-transparent border border-slate-700 text-slate-400 hover:text-white hover:border-slate-500 font-bold py-3 rounded-xl flex items-center justify-center gap-2 mt-4 transition-all"><RotateCcw size={18} /> ACCEPT FATE & RESTART</button></div></div>);
 
   // --- UI RENDER: VICTORY ---
-  if (isVictory) return (<div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-1000"><div className="mb-8 relative"><div className="absolute inset-0 bg-emerald-600 blur-3xl opacity-20 animate-pulse"></div><ShieldCheck size={120} className="text-emerald-500 relative z-10 animate-bounce" /></div><h1 className="text-4xl font-black text-white uppercase tracking-widest mb-2" style={{textShadow: '0 0 20px #10b981'}}>MISSION ACCOMPLISHED</h1><p className="text-emerald-400 font-bold text-lg mb-8 uppercase tracking-widest">You are safe.</p><div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-sm mb-8"><p className="text-slate-300 mb-4">You have successfully evaded the Entity for {gameState.duration} days.</p><div className="inline-block bg-emerald-900/30 text-emerald-400 border border-emerald-900 px-4 py-2 rounded-full font-bold uppercase text-sm mb-2">Rank Achieved: Survivor</div></div><div className="w-full max-w-sm space-y-4"><a href={`https://store.theentity.app/${gameState.duration}-day`} target="_blank" rel="noopener noreferrer" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl text-lg flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(16,185,129,0.3)] transition-all transform hover:scale-105"><ShoppingBag size={24} /> ACCESS {gameState.duration}-DAY STORE</a><button onClick={handleRestartGame} className="w-full bg-transparent border border-slate-700 text-slate-400 hover:text-white hover:border-slate-500 font-bold py-3 rounded-xl flex items-center justify-center gap-2 mt-4 transition-all"><RotateCcw size={18} /> START NEW OPERATION</button></div></div>);
+  if (isVictory) return (
+    <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-1000">
+        <style jsx global>{`.bg-stripes-slate {background-image: linear-gradient(45deg, #1e293b 25%, transparent 25%, transparent 50%, #1e293b 50%, #1e293b 75%, transparent 75%, transparent);background-size: 10px 10px;}`}</style>
+        
+        {showStore && <SecretStore duration={gameState.duration} onClose={() => setShowStore(false)} />}
+        
+        <div className="mb-8 relative">
+            <div className="absolute inset-0 bg-emerald-600 blur-3xl opacity-20 animate-pulse"></div>
+            <ShieldCheck size={120} className="text-emerald-500 relative z-10 animate-bounce" />
+        </div>
+        <h1 className="text-4xl font-black text-white uppercase tracking-widest mb-2" style={{textShadow: '0 0 20px #10b981'}}>MISSION ACCOMPLISHED</h1>
+        <p className="text-emerald-400 font-bold text-lg mb-8 uppercase tracking-widest">You are safe.</p>
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-sm mb-8">
+             <p className="text-slate-300 mb-4">You have successfully evaded the Entity for {gameState.duration} days.</p>
+             <div className="inline-block bg-emerald-900/30 text-emerald-400 border border-emerald-900 px-4 py-2 rounded-full font-bold uppercase text-sm mb-2">Rank Achieved: Survivor</div>
+        </div>
+        <div className="w-full max-w-sm space-y-4">
+            <button onClick={() => setShowStore(true)} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl text-lg flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(16,185,129,0.3)] transition-all transform hover:scale-105">
+                <ShoppingBag size={24} /> ACCESS {gameState.duration}-DAY STORE
+            </button>
+            <button onClick={handleRestartGame} className="w-full bg-transparent border border-slate-700 text-slate-400 hover:text-white hover:border-slate-500 font-bold py-3 rounded-xl flex items-center justify-center gap-2 mt-4 transition-all">
+                <RotateCcw size={18} /> START NEW OPERATION
+            </button>
+        </div>
+    </div>
+  );
 
   // --- UI RENDER: DASHBOARD ---
   const UserAvatar = AVATARS[gameState.avatarId || 'sprinter'];
@@ -520,6 +603,7 @@ export default function TheEntity() {
       
       {showLogModal && <LogRunModal onClose={() => setShowLogModal(false)} onSave={handleAddRun} activeQuest={gameState.activeQuest} />}
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} user={user} gameState={gameState} onLogout={handleLogout} onDelete={handleDeleteAccount} onConnectStrava={handleStravaLogin} />}
+      {showStore && <SecretStore duration={gameState.duration} onClose={() => setShowStore(false)} />}
       
       <div className="sticky top-0 z-30 bg-slate-950/80 backdrop-blur-md border-b border-slate-800">
           <div className="max-w-xl mx-auto px-4 py-4 flex justify-between items-center">
@@ -560,9 +644,7 @@ export default function TheEntity() {
 
         {/* SYNC / STRAVA STATUS SECTION */}
         {gameState.isStravaLinked ? (
-            // LINKED STATE: Pro "Active" Badge with Logo
             <div className="w-full bg-[#FC4C02]/10 border border-[#FC4C02] text-[#FC4C02] py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-3 mb-8 shadow-[0_0_15px_rgba(252,76,2,0.15)]">
-                {/* Official Strava Icon (SVG) */}
                 <svg role="img" viewBox="0 0 24 24" className="w-6 h-6 fill-[#FC4C02]" xmlns="http://www.w3.org/2000/svg">
                     <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
                 </svg>
@@ -570,7 +652,6 @@ export default function TheEntity() {
                 <div className="animate-pulse w-2 h-2 rounded-full bg-[#FC4C02] ml-1"></div>
             </div>
         ) : (
-            // UNLINKED STATE: Official "Connect" Button (Direct Action)
             <button onClick={handleStravaLogin} className="w-full bg-[#FC4C02] hover:bg-[#E34402] transition-all py-4 rounded-xl flex items-center justify-center gap-3 mb-8 shadow-lg group">
                 <svg role="img" viewBox="0 0 24 24" className="w-6 h-6 fill-white" xmlns="http://www.w3.org/2000/svg">
                     <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
@@ -599,7 +680,6 @@ export default function TheEntity() {
                             </div>
                             
                             <div className="flex items-center gap-2">
-                                {/* QUEST CONVERT BUTTON */}
                                 {run.type !== 'quest' && run.type !== 'boost' && gameState.activeQuest?.status === 'active' && (
                                     <button 
                                         onClick={() => handleConvertRunToQuest(run.id)}
@@ -609,7 +689,6 @@ export default function TheEntity() {
                                         <ArrowRightLeft size={16} />
                                     </button>
                                 )}
-                                
                                 <div className="bg-slate-800 p-2 rounded-lg text-slate-400">
                                     {run.type === 'boost' ? <Rocket size={16} className="text-yellow-400" /> : run.type === 'quest' ? <Award size={16} className="text-amber-400" /> : <Activity size={16} />}
                                 </div>
