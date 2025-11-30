@@ -371,6 +371,47 @@ export default function TheEntity() {
     }
   }, [user]);
 
+  // --- PAYMENT LISTENER (Stripe Handling) ---
+  useEffect(() => {
+      const params = new URLSearchParams(window.location.search);
+      const purchaseType = params.get('purchase');
+
+      if (purchaseType && user) {
+          const handlePurchase = async () => {
+              let newState = { ...gameState };
+              let message = "";
+
+              if (purchaseType === 'emp_success') {
+                  newState.lastEmpUsage = new Date().toISOString();
+                  newState.totalPausedHours = (newState.totalPausedHours || 0) + 25;
+                  newState.empUsageCount = (newState.empUsageCount || 0) + 1;
+                  message = "PAYMENT CONFIRMED. EMP DEPLOYED. Entity Stunned for 25h.";
+              } 
+              else if (purchaseType === 'boost_success') {
+                  const boostKm = 3.0; 
+                  newState.totalKmRun = (newState.totalKmRun || 0) + boostKm;
+                  newState.runHistory = [{
+                      id: Date.now(),
+                      date: new Date().toISOString(),
+                      km: boostKm,
+                      notes: 'Nitrous Boost (Paid)',
+                      type: 'boost'
+                  }, ...newState.runHistory];
+                  newState.boostUsageCount = (newState.boostUsageCount || 0) + 1;
+                  message = `PAYMENT CONFIRMED. NITROUS INJECTED (+${boostKm}km).`;
+              }
+
+              if (message) {
+                  await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
+                  alert(message);
+                  window.history.replaceState({}, document.title, window.location.pathname);
+                  setGameState(prev => ({ ...prev, ...newState }));
+              }
+          };
+          handlePurchase();
+      }
+  }, [user, gameState]);
+
   // --- DATABASE LISTENER ---
   useEffect(() => {
     if (!user) return;
@@ -391,35 +432,21 @@ export default function TheEntity() {
   useEffect(() => {
       if (!user || loading) return;
       
-      // 1. CLEANUP: If we are in the early game (Day < 5) but a quest exists, it's a bug/zombie. Kill it.
+      // 1. CLEANUP: Kill zombie quests
       if (daysSinceStart < 5 && gameState.activeQuest) {
           const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
           setDoc(userDocRef, { ...gameState, activeQuest: null });
           return;
       }
 
-      // 2. GENERATION: Generate a new quest every 5 days
       if (daysSinceStart > 0 && daysSinceStart % 5 === 0 && daysSinceStart !== gameState.lastQuestGenerationDay) {
           if (!gameState.activeQuest) {
               const parts = ['battery', 'emitter', 'casing'];
               const randomPart = parts[Math.floor(Math.random() * parts.length)];
               const randomDist = Math.floor(Math.random() * 8) + 5; 
-              
-              const newQuest = {
-                  id: Date.now(),
-                  title: `Scavenge Mission ${gameState.badges.length + 1}`,
-                  distance: randomDist,
-                  progress: 0,
-                  rewardPart: randomPart,
-                  status: 'available'
-              };
-
+              const newQuest = { id: Date.now(), title: `Scavenge Mission ${gameState.badges.length + 1}`, distance: randomDist, progress: 0, rewardPart: randomPart, status: 'available' };
               const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
-              setDoc(userDocRef, {
-                  ...gameState,
-                  activeQuest: newQuest,
-                  lastQuestGenerationDay: daysSinceStart
-              });
+              setDoc(userDocRef, { ...gameState, activeQuest: newQuest, lastQuestGenerationDay: daysSinceStart });
           }
       }
   }, [daysSinceStart, user, loading, gameState.activeQuest, gameState.lastQuestGenerationDay]);
@@ -485,7 +512,6 @@ export default function TheEntity() {
       if (!confirm(`DELETE ACTIVITY?\n\nRemove this ${runToDelete.km}km run?\n\nNOTE: This will reduce your total distance. The Entity will get closer.`)) return;
 
       let newTotalKm = gameState.totalKmRun;
-      // FIX: Handle NULL Quest state so app doesn't crash on delete
       let newActiveQuest = gameState.activeQuest ? { ...gameState.activeQuest } : null;
       
       if (runToDelete.type === 'quest' || runToDelete.type === 'quest_partial') {
@@ -506,30 +532,47 @@ export default function TheEntity() {
   const handleBuyEMP = async () => {
     if (!user || !isEmpAvailable) return;
     const hasCraftedEmp = gameState.inventory.battery > 0 && gameState.inventory.emitter > 0 && gameState.inventory.casing > 0;
-    let cost = isEmpFree ? "FREE (First Time Bonus)" : "$1.00";
-    if (hasCraftedEmp) cost = "FREE (Crafted)";
-    if (!confirm(`Deploy EMP Burst?\n\nCost: ${cost}\nEffect: Stops the Entity for ${EMP_DURATION_HOURS} hours.\nCooldown: ${EMP_COOLDOWN_DAYS} days.`)) return;
     
-    let newInventory = { ...gameState.inventory };
-    if (hasCraftedEmp) { newInventory.battery--; newInventory.emitter--; newInventory.casing--; }
-    const newState = { ...gameState, lastEmpUsage: new Date().toISOString(), totalPausedHours: (gameState.totalPausedHours || 0) + EMP_DURATION_HOURS, empUsageCount: (gameState.empUsageCount || 0) + 1, inventory: newInventory };
-    await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
-    alert("EMP DEPLOYED. The Entity is stunned for 25 hours.");
+    if (hasCraftedEmp || isEmpFree) {
+        if (!confirm(`Deploy EMP Burst?\n\nCost: ${hasCraftedEmp ? "FREE (Crafted)" : "FREE (Bonus)"}\nEffect: Stuns Entity for 25h.`)) return;
+        
+        let newInventory = { ...gameState.inventory };
+        if (hasCraftedEmp) { newInventory.battery--; newInventory.emitter--; newInventory.casing--; }
+        
+        const newState = { 
+            ...gameState, 
+            lastEmpUsage: new Date().toISOString(), 
+            totalPausedHours: (gameState.totalPausedHours || 0) + EMP_DURATION_HOURS, 
+            empUsageCount: (gameState.empUsageCount || 0) + 1, 
+            inventory: newInventory 
+        };
+        await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
+        alert("EMP DEPLOYED. The Entity is stunned.");
+    } else {
+        if (!confirm("PURCHASE EMP BURST?\n\nCost: $1.00\n\nYou will be redirected to secure checkout.")) return;
+        window.location.href = "https://buy.stripe.com/test_12345..."; // Replace with real link
+    }
   };
 
   const handleBuyBoost = async () => {
     if (!user) return;
-    const startOfDay = new Date(); startOfDay.setHours(0,0,0,0);
-    const todayRuns = gameState.runHistory.filter(run => new Date(run.date) >= startOfDay);
-    const todayKm = todayRuns.reduce((acc, run) => acc + run.km, 0);
-    if (todayKm <= 0) return alert("System Error: No movement detected today.\n\nYou must log a run today before you can boost it.");
-    const cost = isBoostFree ? "FREE" : "$1.00";
-    const boostAmount = parseFloat((todayKm * 0.15).toFixed(2));
-    if (!confirm(`Activate Nitrous Boost?\n\nCost: ${cost}\nEffect: Adds 15% (+${boostAmount}km) to today's distance.`)) return;
-    const newTotal = gameState.totalKmRun + boostAmount;
-    const newRun = { id: Date.now(), date: new Date().toISOString(), km: boostAmount, notes: 'Nitrous Boost (+15%)', type: 'boost' };
-    const newState = { ...gameState, totalKmRun: newTotal, runHistory: [newRun, ...gameState.runHistory], boostUsageCount: (gameState.boostUsageCount || 0) + 1 };
-    await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
+    
+    if (isBoostFree) {
+        const startOfDay = new Date(); startOfDay.setHours(0,0,0,0);
+        const todayRuns = gameState.runHistory.filter(run => new Date(run.date) >= startOfDay);
+        const todayKm = todayRuns.reduce((acc, run) => acc + run.km, 0);
+        if (todayKm <= 0) return alert("System Error: No movement detected today.\n\nYou must log a run today before you can boost it.");
+        
+        const boostAmount = parseFloat((todayKm * 0.15).toFixed(2));
+        if (!confirm(`Activate Nitrous Boost?\n\nCost: FREE (First Time)\nEffect: +${boostAmount}km`)) return;
+        
+        const newRun = { id: Date.now(), date: new Date().toISOString(), km: boostAmount, notes: 'Nitrous Boost (Free)', type: 'boost' };
+        const newState = { ...gameState, totalKmRun: gameState.totalKmRun + boostAmount, runHistory: [newRun, ...gameState.runHistory], boostUsageCount: 1 };
+        await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
+    } else {
+        if (!confirm("PURCHASE NITROUS BOOST?\n\nCost: $1.00\nEffect: Instant +3km distance.\n\nYou will be redirected to secure checkout.")) return;
+        window.location.href = "https://buy.stripe.com/test_67890..."; // Replace with real link
+    }
   };
 
   const handleContinueGame = async () => {
@@ -589,7 +632,12 @@ export default function TheEntity() {
 
   const handleAcceptQuest = async () => {
       if (!user || !gameState.activeQuest) return;
-      const updatedQuest = { ...gameState.activeQuest, status: 'active' };
+      const updatedQuest = { 
+          ...gameState.activeQuest, 
+          status: 'active',
+          progress: gameState.activeQuest.progress || 0, 
+          distance: gameState.activeQuest.distance || 5  
+      };
       await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), { ...gameState, activeQuest: updatedQuest });
   };
 
@@ -725,7 +773,16 @@ export default function TheEntity() {
                         </div>
                     </div>
                     {gameState.activeQuest.status === 'active' ? (
-                        <div className="mt-4"><div className="flex justify-between text-xs text-slate-400 mb-1"><span>Progress</span><span>{gameState.activeQuest.progress.toFixed(1)} / {gameState.activeQuest.distance} km</span></div><div className="h-2 bg-slate-800 rounded-full overflow-hidden"><div className="h-full bg-amber-500 transition-all" style={{width: `${(gameState.activeQuest.progress / gameState.activeQuest.distance) * 100}%`}}></div></div></div>
+                        <div className="mt-4">
+                            <div className="flex justify-between text-xs text-slate-400 mb-1">
+                                {/* SAFETY FIX: Use optional chaining (?) and default values */}
+                                <span>Progress</span>
+                                <span>{(gameState.activeQuest.progress || 0).toFixed(1)} / {gameState.activeQuest.distance} km</span>
+                            </div>
+                            <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                                <div className="h-full bg-amber-500 transition-all" style={{width: `${((gameState.activeQuest.progress || 0) / gameState.activeQuest.distance) * 100}%`}}></div>
+                            </div>
+                        </div>
                     ) : (
                         <button onClick={handleAcceptQuest} className="mt-4 w-full bg-slate-800 hover:bg-slate-700 text-amber-500 border border-slate-700 font-bold py-2 rounded-lg text-sm transition-colors">Accept Mission</button>
                     )}
@@ -752,12 +809,16 @@ export default function TheEntity() {
                 <div className="animate-pulse w-2 h-2 rounded-full bg-[#FC4C02] ml-1"></div>
             </div>
         ) : (
-            <button onClick={handleStravaLogin} className="w-full bg-[#FC4C02] hover:bg-[#E34402] transition-all py-4 rounded-xl flex items-center justify-center gap-3 mb-8 shadow-lg group">
-                <svg role="img" viewBox="0 0 24 24" className="w-6 h-6 fill-white" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
-                </svg>
-                <span className="text-white font-bold text-lg">Connect with Strava</span>
-            </button>
+            <div className="flex gap-2 mb-8">
+                <button onClick={handleStravaLogin} className="flex-1 bg-[#FC4C02] hover:bg-[#E34402] transition-all py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg group">
+                    <svg role="img" viewBox="0 0 24 24" className="w-5 h-5 fill-white" xmlns="http://www.w3.org/2000/svg"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+                    <span className="text-white font-bold text-sm">Connect Strava</span>
+                </button>
+                <button onClick={() => setShowLogModal(true)} className="flex-1 bg-emerald-600 hover:bg-emerald-500 transition-all py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg">
+                    <Footprints size={20} className="text-white" />
+                    <span className="text-white font-bold text-sm">Manual Log</span>
+                </button>
+            </div>
         )}
         
         {/* RECENT LOGS */}
