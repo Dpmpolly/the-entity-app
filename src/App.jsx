@@ -387,20 +387,42 @@ export default function TheEntity() {
     return () => unsubscribeSnapshot();
   }, [user]);
 
-  // --- GAME LOOP: QUEST GENERATION ---
+  // --- GAME LOOP: QUEST GENERATION & CLEANUP ---
   useEffect(() => {
       if (!user || loading) return;
+      
+      // 1. CLEANUP: If we are in the early game (Day < 5) but a quest exists, it's a bug/zombie. Kill it.
+      if (daysSinceStart < 5 && gameState.activeQuest) {
+          const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
+          setDoc(userDocRef, { ...gameState, activeQuest: null });
+          return;
+      }
+
+      // 2. GENERATION: Generate a new quest every 5 days
       if (daysSinceStart > 0 && daysSinceStart % 5 === 0 && daysSinceStart !== gameState.lastQuestGenerationDay) {
           if (!gameState.activeQuest) {
               const parts = ['battery', 'emitter', 'casing'];
               const randomPart = parts[Math.floor(Math.random() * parts.length)];
               const randomDist = Math.floor(Math.random() * 8) + 5; 
-              const newQuest = { id: Date.now(), title: `Scavenge Mission ${gameState.badges.length + 1}`, distance: randomDist, progress: 0, rewardPart: randomPart, status: 'available' };
+              
+              const newQuest = {
+                  id: Date.now(),
+                  title: `Scavenge Mission ${gameState.badges.length + 1}`,
+                  distance: randomDist,
+                  progress: 0,
+                  rewardPart: randomPart,
+                  status: 'available'
+              };
+
               const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
-              setDoc(userDocRef, { ...gameState, activeQuest: newQuest, lastQuestGenerationDay: daysSinceStart });
+              setDoc(userDocRef, {
+                  ...gameState,
+                  activeQuest: newQuest,
+                  lastQuestGenerationDay: daysSinceStart
+              });
           }
       }
-  }, [daysSinceStart, user, loading]);
+  }, [daysSinceStart, user, loading, gameState.activeQuest, gameState.lastQuestGenerationDay]);
 
   // --- CORE FUNCTIONS ---
   const calculateAdaptiveSpeed = (totalKm, activeDays, diff) => {
