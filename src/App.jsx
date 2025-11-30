@@ -16,7 +16,7 @@ import {
 } from 'firebase/firestore';
 import { 
   Activity, Skull, Settings, Plus, AlertTriangle, MapPin, History, X, 
-  Link as LinkIcon, CheckCircle2, Zap, Timer, 
+  Link as LinkIcon, CheckCircle2, Zap, Timer, RefreshCw, // <--- ADDED RefreshCw HERE
   ShieldCheck, Compass, Map as MapIcon, Shield, ChevronRight, ZapOff, 
   Lock, Rocket, Wrench, Cpu, Disc, Award, ArrowRightLeft, HeartPulse, 
   RotateCcw, ShoppingBag, BarChart3, User, Trash2, LogOut, Footprints
@@ -69,21 +69,12 @@ const formatDate = (date) => {
 
 // 1. Secret Store (E-Commerce Logic)
 const SecretStore = ({ duration, onClose }) => {
-    // CONFIGURATION: Replace hashtags with real Shopify links
     const LINKS = {
-        tee30: "#",
-        sticker: "#",
-        hoodie90: "#",
-        cap: "#",
-        jacket: "#",
-        medal: "#",
+        tee30: "#", sticker: "#", hoodie90: "#", cap: "#", jacket: "#", medal: "#",
     };
 
     let theme = {
-        title: "SURVIVOR SUPPLY",
-        color: "text-emerald-400",
-        border: "border-emerald-500/50",
-        bg: "bg-emerald-950",
+        title: "SURVIVOR SUPPLY", color: "text-emerald-400", border: "border-emerald-500/50", bg: "bg-emerald-950",
         items: [
             { id: 1, name: "Survivor Tee", price: "$28.00", icon: "Shirt", desc: "Moisture-wicking. 'I Survived' back print.", link: LINKS.tee30 },
             { id: 2, name: "Entity Decal Pack", price: "$8.00", icon: "Sticker", desc: "Reflective vinyl for night runs.", link: LINKS.sticker }
@@ -92,10 +83,7 @@ const SecretStore = ({ duration, onClose }) => {
 
     if (duration === 90) {
         theme = {
-            title: "OPERATIVE ARMORY",
-            color: "text-amber-400",
-            border: "border-amber-500/50",
-            bg: "bg-amber-950",
+            title: "OPERATIVE ARMORY", color: "text-amber-400", border: "border-amber-500/50", bg: "bg-amber-950",
             items: [
                 { id: 3, name: "Tech-Fleece Hoodie", price: "$65.00", icon: "Hoodie", desc: "Thermal regulation. Stealth black.", link: LINKS.hoodie90 },
                 { id: 4, name: "5-Panel Mission Cap", price: "$30.00", icon: "Cap", desc: "Water-resistant. Embroidered logo.", link: LINKS.cap },
@@ -104,10 +92,7 @@ const SecretStore = ({ duration, onClose }) => {
         };
     } else if (duration === 365) {
         theme = {
-            title: "GHOST PROTOCOL",
-            color: "text-purple-400",
-            border: "border-purple-500/50",
-            bg: "bg-purple-950",
+            title: "GHOST PROTOCOL", color: "text-purple-400", border: "border-purple-500/50", bg: "bg-purple-950",
             items: [
                 { id: 5, name: "Alpha Bomber Jacket", price: "$120.00", icon: "Jacket", desc: "Ballistic nylon. Limited Edition.", link: LINKS.jacket },
                 { id: 6, name: "1-Year Medal", price: "$45.00", icon: "Coin", desc: "Heavy brass. Engraved with completion date.", link: LINKS.medal },
@@ -126,12 +111,7 @@ const SecretStore = ({ duration, onClose }) => {
     return (
         <div className="fixed inset-0 z-[60] bg-black flex flex-col animate-in fade-in duration-500 overflow-hidden">
             <div className={`p-6 border-b border-slate-800 flex justify-between items-center ${theme.bg}`}>
-                <div>
-                    <div className={`text-[10px] uppercase tracking-[0.2em] text-white/60 mb-1`}>Clearance Level: {duration} Days</div>
-                    <h2 className={`text-2xl font-black uppercase tracking-wider ${theme.color} flex items-center gap-2`}>
-                        <Lock size={20} className="mb-1" /> {theme.title}
-                    </h2>
-                </div>
+                <div><div className={`text-[10px] uppercase tracking-[0.2em] text-white/60 mb-1`}>Clearance Level: {duration} Days</div><h2 className={`text-2xl font-black uppercase tracking-wider ${theme.color} flex items-center gap-2`}><Lock size={20} className="mb-1" /> {theme.title}</h2></div>
                 <button onClick={onClose} className="p-2 bg-black/30 rounded-full text-white hover:bg-white/10 transition-colors"><X size={24}/></button>
             </div>
             <div className="flex-1 overflow-y-auto p-6 bg-slate-950">
@@ -196,7 +176,7 @@ const LogRunModal = ({ onClose, onSave, activeQuest }) => {
     );
 };
   
-// 3. Settings Modal (With Repair Button)
+// 3. Settings Modal (With Repair Button & Compliance)
 const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnectStrava }) => {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-6 animate-in fade-in duration-200">
@@ -218,20 +198,13 @@ const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnect
 
             <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Data Source</label>
-                
                 {gameState.isStravaLinked ? (
                     <div className="space-y-2">
-                        {/* Connected Status */}
-                        <div className="w-full p-4 rounded-xl border bg-emerald-900/10 border-emerald-900/50 text-emerald-400 flex items-center justify-center gap-2 shadow-inner">
+                        <div className="w-full p-4 rounded-xl border bg-[#FC4C02]/10 border-[#FC4C02] text-[#FC4C02] flex items-center justify-center gap-2 shadow-[0_0_10px_rgba(252,76,2,0.15)]">
                             <CheckCircle2 size={18} />
                             <span className="font-bold text-sm">Strava Connected</span>
                         </div>
-                        
-                        {/* THE REPAIR BUTTON */}
-                        <button 
-                            onClick={onConnectStrava} 
-                            className="w-full text-[10px] text-slate-500 hover:text-amber-400 flex items-center justify-center gap-1 transition-colors"
-                        >
+                        <button onClick={onConnectStrava} className="w-full text-[10px] text-slate-500 hover:text-amber-400 flex items-center justify-center gap-1 transition-colors">
                             <RefreshCw size={10} /> Sync issues? Repair Connection
                         </button>
                     </div>
@@ -281,7 +254,7 @@ export default function TheEntity() {
   // UI State
   const [showLogModal, setShowLogModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [showStore, setShowStore] = useState(false); // STORE VISIBILITY STATE
+  const [showStore, setShowStore] = useState(false);
   const hasExchangedCode = useRef(false);
   
   // Game Data State
@@ -310,7 +283,10 @@ export default function TheEntity() {
   });
 
   // --- REAL TIME CALCULATIONS ---
-  const today = new Date();
+  const [now, setNow] = useState(new Date()); // HEARTBEAT CLOCK
+  useEffect(() => { const timer = setInterval(() => { setNow(new Date()); }, 60000); return () => clearInterval(timer); }, []);
+  
+  const today = now;
   const gameStart = new Date(gameState.startDate);
   const msElapsed = today.getTime() - gameStart.getTime();
   const hoursElapsed = msElapsed / (1000 * 60 * 60); 
@@ -361,8 +337,8 @@ export default function TheEntity() {
        hasExchangedCode.current = true;
        const exchangeToken = async () => {
           try {
-             const clientId = "187205"; 
-             const clientSecret = "cfb204ddcafd2f99c0ff4f96815026968ad56da3"; 
+             const clientId = import.meta.env.VITE_STRAVA_CLIENT_ID;
+             const clientSecret = import.meta.env.VITE_STRAVA_CLIENT_SECRET;
              
              const response = await fetch(`https://www.strava.com/oauth/token?client_id=${clientId}&client_secret=${clientSecret}&code=${stravaCode}&grant_type=authorization_code`, { method: 'POST' });
              const data = await response.json();
@@ -438,7 +414,7 @@ export default function TheEntity() {
       try { await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save')); await deleteUser(user); window.location.reload(); } catch (error) { alert("Error deleting data: " + error.message); }
   };
   const handleStravaLogin = () => {
-      const clientId = "187205"; 
+      const clientId = import.meta.env.VITE_STRAVA_CLIENT_ID;
       const redirectUri = window.location.origin; 
       const scope = "activity:read_all";
       window.location.href = `http://www.strava.com/oauth/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}&approval_prompt=force&scope=${scope}`;
