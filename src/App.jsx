@@ -196,49 +196,78 @@ const LogRunModal = ({ onClose, onSave, activeQuest }) => {
     );
 };
   
-// 3. Settings Modal (Strava Compliant)
+// 3. Settings Modal (With Repair Button)
 const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnectStrava }) => {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-6 animate-in fade-in duration-200">
         <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden relative">
+          
           <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
             <h3 className="font-bold text-white flex items-center gap-2"><Settings size={18} className="text-slate-400"/> Settings</h3>
             <button onClick={onClose} className="text-slate-500 hover:text-white"><X size={20} /></button>
           </div>
+
           <div className="p-6 space-y-6">
             <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center gap-3">
                 <div className="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center text-slate-400"><User size={20}/></div>
-                <div className="overflow-hidden"><div className="text-white font-bold truncate">{gameState.username || 'Agent'}</div><div className="text-xs text-slate-500 truncate">ID: {user?.uid.slice(0,8)}...</div></div>
+                <div className="overflow-hidden">
+                    <div className="text-white font-bold truncate">{gameState.username || 'Agent'}</div>
+                    <div className="text-xs text-slate-500 truncate">ID: {user?.uid.slice(0,8)}...</div>
+                </div>
             </div>
+
             <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Data Source</label>
-               {gameState.isStravaLinked ? (
-                      // COMPLIANT: Uses Strava Orange (#FC4C02) for the "Active" state
-                      <div className="w-full p-4 rounded-xl border bg-[#FC4C02]/10 border-[#FC4C02] text-[#FC4C02] flex items-center justify-center gap-2 shadow-[0_0_10px_rgba(252,76,2,0.15)]">
-                          <CheckCircle2 size={18} />
-                          <span className="font-bold text-sm">Strava Connected</span>
-                      </div>
-                  ) : (
-                      // Official Connect Button
-                      <button onClick={onConnectStrava} className="w-full bg-[#FC4C02] hover:bg-[#E34402] transition-all py-3 rounded-lg flex items-center justify-center gap-3 shadow-lg group">
-                          {/* Strava Icon */}
-                          <svg role="img" viewBox="0 0 24 24" className="w-5 h-5 fill-white" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
-                          </svg>
-                          <span className="text-white font-bold text-sm">Connect with Strava</span>
-                      </button>
-                  )}
+                
+                {gameState.isStravaLinked ? (
+                    <div className="space-y-2">
+                        {/* Connected Status */}
+                        <div className="w-full p-4 rounded-xl border bg-emerald-900/10 border-emerald-900/50 text-emerald-400 flex items-center justify-center gap-2 shadow-inner">
+                            <CheckCircle2 size={18} />
+                            <span className="font-bold text-sm">Strava Connected</span>
+                        </div>
+                        
+                        {/* THE REPAIR BUTTON */}
+                        <button 
+                            onClick={onConnectStrava} 
+                            className="w-full text-[10px] text-slate-500 hover:text-amber-400 flex items-center justify-center gap-1 transition-colors"
+                        >
+                            <RefreshCw size={10} /> Sync issues? Repair Connection
+                        </button>
+                    </div>
+                ) : (
+                    <button onClick={onConnectStrava} className="w-full bg-[#FC4C02] hover:bg-[#E34402] transition-all py-3 rounded-lg flex items-center justify-center gap-3 shadow-lg group">
+                        <svg role="img" viewBox="0 0 24 24" className="w-5 h-5 fill-white" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
+                        </svg>
+                        <span className="text-white font-bold text-sm">Connect with Strava</span>
+                    </button>
+                )}
             </div>
+
             <div className="pt-2 space-y-3">
-                <a href="mailto:russellpollard77@gmail.com?subject=The Entity Support" className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2"><HeartPulse size={16} /> Contact Support</a>
-                <button onClick={onLogout} className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2"><LogOut size={16} /> Disconnect (Logout)</button>
-                <button onClick={onDelete} className="w-full py-3 rounded-xl border border-red-900/30 text-red-500 font-bold hover:bg-red-900/10 flex items-center justify-center gap-2"><Trash2 size={16} /> Burn Identity (Delete)</button>
+                <a href="mailto:russellpollard77@gmail.com?subject=The Entity Support" className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2">
+                    <HeartPulse size={16} /> Contact Support
+                </a>
+                <button onClick={onLogout} className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2">
+                    <LogOut size={16} /> Disconnect (Logout)
+                </button>
+                <button onClick={onDelete} className="w-full py-3 rounded-xl border border-red-900/30 text-red-500 font-bold hover:bg-red-900/10 flex items-center justify-center gap-2">
+                    <Trash2 size={16} /> Burn Identity (Delete)
+                </button>
             </div>
           </div>
+
           <div className="bg-slate-950 p-4 border-t border-slate-800 flex flex-col items-center justify-center gap-1 opacity-60">
               <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Powered by</span>
-              <div className="flex items-center gap-1.5"><svg role="img" viewBox="0 0 24 24" className="w-4 h-4 fill-[#FC4C02]" xmlns="http://www.w3.org/2000/svg"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg><span className="text-sm font-black text-slate-300 tracking-tight leading-none">STRAVA</span></div>
+              <div className="flex items-center gap-1.5">
+                  <svg role="img" viewBox="0 0 24 24" className="w-4 h-4 fill-[#FC4C02]" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
+                  </svg>
+                  <span className="text-sm font-black text-slate-300 tracking-tight leading-none">STRAVA</span>
+              </div>
           </div>
+
         </div>
       </div>
     );

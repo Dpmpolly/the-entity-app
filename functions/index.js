@@ -6,7 +6,7 @@ admin.initializeApp();
 const db = admin.firestore();
 
 exports.stravaWebhook = functions.https.onRequest(async (req, res) => {
-  // 1. VERIFICATION
+  // 1. VERIFICATION (Strava Handshake)
   const mode = req.query['hub.mode'];
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
@@ -23,14 +23,18 @@ exports.stravaWebhook = functions.https.onRequest(async (req, res) => {
   // 2. EVENT HANDLING
   const event = req.body;
   
+  // We only care about NEW activities
   if (event.object_type === 'activity' && event.aspect_type === 'create') {
     const stravaId = event.owner_id.toString();
-    const activityId = event.object_id;
+    const activityId = event.object_id; // Unique ID from Strava
 
     try {
-      // A. Find User
+      // A. Find the Firebase User
       const mapDoc = await db.collection('strava_mappings').doc(stravaId).get();
-      if (!mapDoc.exists) return res.sendStatus(200);
+      if (!mapDoc.exists) {
+          console.log(`No user found for Strava ID: ${stravaId}`);
+          return res.sendStatus(200);
+      }
       
       const { firebaseUid, appId } = mapDoc.data();
       const userRef = db.doc(`artifacts/${appId}/users/${firebaseUid}/game_data/main_save`);
@@ -38,7 +42,17 @@ exports.stravaWebhook = functions.https.onRequest(async (req, res) => {
       const userSnap = await userRef.get();
       const userData = userSnap.data();
 
-      // B. Get Run Details
+      // --- B. IDEMPOTENCY CHECK (The Fix) ---
+      // Check if we have already saved a run with this exact Strava ID
+      const alreadyProcessed = userData.runHistory?.some(run => run.stravaId === activityId);
+      
+      if (alreadyProcessed) {
+          console.log(`Duplicate event detected for Activity ${activityId}. Ignoring.`);
+          return res.sendStatus(200); // Stop here. Do not add it again.
+      }
+      // -----------------------------------
+
+      // C. Get Run Details from Strava
       const response = await fetch(`https://www.strava.com/api/v3/activities/${activityId}`, {
          headers: { 'Authorization': `Bearer ${userData.stravaAccessToken}` }
       });
@@ -50,24 +64,20 @@ exports.stravaWebhook = functions.https.onRequest(async (req, res) => {
           let activeQuest = userData.activeQuest || null;
           let inventory = userData.inventory || { battery: 0, emitter: 0, casing: 0 };
           let badges = userData.badges || [];
-          let runType = 'survival'; // Default type
+          let runType = 'survival';
           let runNotes = activity.name;
 
-          // --- SMART OVERFLOW LOGIC ---
+          // D. Smart Quest Logic
           if (activeQuest && activeQuest.status === 'active') {
               const remainingNeeded = activeQuest.distance - activeQuest.progress;
 
               if (runKm >= remainingNeeded) {
-                  // SCENARIO 1: OVERFLOW (Run is bigger than Quest needs)
-                  // 1. Calculate the split
-                  const questContribution = remainingNeeded;
+                  // Overflow: Complete Quest + Add leftovers to Safety
                   const safetyContribution = runKm - remainingNeeded;
 
-                  // 2. Complete the Quest
                   activeQuest.progress = activeQuest.distance;
                   activeQuest.status = 'completed';
                   
-                  // 3. Add Reward
                   if (inventory[activeQuest.rewardPart] !== undefined) {
                       inventory[activeQuest.rewardPart]++;
                   }
@@ -77,37 +87,30 @@ exports.stravaWebhook = functions.https.onRequest(async (req, res) => {
                       date: new Date().toISOString() 
                   });
 
-                  // 4. Update Safety with the LEFTOVER distance
                   newTotalKm += safetyContribution;
-                  
                   runType = 'quest_complete';
                   runNotes = `${activity.name} (Quest Complete + ${safetyContribution.toFixed(2)}km Safety)`;
 
               } else {
-                  // SCENARIO 2: SACRIFICE (Run is smaller than Quest needs)
-                  // 1. Add ALL distance to Quest
+                  // Sacrifice: All distance goes to Quest
                   activeQuest.progress += runKm;
-                  
-                  // 2. Add ZERO distance to Safety (The Entity catches up!)
-                  // newTotalKm stays the same
-                  
                   runType = 'quest_partial';
                   runNotes = `${activity.name} (Dedicated to Quest)`;
               }
           } else {
-              // SCENARIO 3: NO QUEST (Normal Gameplay)
+              // Normal Survival Run
               newTotalKm += runKm;
           }
-          // -----------------------------
 
-          // Save to Database
+          // E. Save to Database (Including the stravaId tag)
           const newRun = {
               id: Date.now(),
               date: new Date().toISOString(),
               km: runKm,
               notes: runNotes,
               type: runType,
-              source: 'strava'
+              source: 'strava',
+              stravaId: activityId // <--- This tag prevents future duplicates
           };
           
           await userRef.update({
@@ -117,6 +120,8 @@ exports.stravaWebhook = functions.https.onRequest(async (req, res) => {
               badges: badges,
               runHistory: [newRun, ...userData.runHistory]
           });
+          
+          console.log(`Processed run for ${firebaseUid}: ${runKm}km`);
       }
 
     } catch (error) {
@@ -124,10 +129,11 @@ exports.stravaWebhook = functions.https.onRequest(async (req, res) => {
     }
   }
 
-  // 3. DEAUTHORIZE HANDLING
+  // 3. DEAUTHORIZE HANDLING (Compliance)
   if (event.aspect_type === 'update' && event.updates.authorized === 'false') {
       const stravaId = event.owner_id.toString();
       await db.collection('strava_mappings').doc(stravaId).delete();
+      console.log(`User ${stravaId} revoked access.`);
   }
 
   res.sendStatus(200);
