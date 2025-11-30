@@ -16,7 +16,7 @@ import {
 } from 'firebase/firestore';
 import { 
   Activity, Skull, Settings, Plus, AlertTriangle, MapPin, History, X, 
-  Link as LinkIcon, CheckCircle2, Zap, Timer, RefreshCw, // <--- ADDED RefreshCw HERE
+  Link as LinkIcon, CheckCircle2, Zap, Timer, RefreshCw, 
   ShieldCheck, Compass, Map as MapIcon, Shield, ChevronRight, ZapOff, 
   Lock, Rocket, Wrench, Cpu, Disc, Award, ArrowRightLeft, HeartPulse, 
   RotateCcw, ShoppingBag, BarChart3, User, Trash2, LogOut, Footprints
@@ -453,6 +453,30 @@ export default function TheEntity() {
       await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
   };
 
+  const handleDeleteRun = async (runId) => {
+      if (!user) return;
+      const runToDelete = gameState.runHistory.find(r => r.id === runId);
+      if (!runToDelete) return;
+      if (!confirm(`DELETE ACTIVITY?\n\nRemove this ${runToDelete.km}km run?\n\nNOTE: This will reduce your total distance. The Entity will get closer.`)) return;
+
+      let newTotalKm = gameState.totalKmRun;
+      let newActiveQuest = { ...gameState.activeQuest };
+      
+      if (runToDelete.type === 'quest' || runToDelete.type === 'quest_partial') {
+          if (newActiveQuest && newActiveQuest.status === 'active') {
+              newActiveQuest.progress = Math.max(0, newActiveQuest.progress - runToDelete.km);
+          }
+      } else if (runToDelete.type === 'quest_complete') {
+          alert("Note: This run completed a mission. The reward item will remain in your inventory.");
+      } else {
+          newTotalKm = Math.max(0, newTotalKm - runToDelete.km);
+      }
+
+      const newRunHistory = gameState.runHistory.filter(r => r.id !== runId);
+      const newState = { ...gameState, totalKmRun: newTotalKm, activeQuest: newActiveQuest, runHistory: newRunHistory };
+      await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
+  };
+
   const handleBuyEMP = async () => {
     if (!user || !isEmpAvailable) return;
     const hasCraftedEmp = gameState.inventory.battery > 0 && gameState.inventory.emitter > 0 && gameState.inventory.casing > 0;
@@ -658,22 +682,24 @@ export default function TheEntity() {
             </div>
         </div>
 
-        {/* SYNC / STRAVA STATUS SECTION */}
+        {/* LOG RUN BUTTON (Replaces Strava Button) */}
         {gameState.isStravaLinked ? (
             <div className="w-full bg-[#FC4C02]/10 border border-[#FC4C02] text-[#FC4C02] py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-3 mb-8 shadow-[0_0_15px_rgba(252,76,2,0.15)]">
-                <svg role="img" viewBox="0 0 24 24" className="w-6 h-6 fill-[#FC4C02]" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
-                </svg>
+                <svg role="img" viewBox="0 0 24 24" className="w-6 h-6 fill-[#FC4C02]" xmlns="http://www.w3.org/2000/svg"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
                 <span>Strava Active</span>
                 <div className="animate-pulse w-2 h-2 rounded-full bg-[#FC4C02] ml-1"></div>
             </div>
         ) : (
-            <button onClick={handleStravaLogin} className="w-full bg-[#FC4C02] hover:bg-[#E34402] transition-all py-4 rounded-xl flex items-center justify-center gap-3 mb-8 shadow-lg group">
-                <svg role="img" viewBox="0 0 24 24" className="w-6 h-6 fill-white" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
-                </svg>
-                <span className="text-white font-bold text-lg">Connect with Strava</span>
-            </button>
+            <div className="flex gap-2 mb-8">
+                <button onClick={handleStravaLogin} className="flex-1 bg-[#FC4C02] hover:bg-[#E34402] transition-all py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg group">
+                    <svg role="img" viewBox="0 0 24 24" className="w-5 h-5 fill-white" xmlns="http://www.w3.org/2000/svg"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+                    <span className="text-white font-bold text-sm">Connect Strava</span>
+                </button>
+                <button onClick={() => setShowLogModal(true)} className="flex-1 bg-emerald-600 hover:bg-emerald-500 transition-all py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg">
+                    <Footprints size={20} className="text-white" />
+                    <span className="text-white font-bold text-sm">Manual Log</span>
+                </button>
+            </div>
         )}
         
         {/* RECENT LOGS */}
@@ -684,7 +710,7 @@ export default function TheEntity() {
                     <div className="text-center p-8 border-2 border-dashed border-slate-800 rounded-xl text-slate-600">No runs logged yet. Start running.</div>
                 ) : (
                     gameState.runHistory.slice(0, 5).map((run) => (
-                        <div key={run.id} className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex justify-between items-center group">
+                        <div key={run.id} className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex justify-between items-center group relative overflow-hidden">
                             <div>
                                 <div className="text-white font-bold flex items-center gap-2">
                                     {run.km} km
@@ -696,14 +722,9 @@ export default function TheEntity() {
                             </div>
                             
                             <div className="flex items-center gap-2">
+                                <button onClick={() => handleDeleteRun(run.id)} className="p-2 rounded-lg text-slate-600 hover:bg-red-900/20 hover:text-red-500 transition-all" title="Delete Activity"><Trash2 size={16} /></button>
                                 {run.type !== 'quest' && run.type !== 'boost' && gameState.activeQuest?.status === 'active' && (
-                                    <button 
-                                        onClick={() => handleConvertRunToQuest(run.id)}
-                                        className="p-2 rounded-lg bg-slate-800 text-slate-500 hover:bg-amber-900/30 hover:text-amber-500 transition-colors"
-                                        title="Assign to Mission"
-                                    >
-                                        <ArrowRightLeft size={16} />
-                                    </button>
+                                    <button onClick={() => handleConvertRunToQuest(run.id)} className="p-2 rounded-lg bg-slate-800 text-slate-500 hover:bg-amber-900/30 hover:text-amber-500 transition-colors" title="Assign to Mission"><ArrowRightLeft size={16} /></button>
                                 )}
                                 <div className="bg-slate-800 p-2 rounded-lg text-slate-400">
                                     {run.type === 'boost' ? <Rocket size={16} className="text-yellow-400" /> : run.type === 'quest' ? <Award size={16} className="text-amber-400" /> : <Activity size={16} />}
