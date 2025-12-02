@@ -19,7 +19,8 @@ import {
   Link as LinkIcon, CheckCircle2, Zap, Timer, RefreshCw, 
   ShieldCheck, Compass, Map as MapIcon, Shield, ChevronRight, ZapOff, 
   Lock, Rocket, Wrench, Cpu, Disc, Award, ArrowRightLeft, HeartPulse, 
-  RotateCcw, ShoppingBag, BarChart3, User, Trash2, LogOut, Footprints
+  RotateCcw, ShoppingBag, BarChart3, User, Trash2, LogOut, Footprints,
+  Terminal, Radio
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
@@ -65,23 +66,9 @@ const formatDate = (date) => {
   return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
-// Helper to format milliseconds to HH:MM:SS or DD:HH:MM:SS for the clock
-const formatDuration = (ms) => {
-    if (ms <= 0) return "00:00:00";
-    const seconds = Math.floor((ms / 1000) % 60);
-    const minutes = Math.floor((ms / (1000 * 60)) % 60);
-    const hours = Math.floor((ms / (1000 * 60 * 60)) % 24);
-    const days = Math.floor(ms / (1000 * 60 * 60 * 24));
-    
-    const pad = (n) => n.toString().padStart(2, '0');
-    
-    if (days > 0) return `${days}d ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-};
-
 // --- SUB-COMPONENTS ---
 
-// 1. Secret Store (E-Commerce Logic)
+// 1. Secret Store
 const SecretStore = ({ duration, onClose }) => {
     const LINKS = {
         tee30: "#", sticker: "#", hoodie90: "#", cap: "#", jacket: "#", medal: "#",
@@ -156,7 +143,6 @@ const LogRunModal = ({ onClose, onSave, activeQuest }) => {
       onClose();
     };
   
-    // SAFEGUARD: Quest might be null or a ghost object
     const isQuestActive = activeQuest && activeQuest.status === 'active' && activeQuest.title;
 
     return (
@@ -193,17 +179,15 @@ const LogRunModal = ({ onClose, onSave, activeQuest }) => {
     );
 };
   
-// 3. Settings Modal (With Repair Button & Compliance)
+// 3. Settings Modal
 const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnectStrava }) => {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-6 animate-in fade-in duration-200">
         <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden relative">
-          
           <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
             <h3 className="font-bold text-white flex items-center gap-2"><Settings size={18} className="text-slate-400"/> Settings</h3>
             <button onClick={onClose} className="text-slate-500 hover:text-white"><X size={20} /></button>
           </div>
-
           <div className="p-6 space-y-6">
             <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center gap-3">
                 <div className="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center text-slate-400"><User size={20}/></div>
@@ -263,6 +247,56 @@ const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnect
     );
 };
 
+// --- CYBER CLOCK COMPONENT (The new Visuals) ---
+const CyberClock = ({ ms }) => {
+    if (ms <= 0) ms = 0;
+    const seconds = Math.floor((ms / 1000) % 60);
+    const minutes = Math.floor((ms / (1000 * 60)) % 60);
+    const hours = Math.floor((ms / (1000 * 60 * 60)) % 24);
+    const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+    
+    const pad = (n) => n.toString().padStart(2, '0');
+
+    return (
+        <div className="flex items-center justify-center gap-2 md:gap-4 font-mono my-2">
+            {/* Days */}
+            <div className="flex flex-col items-center">
+                <div className="bg-black/40 border border-slate-800 rounded px-2 py-1 text-2xl md:text-4xl font-black text-white tracking-wider" style={{textShadow: '0 0 10px currentColor'}}>
+                    {pad(days)}
+                </div>
+                <span className="text-[8px] uppercase text-slate-500 tracking-widest mt-1">Days</span>
+            </div>
+            <div className="text-slate-700 text-2xl md:text-4xl pb-4">:</div>
+            
+            {/* Hours */}
+            <div className="flex flex-col items-center">
+                <div className="bg-black/40 border border-slate-800 rounded px-2 py-1 text-2xl md:text-4xl font-black text-white tracking-wider" style={{textShadow: '0 0 10px currentColor'}}>
+                    {pad(hours)}
+                </div>
+                <span className="text-[8px] uppercase text-slate-500 tracking-widest mt-1">Hrs</span>
+            </div>
+            <div className="text-slate-700 text-2xl md:text-4xl pb-4 animate-pulse">:</div>
+
+            {/* Mins */}
+            <div className="flex flex-col items-center">
+                <div className="bg-black/40 border border-slate-800 rounded px-2 py-1 text-2xl md:text-4xl font-black text-white tracking-wider" style={{textShadow: '0 0 10px currentColor'}}>
+                    {pad(minutes)}
+                </div>
+                <span className="text-[8px] uppercase text-slate-500 tracking-widest mt-1">Min</span>
+            </div>
+            <div className="text-slate-700 text-2xl md:text-4xl pb-4 animate-pulse">:</div>
+
+            {/* Secs */}
+            <div className="flex flex-col items-center">
+                <div className="bg-black/40 border border-slate-800 rounded px-2 py-1 text-2xl md:text-4xl font-black text-white tracking-wider" style={{textShadow: '0 0 10px currentColor'}}>
+                    {pad(seconds)}
+                </div>
+                <span className="text-[8px] uppercase text-slate-500 tracking-widest mt-1">Sec</span>
+            </div>
+        </div>
+    );
+};
+
 // --- MAIN COMPONENT ---
 export default function TheEntity() {
   const [user, setUser] = useState(null);
@@ -272,7 +306,7 @@ export default function TheEntity() {
   const [showLogModal, setShowLogModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showStore, setShowStore] = useState(false);
-  const [viewMode, setViewMode] = useState('clock'); // 'clock' or 'distance' - TOGGLE STATE
+  const [viewMode, setViewMode] = useState('clock'); // Default to Clock View
   const hasExchangedCode = useRef(false);
   
   // Game Data State
@@ -300,12 +334,10 @@ export default function TheEntity() {
     continuesUsed: 0
   });
 
-  // --- REAL TIME CALCULATIONS (The Heartbeat) ---
-  const [now, setNow] = useState(new Date());
-  
-  // 1. High-Frequency Timer (1 Second)
+  // --- REAL TIME CALCULATIONS ---
+  const [now, setNow] = useState(new Date()); // HEARTBEAT CLOCK
   useEffect(() => { 
-      const timer = setInterval(() => { setNow(new Date()); }, 1000); 
+      const timer = setInterval(() => { setNow(new Date()); }, 1000); // Tick every second
       return () => clearInterval(timer); 
   }, []);
   
@@ -315,7 +347,7 @@ export default function TheEntity() {
   const hoursElapsed = msElapsed / (1000 * 60 * 60); 
   const daysSinceStart = Math.floor(hoursElapsed / 24);
 
-  // 2. Movement Logic
+  // Entity Movement Logic
   const gracePeriodHours = 24;
   const activeEntityHours = Math.max(0, hoursElapsed - gracePeriodHours - gameState.totalPausedHours);
   const speedPerHour = gameState.entitySpeed / 24;
@@ -323,18 +355,10 @@ export default function TheEntity() {
   const userDistance = gameState.totalKmRun;
   const distanceGap = userDistance - entityDistance;
   
-  // 3. Status Flags
   const isGracePeriod = hoursElapsed < gracePeriodHours;
   const isCaught = distanceGap <= 0 && !isGracePeriod;
   const isVictory = daysSinceStart >= gameState.duration && !isCaught;
   
-  // 4. Time Calculations for Clock
-  const gracePeriodMs = 24 * 60 * 60 * 1000;
-  const timeUntilActive = Math.max(0, gracePeriodMs - msElapsed);
-  
-  const hoursUntilCatch = distanceGap > 0 ? (distanceGap / speedPerHour) : 0;
-  const msUntilCatch = hoursUntilCatch * 60 * 60 * 1000;
-
   const EMP_DURATION_HOURS = 25;
   const EMP_COOLDOWN_DAYS = 90;
   const lastEmpDate = gameState.lastEmpUsage ? new Date(gameState.lastEmpUsage) : null;
@@ -346,6 +370,11 @@ export default function TheEntity() {
   const isBoostFree = (gameState.boostUsageCount || 0) === 0;
   
   const daysUntilCaught = distanceGap > 0 ? Math.floor(distanceGap / gameState.entitySpeed) : 0;
+  const hoursUntilCatch = distanceGap > 0 ? (distanceGap / speedPerHour) : 0;
+  const msUntilCatch = hoursUntilCatch * 60 * 60 * 1000;
+  const gracePeriodMs = 24 * 60 * 60 * 1000;
+  const timeUntilActive = Math.max(0, gracePeriodMs - msElapsed);
+
   const daysToNextUpdate = 4 - (daysSinceStart % 4);
 
   // --- AUTHENTICATION ---
