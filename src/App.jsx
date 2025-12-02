@@ -19,7 +19,8 @@ import {
   Link as LinkIcon, CheckCircle2, Zap, Timer, RefreshCw, 
   ShieldCheck, Compass, Map as MapIcon, Shield, ChevronRight, ZapOff, 
   Lock, Rocket, Wrench, Cpu, Disc, Award, ArrowRightLeft, HeartPulse, 
-  RotateCcw, ShoppingBag, BarChart3, User, Trash2, LogOut, Footprints
+  RotateCcw, ShoppingBag, BarChart3, User, Trash2, LogOut, Footprints,
+  Terminal, Radio
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
@@ -80,28 +81,7 @@ const formatDuration = (ms) => {
 
 // --- SUB-COMPONENTS ---
 
-// 1. Onboarding Wizard (Moved OUTSIDE to fix reset bug)
-const OnboardingWizard = ({ onComplete }) => {
-    const [step, setStep] = useState(1);
-    const [duration, setDuration] = useState(30);
-    const [difficulty, setDifficulty] = useState('easy');
-    const [avatarId, setAvatarId] = useState('sprinter');
-    const [codename, setCodename] = useState('');
-
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950 p-6">
-        <div className="w-full max-w-lg">
-          <div className="mb-8 text-center"><h1 className="text-3xl font-black text-white italic uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><Skull className="text-purple-500" /> The Entity</h1><p className="text-slate-500">Setup your escape protocol.</p></div>
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
-            {step === 1 && (<div className="animate-in fade-in slide-in-from-right-8 duration-300"><h2 className="text-xl font-bold text-white mb-6">1. Choose Challenge Duration</h2><div className="grid grid-cols-1 gap-4 mb-8">{[30, 90, 365].map(d => (<button key={d} onClick={() => setDuration(d)} className={`p-4 rounded-xl border-2 text-left transition-all flex justify-between items-center ${duration === d ? 'border-purple-500 bg-purple-900/20' : 'border-slate-700 bg-slate-800 hover:border-slate-600'}`}><div><div className="font-bold text-lg text-white">{d === 365 ? '1 Year' : `${d} Days`}</div><div className="text-sm text-slate-400">Survival Goal</div></div>{duration === d && <CheckCircle2 className="text-purple-500" />}</button>))}</div><button onClick={() => setStep(2)} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">Next Step <ChevronRight size={20} /></button></div>)}
-            {step === 2 && (<div className="animate-in fade-in slide-in-from-right-8 duration-300"><h2 className="text-xl font-bold text-white mb-6">2. Select Difficulty</h2><div className="grid grid-cols-1 gap-4 mb-8">{Object.values(DIFFICULTIES).map(diff => (<button key={diff.id} onClick={() => setDifficulty(diff.id)} className={`p-4 rounded-xl border-2 text-left transition-all flex justify-between items-center ${difficulty === diff.id ? 'border-purple-500 bg-purple-900/20' : 'border-slate-700 bg-slate-800 hover:border-slate-600'}`}><div><div className={`font-bold text-lg ${diff.color}`}>{diff.label}</div><div className="text-sm text-slate-400">{diff.desc}</div></div>{difficulty === diff.id && <CheckCircle2 className="text-purple-500" />}</button>))}</div><div className="flex gap-3"><button onClick={() => setStep(1)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button><button onClick={() => setStep(3)} className="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">Next Step <ChevronRight size={20} /></button></div></div>)}
-            {step === 3 && (<div className="animate-in fade-in slide-in-from-right-8 duration-300"><h2 className="text-xl font-bold text-white mb-6">3. Operative Codename</h2><input type="text" value={codename} onChange={(e) => setCodename(e.target.value)} placeholder="Enter your alias..." className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-white text-center text-lg focus:ring-2 focus:ring-purple-500 outline-none mb-8 uppercase tracking-widest" /><div className="flex gap-3"><button onClick={() => setStep(2)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button><button disabled={!codename} onClick={() => setStep(4)} className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">Next Step <ChevronRight size={20} /></button></div></div>)}
-            {step === 4 && (<div className="animate-in fade-in slide-in-from-right-8 duration-300"><h2 className="text-xl font-bold text-white mb-6">4. Select Your Runner</h2><div className="grid grid-cols-2 gap-4 mb-8">{Object.values(AVATARS).map((av) => {const Icon = av.icon; const isSelected = avatarId === av.id; return (<button key={av.id} onClick={() => setAvatarId(av.id)} className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center text-center gap-2 ${isSelected ? 'border-purple-500 bg-purple-900/20' : 'border-slate-700 bg-slate-800 hover:border-slate-600'}`}><div className={`p-3 rounded-full ${isSelected ? av.bg : 'bg-slate-700'} text-white transition-colors`}><Icon size={24} /></div><div><div className="font-bold text-white text-sm">{av.name}</div><div className="text-[10px] text-slate-400 leading-tight mt-1">{av.desc}</div></div></button>)})}</div><div className="flex gap-3"><button onClick={() => setStep(3)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button><button onClick={() => onComplete({ duration, avatarId, difficulty, username: codename })} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">INITIATE PROTOCOL</button></div></div>)}
-          </div></div></div>
-    );
-};
-
-// 2. Cyberpunk Digital Clock
+// 1. Cyberpunk Digital Clock
 const CyberClock = ({ ms, label, color = "text-white" }) => {
     if (ms <= 0) ms = 0;
     const d = Math.floor(ms / (1000 * 60 * 60 * 24));
@@ -154,6 +134,27 @@ const CyberClock = ({ ms, label, color = "text-white" }) => {
             </div>
          </div>
       </div>
+    );
+};
+
+// 2. Onboarding Wizard (MOVED OUTSIDE)
+const OnboardingWizard = ({ onComplete }) => {
+    const [step, setStep] = useState(1);
+    const [duration, setDuration] = useState(30);
+    const [difficulty, setDifficulty] = useState('easy');
+    const [avatarId, setAvatarId] = useState('sprinter');
+    const [codename, setCodename] = useState('');
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950 p-6">
+        <div className="w-full max-w-lg">
+          <div className="mb-8 text-center"><h1 className="text-3xl font-black text-white italic uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><Skull className="text-purple-500" /> The Entity</h1><p className="text-slate-500">Setup your escape protocol.</p></div>
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
+            {step === 1 && (<div className="animate-in fade-in slide-in-from-right-8 duration-300"><h2 className="text-xl font-bold text-white mb-6">1. Choose Challenge Duration</h2><div className="grid grid-cols-1 gap-4 mb-8">{[30, 90, 365].map(d => (<button key={d} onClick={() => setDuration(d)} className={`p-4 rounded-xl border-2 text-left transition-all flex justify-between items-center ${duration === d ? 'border-purple-500 bg-purple-900/20' : 'border-slate-700 bg-slate-800 hover:border-slate-600'}`}><div><div className="font-bold text-lg text-white">{d === 365 ? '1 Year' : `${d} Days`}</div><div className="text-sm text-slate-400">Survival Goal</div></div>{duration === d && <CheckCircle2 className="text-purple-500" />}</button>))}</div><button onClick={() => setStep(2)} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">Next Step <ChevronRight size={20} /></button></div>)}
+            {step === 2 && (<div className="animate-in fade-in slide-in-from-right-8 duration-300"><h2 className="text-xl font-bold text-white mb-6">2. Select Difficulty</h2><div className="grid grid-cols-1 gap-4 mb-8">{Object.values(DIFFICULTIES).map(diff => (<button key={diff.id} onClick={() => setDifficulty(diff.id)} className={`p-4 rounded-xl border-2 text-left transition-all flex justify-between items-center ${difficulty === diff.id ? 'border-purple-500 bg-purple-900/20' : 'border-slate-700 bg-slate-800 hover:border-slate-600'}`}><div><div className={`font-bold text-lg ${diff.color}`}>{diff.label}</div><div className="text-sm text-slate-400">{diff.desc}</div></div>{difficulty === diff.id && <CheckCircle2 className="text-purple-500" />}</button>))}</div><div className="flex gap-3"><button onClick={() => setStep(1)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button><button onClick={() => setStep(3)} className="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">Next Step <ChevronRight size={20} /></button></div></div>)}
+            {step === 3 && (<div className="animate-in fade-in slide-in-from-right-8 duration-300"><h2 className="text-xl font-bold text-white mb-6">3. Operative Codename</h2><input type="text" value={codename} onChange={(e) => setCodename(e.target.value)} placeholder="Enter your alias..." className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-white text-center text-lg focus:ring-2 focus:ring-purple-500 outline-none mb-8 uppercase tracking-widest" /><div className="flex gap-3"><button onClick={() => setStep(2)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button><button disabled={!codename} onClick={() => setStep(4)} className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">Next Step <ChevronRight size={20} /></button></div></div>)}
+            {step === 4 && (<div className="animate-in fade-in slide-in-from-right-8 duration-300"><h2 className="text-xl font-bold text-white mb-6">4. Select Your Runner</h2><div className="grid grid-cols-2 gap-4 mb-8">{Object.values(AVATARS).map((av) => {const Icon = av.icon; const isSelected = avatarId === av.id; return (<button key={av.id} onClick={() => setAvatarId(av.id)} className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center text-center gap-2 ${isSelected ? 'border-purple-500 bg-purple-900/20' : 'border-slate-700 bg-slate-800 hover:border-slate-600'}`}><div className={`p-3 rounded-full ${isSelected ? av.bg : 'bg-slate-700'} text-white transition-colors`}><Icon size={24} /></div><div><div className="font-bold text-white text-sm">{av.name}</div><div className="text-[10px] text-slate-400 leading-tight mt-1">{av.desc}</div></div></button>)})}</div><div className="flex gap-3"><button onClick={() => setStep(3)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button><button onClick={() => onComplete({ duration, avatarId, difficulty, username: codename })} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">INITIATE PROTOCOL</button></div></div>)}
+          </div></div></div>
     );
 };
 
@@ -345,7 +346,7 @@ export default function TheEntity() {
   const [showLogModal, setShowLogModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showStore, setShowStore] = useState(false);
-  const [viewMode, setViewMode] = useState('clock'); // Toggle View
+  const [viewMode, setViewMode] = useState('clock'); // Toggle: 'clock' or 'distance'
   const hasExchangedCode = useRef(false);
   
   // Game Data State
@@ -376,7 +377,7 @@ export default function TheEntity() {
   // --- REAL TIME CALCULATIONS ---
   const [now, setNow] = useState(new Date()); 
   useEffect(() => { 
-      const timer = setInterval(() => { setNow(new Date()); }, 1000); 
+      const timer = setInterval(() => { setNow(new Date()); }, 1000); // Tick every second
       return () => clearInterval(timer); 
   }, []);
   
@@ -711,25 +712,7 @@ export default function TheEntity() {
 
   // --- UI RENDER: ONBOARDING ---
   if (!gameState.onboardingComplete) {
-    const OnboardingWizard = () => {
-        const [step, setStep] = useState(1);
-        const [duration, setDuration] = useState(30);
-        const [difficulty, setDifficulty] = useState('easy');
-        const [avatarId, setAvatarId] = useState('sprinter');
-        const [codename, setCodename] = useState('');
-        return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950 p-6">
-            <div className="w-full max-w-lg">
-              <div className="mb-8 text-center"><h1 className="text-3xl font-black text-white italic uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><Skull className="text-purple-500" /> The Entity</h1><p className="text-slate-500">Setup your escape protocol.</p></div>
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
-                {step === 1 && (<div className="animate-in fade-in slide-in-from-right-8 duration-300"><h2 className="text-xl font-bold text-white mb-6">1. Choose Challenge Duration</h2><div className="grid grid-cols-1 gap-4 mb-8">{[30, 90, 365].map(d => (<button key={d} onClick={() => setDuration(d)} className={`p-4 rounded-xl border-2 text-left transition-all flex justify-between items-center ${duration === d ? 'border-purple-500 bg-purple-900/20' : 'border-slate-700 bg-slate-800 hover:border-slate-600'}`}><div><div className="font-bold text-lg text-white">{d === 365 ? '1 Year' : `${d} Days`}</div><div className="text-sm text-slate-400">Survival Goal</div></div>{duration === d && <CheckCircle2 className="text-purple-500" />}</button>))}</div><button onClick={() => setStep(2)} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">Next Step <ChevronRight size={20} /></button></div>)}
-                {step === 2 && (<div className="animate-in fade-in slide-in-from-right-8 duration-300"><h2 className="text-xl font-bold text-white mb-6">2. Select Difficulty</h2><div className="grid grid-cols-1 gap-4 mb-8">{Object.values(DIFFICULTIES).map(diff => (<button key={diff.id} onClick={() => setDifficulty(diff.id)} className={`p-4 rounded-xl border-2 text-left transition-all flex justify-between items-center ${difficulty === diff.id ? 'border-purple-500 bg-purple-900/20' : 'border-slate-700 bg-slate-800 hover:border-slate-600'}`}><div><div className={`font-bold text-lg ${diff.color}`}>{diff.label}</div><div className="text-sm text-slate-400">{diff.desc}</div></div>{difficulty === diff.id && <CheckCircle2 className="text-purple-500" />}</button>))}</div><div className="flex gap-3"><button onClick={() => setStep(1)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button><button onClick={() => setStep(3)} className="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">Next Step <ChevronRight size={20} /></button></div></div>)}
-                {step === 3 && (<div className="animate-in fade-in slide-in-from-right-8 duration-300"><h2 className="text-xl font-bold text-white mb-6">3. Operative Codename</h2><input type="text" value={codename} onChange={(e) => setCodename(e.target.value)} placeholder="Enter your alias..." className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-white text-center text-lg focus:ring-2 focus:ring-purple-500 outline-none mb-8 uppercase tracking-widest" /><div className="flex gap-3"><button onClick={() => setStep(2)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button><button disabled={!codename} onClick={() => setStep(4)} className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">Next Step <ChevronRight size={20} /></button></div></div>)}
-                {step === 4 && (<div className="animate-in fade-in slide-in-from-right-8 duration-300"><h2 className="text-xl font-bold text-white mb-6">4. Select Your Runner</h2><div className="grid grid-cols-2 gap-4 mb-8">{Object.values(AVATARS).map((av) => {const Icon = av.icon; const isSelected = avatarId === av.id; return (<button key={av.id} onClick={() => setAvatarId(av.id)} className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center text-center gap-2 ${isSelected ? 'border-purple-500 bg-purple-900/20' : 'border-slate-700 bg-slate-800 hover:border-slate-600'}`}><div className={`p-3 rounded-full ${isSelected ? av.bg : 'bg-slate-700'} text-white transition-colors`}><Icon size={24} /></div><div><div className="font-bold text-white text-sm">{av.name}</div><div className="text-[10px] text-slate-400 leading-tight mt-1">{av.desc}</div></div></button>)})}</div><div className="flex gap-3"><button onClick={() => setStep(3)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button><button onClick={() => handleCompleteOnboarding({ duration, avatarId, difficulty, username: codename })} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">INITIATE PROTOCOL</button></div></div>)}
-              </div></div></div>
-        );
-    };
-    return <OnboardingWizard />;
+      return <OnboardingWizard onComplete={handleCompleteOnboarding} />;
   }
 
   // --- UI RENDER: GAME OVER ---
@@ -759,10 +742,21 @@ export default function TheEntity() {
   if (isEmpActive) { 
     BannerContent = (<><div className="absolute inset-0 bg-cyan-500/10 animate-pulse pointer-events-none"></div><span className="text-cyan-400 uppercase text-xs font-bold tracking-widest mb-1 block flex items-center justify-center gap-1"><ZapOff size={12} /> Countermeasure Active</span><div className="text-2xl font-black text-white mb-1 uppercase tracking-wider">ENTITY STUNNED</div><p className="text-cyan-200 font-medium text-sm">The Entity is frozen. It will not move for the duration.</p></>);
   } else if (isGracePeriod) { 
-    BannerContent = (<><div className="absolute inset-0 bg-emerald-600/5 pointer-events-none"></div><span className="text-slate-400 uppercase text-xs font-bold tracking-widest mb-1 block flex items-center justify-center gap-1"><ShieldCheck size={12} /> SAFETY PROTOCOL</span><div className="text-3xl font-black text-white mb-1 uppercase tracking-wider font-mono">{formatDuration(timeUntilActive)}</div><p className="text-slate-400 font-medium text-sm">Time until Entity activation.</p></>);
+    BannerContent = (<><div className="absolute inset-0 bg-emerald-600/5 pointer-events-none"></div><span className="text-slate-400 uppercase text-xs font-bold tracking-widest mb-1 block flex items-center justify-center gap-1"><ShieldCheck size={12} /> SAFETY PROTOCOL</span><CyberClock ms={timeUntilActive} label="ACTIVATION IN" color="text-emerald-400" /><p className="text-slate-400 font-medium text-sm mt-2">Time until Entity activation.</p></>);
   } else { 
     if (viewMode === 'clock') {
-        BannerContent = (<><span className="text-slate-400 uppercase text-xs font-bold tracking-widest mb-1 block">INTERCEPTION ESTIMATE</span><div className="text-4xl font-black text-white mb-1 font-mono">{formatDuration(msUntilCatch)}</div><div className="flex items-center justify-center gap-2 text-xs"><span className="text-emerald-400 font-bold">{distanceGap.toFixed(2)}km Gap</span><span className="text-slate-600">|</span><span className="text-slate-400">Speed: {gameState.entitySpeed}km/d</span></div><div className="mt-2 text-[9px] text-slate-600 uppercase tracking-widest">Tap to switch view</div>{daysUntilCaught < 1 && (<div className="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-red-900/30 text-red-400 rounded-full text-xs font-bold border border-red-900/50 animate-pulse"><AlertTriangle size={12} /> CRITICAL PROXIMITY</div>)}</>);
+        BannerContent = (
+            <>
+                <CyberClock ms={msUntilCatch} label="INTERCEPTION ESTIMATE" color={daysUntilCaught < 1 ? "text-red-500" : "text-slate-400"} />
+                <div className="flex items-center justify-center gap-2 text-xs mt-2">
+                    <span className="text-emerald-400 font-bold">{distanceGap.toFixed(2)}km Gap</span>
+                    <span className="text-slate-600">|</span>
+                    <span className="text-slate-400">Speed: {gameState.entitySpeed}km/d</span>
+                </div>
+                <div className="mt-2 text-[9px] text-slate-600 uppercase tracking-widest">Tap to switch view</div>
+                {daysUntilCaught < 1 && (<div className="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-red-900/30 text-red-400 rounded-full text-xs font-bold border border-red-900/50 animate-pulse"><AlertTriangle size={12} /> CRITICAL PROXIMITY</div>)}
+            </>
+        );
     } else {
         BannerContent = (<><span className="text-slate-400 uppercase text-xs font-bold tracking-widest mb-1 block">Current Status</span><div className="text-4xl font-black text-white mb-1">{Math.abs(distanceGap).toFixed(3)} <span className="text-xl text-slate-500">km</span></div><p className="text-emerald-400 font-medium flex items-center justify-center gap-1">Ahead of the Entity</p><div className="mt-2 text-[9px] text-slate-600 uppercase tracking-widest">Tap to switch view</div></>);
     }
@@ -834,12 +828,22 @@ export default function TheEntity() {
         {/* SYNC / STRAVA STATUS SECTION */}
         {gameState.isStravaLinked ? (
             <div className="w-full bg-[#FC4C02]/10 border border-[#FC4C02] text-[#FC4C02] py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-3 mb-8 shadow-[0_0_15px_rgba(252,76,2,0.15)]">
-                <svg role="img" viewBox="0 0 24 24" className="w-6 h-6 fill-[#FC4C02]" xmlns="http://www.w3.org/2000/svg"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg><span>Strava Active</span><div className="animate-pulse w-2 h-2 rounded-full bg-[#FC4C02] ml-1"></div>
+                <svg role="img" viewBox="0 0 24 24" className="w-6 h-6 fill-[#FC4C02]" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
+                </svg>
+                <span>Strava Active</span>
+                <div className="animate-pulse w-2 h-2 rounded-full bg-[#FC4C02] ml-1"></div>
             </div>
         ) : (
             <div className="flex gap-2 mb-8">
-                <button onClick={handleStravaLogin} className="flex-1 bg-[#FC4C02] hover:bg-[#E34402] transition-all py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg group"><svg role="img" viewBox="0 0 24 24" className="w-5 h-5 fill-white" xmlns="http://www.w3.org/2000/svg"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg><span className="text-white font-bold text-sm">Connect Strava</span></button>
-                <button onClick={() => setShowLogModal(true)} className="flex-1 bg-emerald-600 hover:bg-emerald-500 transition-all py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg"><Footprints size={20} className="text-white" /><span className="text-white font-bold text-sm">Manual Log</span></button>
+                <button onClick={handleStravaLogin} className="flex-1 bg-[#FC4C02] hover:bg-[#E34402] transition-all py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg group">
+                    <svg role="img" viewBox="0 0 24 24" className="w-5 h-5 fill-white" xmlns="http://www.w3.org/2000/svg"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+                    <span className="text-white font-bold text-sm">Connect Strava</span>
+                </button>
+                <button onClick={() => setShowLogModal(true)} className="flex-1 bg-emerald-600 hover:bg-emerald-500 transition-all py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg">
+                    <Footprints size={20} className="text-white" />
+                    <span className="text-white font-bold text-sm">Manual Log</span>
+                </button>
             </div>
         )}
         
@@ -865,8 +869,15 @@ export default function TheEntity() {
                             <div className="flex items-center gap-2">
                                 <button onClick={() => handleDeleteRun(run.id)} className="p-2 rounded-lg text-slate-600 hover:bg-red-900/20 hover:text-red-500 transition-all" title="Delete Activity"><Trash2 size={16} /></button>
                                 {run.type !== 'quest' && run.type !== 'boost' && gameState.activeQuest?.status === 'active' && (
-                                    <button onClick={() => handleConvertRunToQuest(run.id)} className="p-2 rounded-lg bg-slate-800 text-slate-500 hover:bg-amber-900/30 hover:text-amber-500 transition-colors" title="Assign to Mission"><ArrowRightLeft size={16} /></button>
+                                    <button 
+                                        onClick={() => handleConvertRunToQuest(run.id)}
+                                        className="p-2 rounded-lg bg-slate-800 text-slate-500 hover:bg-amber-900/30 hover:text-amber-500 transition-colors"
+                                        title="Assign to Mission"
+                                    >
+                                        <ArrowRightLeft size={16} />
+                                    </button>
                                 )}
+                                
                                 <div className="bg-slate-800 p-2 rounded-lg text-slate-400">
                                     {run.type === 'boost' ? <Rocket size={16} className="text-yellow-400" /> : run.type === 'quest' ? <Award size={16} className="text-amber-400" /> : <Activity size={16} />}
                                 </div>
