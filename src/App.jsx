@@ -142,7 +142,6 @@ const LogRunModal = ({ onClose, onSave, activeQuest }) => {
       onClose();
     };
   
-    // SAFEGUARD: Quest might be null or a ghost object
     const isQuestActive = activeQuest && activeQuest.status === 'active' && activeQuest.title;
 
     return (
@@ -179,26 +178,20 @@ const LogRunModal = ({ onClose, onSave, activeQuest }) => {
     );
 };
   
-// 3. Settings Modal (With Repair Button & Compliance)
+// 3. Settings Modal
 const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnectStrava }) => {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-6 animate-in fade-in duration-200">
         <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden relative">
-          
           <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
             <h3 className="font-bold text-white flex items-center gap-2"><Settings size={18} className="text-slate-400"/> Settings</h3>
             <button onClick={onClose} className="text-slate-500 hover:text-white"><X size={20} /></button>
           </div>
-
           <div className="p-6 space-y-6">
             <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center gap-3">
                 <div className="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center text-slate-400"><User size={20}/></div>
-                <div className="overflow-hidden">
-                    <div className="text-white font-bold truncate">{gameState.username || 'Agent'}</div>
-                    <div className="text-xs text-slate-500 truncate">ID: {user?.uid.slice(0,8)}...</div>
-                </div>
+                <div className="overflow-hidden"><div className="text-white font-bold truncate">{gameState.username || 'Agent'}</div><div className="text-xs text-slate-500 truncate">ID: {user?.uid.slice(0,8)}...</div></div>
             </div>
-
             <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Data Source</label>
                 {gameState.isStravaLinked ? (
@@ -207,43 +200,19 @@ const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnect
                             <CheckCircle2 size={18} />
                             <span className="font-bold text-sm">Strava Connected</span>
                         </div>
-                        <button onClick={onConnectStrava} className="w-full text-[10px] text-slate-500 hover:text-amber-400 flex items-center justify-center gap-1 transition-colors">
-                            <RefreshCw size={10} /> Sync issues? Repair Connection
-                        </button>
+                        <button onClick={onConnectStrava} className="w-full text-[10px] text-slate-500 hover:text-amber-400 flex items-center justify-center gap-1 transition-colors"><RefreshCw size={10} /> Sync issues? Repair Connection</button>
                     </div>
                 ) : (
-                    <button onClick={onConnectStrava} className="w-full bg-[#FC4C02] hover:bg-[#E34402] transition-all py-3 rounded-lg flex items-center justify-center gap-3 shadow-lg group">
-                        <svg role="img" viewBox="0 0 24 24" className="w-5 h-5 fill-white" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
-                        </svg>
-                        <span className="text-white font-bold text-sm">Connect with Strava</span>
-                    </button>
+                    <button onClick={onConnectStrava} className="w-full bg-[#FC4C02] hover:bg-[#E34402] transition-all py-3 rounded-lg flex items-center justify-center gap-3 shadow-lg group"><svg role="img" viewBox="0 0 24 24" className="w-5 h-5 fill-white" xmlns="http://www.w3.org/2000/svg"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg><span className="text-white font-bold text-sm">Connect with Strava</span></button>
                 )}
             </div>
-
             <div className="pt-2 space-y-3">
-                <a href="mailto:russellpollard77@gmail.com?subject=The Entity Support" className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2">
-                    <HeartPulse size={16} /> Contact Support
-                </a>
-                <button onClick={onLogout} className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2">
-                    <LogOut size={16} /> Disconnect (Logout)
-                </button>
-                <button onClick={onDelete} className="w-full py-3 rounded-xl border border-red-900/30 text-red-500 font-bold hover:bg-red-900/10 flex items-center justify-center gap-2">
-                    <Trash2 size={16} /> Burn Identity (Delete)
-                </button>
+                <a href="mailto:russellpollard77@gmail.com?subject=The Entity Support" className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2"><HeartPulse size={16} /> Contact Support</a>
+                <button onClick={onLogout} className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2"><LogOut size={16} /> Disconnect (Logout)</button>
+                <button onClick={onDelete} className="w-full py-3 rounded-xl border border-red-900/30 text-red-500 font-bold hover:bg-red-900/10 flex items-center justify-center gap-2"><Trash2 size={16} /> Burn Identity (Delete)</button>
             </div>
           </div>
-
-          <div className="bg-slate-950 p-4 border-t border-slate-800 flex flex-col items-center justify-center gap-1 opacity-60">
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Powered by</span>
-              <div className="flex items-center gap-1.5">
-                  <svg role="img" viewBox="0 0 24 24" className="w-4 h-4 fill-[#FC4C02]" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
-                  </svg>
-                  <span className="text-sm font-black text-slate-300 tracking-tight leading-none">STRAVA</span>
-              </div>
-          </div>
-
+          <div className="bg-slate-950 p-4 border-t border-slate-800 flex flex-col items-center justify-center gap-1 opacity-60"><span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Powered by</span><div className="flex items-center gap-1.5"><svg role="img" viewBox="0 0 24 24" className="w-4 h-4 fill-[#FC4C02]" xmlns="http://www.w3.org/2000/svg"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg><span className="text-sm font-black text-slate-300 tracking-tight leading-none">STRAVA</span></div></div>
         </div>
       </div>
     );
@@ -285,9 +254,14 @@ export default function TheEntity() {
     continuesUsed: 0
   });
 
-  // --- REAL TIME CALCULATIONS ---
-  const [now, setNow] = useState(new Date()); // HEARTBEAT CLOCK
-  useEffect(() => { const timer = setInterval(() => { setNow(new Date()); }, 60000); return () => clearInterval(timer); }, []);
+  // --- REAL TIME CALCULATIONS (The Heartbeat) ---
+  const [now, setNow] = useState(new Date());
+  
+  // 1. High-Frequency Timer (1 Second)
+  useEffect(() => { 
+      const timer = setInterval(() => { setNow(new Date()); }, 1000); 
+      return () => clearInterval(timer); 
+  }, []);
   
   const today = now;
   const gameStart = new Date(gameState.startDate);
@@ -295,7 +269,7 @@ export default function TheEntity() {
   const hoursElapsed = msElapsed / (1000 * 60 * 60); 
   const daysSinceStart = Math.floor(hoursElapsed / 24);
 
-  // Entity Movement Logic
+  // 2. Movement Logic
   const gracePeriodHours = 24;
   const activeEntityHours = Math.max(0, hoursElapsed - gracePeriodHours - gameState.totalPausedHours);
   const speedPerHour = gameState.entitySpeed / 24;
@@ -303,10 +277,32 @@ export default function TheEntity() {
   const userDistance = gameState.totalKmRun;
   const distanceGap = userDistance - entityDistance;
   
+  // 3. Status Flags
   const isGracePeriod = hoursElapsed < gracePeriodHours;
   const isCaught = distanceGap <= 0 && !isGracePeriod;
   const isVictory = daysSinceStart >= gameState.duration && !isCaught;
   
+  // 4. Time Calculations for Clock
+  const gracePeriodMs = 24 * 60 * 60 * 1000;
+  const timeUntilActive = Math.max(0, gracePeriodMs - msElapsed);
+  
+  const hoursUntilCatch = distanceGap > 0 ? (distanceGap / speedPerHour) : 0;
+  const msUntilCatch = hoursUntilCatch * 60 * 60 * 1000;
+
+  // Helper to format milliseconds to HH:MM:SS or DD:HH:MM:SS
+  const formatDuration = (ms) => {
+      if (ms <= 0) return "00:00:00";
+      const seconds = Math.floor((ms / 1000) % 60);
+      const minutes = Math.floor((ms / (1000 * 60)) % 60);
+      const hours = Math.floor((ms / (1000 * 60 * 60)) % 24);
+      const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+      
+      const pad = (n) => n.toString().padStart(2, '0');
+      
+      if (days > 0) return `${days}d ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+      return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+  };
+
   const EMP_DURATION_HOURS = 25;
   const EMP_COOLDOWN_DAYS = 90;
   const lastEmpDate = gameState.lastEmpUsage ? new Date(gameState.lastEmpUsage) : null;
@@ -317,7 +313,6 @@ export default function TheEntity() {
   const isEmpFree = (gameState.empUsageCount || 0) === 0;
   const isBoostFree = (gameState.boostUsageCount || 0) === 0;
   
-  const daysUntilCaught = distanceGap > 0 ? Math.floor(distanceGap / gameState.entitySpeed) : 0;
   const daysToNextUpdate = 4 - (daysSinceStart % 4);
 
   // --- AUTHENTICATION ---
@@ -371,16 +366,14 @@ export default function TheEntity() {
     }
   }, [user]);
 
-  // --- PAYMENT LISTENER (Stripe Handling) ---
+  // --- PAYMENT LISTENER ---
   useEffect(() => {
       const params = new URLSearchParams(window.location.search);
       const purchaseType = params.get('purchase');
-
       if (purchaseType && user) {
           const handlePurchase = async () => {
               let newState = { ...gameState };
               let message = "";
-
               if (purchaseType === 'emp_success') {
                   newState.lastEmpUsage = new Date().toISOString();
                   newState.totalPausedHours = (newState.totalPausedHours || 0) + 25;
@@ -390,17 +383,10 @@ export default function TheEntity() {
               else if (purchaseType === 'boost_success') {
                   const boostKm = 3.0; 
                   newState.totalKmRun = (newState.totalKmRun || 0) + boostKm;
-                  newState.runHistory = [{
-                      id: Date.now(),
-                      date: new Date().toISOString(),
-                      km: boostKm,
-                      notes: 'Nitrous Boost (Paid)',
-                      type: 'boost'
-                  }, ...newState.runHistory];
+                  newState.runHistory = [{ id: Date.now(), date: new Date().toISOString(), km: boostKm, notes: 'Nitrous Boost (Paid)', type: 'boost' }, ...newState.runHistory];
                   newState.boostUsageCount = (newState.boostUsageCount || 0) + 1;
                   message = `PAYMENT CONFIRMED. NITROUS INJECTED (+${boostKm}km).`;
               }
-
               if (message) {
                   await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
                   alert(message);
@@ -428,17 +414,14 @@ export default function TheEntity() {
     return () => unsubscribeSnapshot();
   }, [user]);
 
-  // --- GAME LOOP: QUEST GENERATION & CLEANUP ---
+  // --- GAME LOOP & CLEANUP ---
   useEffect(() => {
       if (!user || loading) return;
-      
-      // 1. CLEANUP: Kill zombie quests
       if (daysSinceStart < 5 && gameState.activeQuest) {
           const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
           setDoc(userDocRef, { ...gameState, activeQuest: null });
           return;
       }
-
       if (daysSinceStart > 0 && daysSinceStart % 5 === 0 && daysSinceStart !== gameState.lastQuestGenerationDay) {
           if (!gameState.activeQuest) {
               const parts = ['battery', 'emitter', 'casing'];
@@ -451,7 +434,7 @@ export default function TheEntity() {
       }
   }, [daysSinceStart, user, loading, gameState.activeQuest, gameState.lastQuestGenerationDay]);
 
-  // --- CORE FUNCTIONS ---
+  // --- FUNCTIONS ---
   const calculateAdaptiveSpeed = (totalKm, activeDays, diff) => {
     if (activeDays < 1) return MIN_ENTITY_SPEED;
     const avgDaily = totalKm / activeDays;
@@ -485,7 +468,6 @@ export default function TheEntity() {
 
       const newTotalKm = gameState.totalKmRun - run.km; 
       const newQuestProgress = gameState.activeQuest.progress + run.km;
-      
       let updatedQuest = { ...gameState.activeQuest, progress: newQuestProgress };
       let newInventory = { ...gameState.inventory };
       let newBadges = [...gameState.badges];
@@ -497,10 +479,8 @@ export default function TheEntity() {
           alert(`MISSION COMPLETE!\n\nAcquired: 1x ${EMP_PARTS.find(p => p.id === gameState.activeQuest.rewardPart).name}\nAwarded: Mission Badge`);
           updatedQuest = null; 
       }
-
       const newRunHistory = [...gameState.runHistory];
       newRunHistory[runIndex] = { ...run, type: 'quest', notes: `${run.notes} (Re-routed)` };
-
       const newState = { ...gameState, totalKmRun: newTotalKm, activeQuest: updatedQuest, inventory: newInventory, badges: newBadges, runHistory: newRunHistory };
       await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
   };
@@ -532,46 +512,34 @@ export default function TheEntity() {
   const handleBuyEMP = async () => {
     if (!user || !isEmpAvailable) return;
     const hasCraftedEmp = gameState.inventory.battery > 0 && gameState.inventory.emitter > 0 && gameState.inventory.casing > 0;
-    
     if (hasCraftedEmp || isEmpFree) {
         if (!confirm(`Deploy EMP Burst?\n\nCost: ${hasCraftedEmp ? "FREE (Crafted)" : "FREE (Bonus)"}\nEffect: Stuns Entity for 25h.`)) return;
-        
         let newInventory = { ...gameState.inventory };
         if (hasCraftedEmp) { newInventory.battery--; newInventory.emitter--; newInventory.casing--; }
-        
-        const newState = { 
-            ...gameState, 
-            lastEmpUsage: new Date().toISOString(), 
-            totalPausedHours: (gameState.totalPausedHours || 0) + EMP_DURATION_HOURS, 
-            empUsageCount: (gameState.empUsageCount || 0) + 1, 
-            inventory: newInventory 
-        };
+        const newState = { ...gameState, lastEmpUsage: new Date().toISOString(), totalPausedHours: (gameState.totalPausedHours || 0) + EMP_DURATION_HOURS, empUsageCount: (gameState.empUsageCount || 0) + 1, inventory: newInventory };
         await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
         alert("EMP DEPLOYED. The Entity is stunned.");
     } else {
         if (!confirm("PURCHASE EMP BURST?\n\nCost: $1.00\n\nYou will be redirected to secure checkout.")) return;
-        window.location.href = "https://buy.stripe.com/test_12345..."; // Replace with real link
+        window.location.href = "https://buy.stripe.com/test_12345"; 
     }
   };
 
   const handleBuyBoost = async () => {
     if (!user) return;
-    
     if (isBoostFree) {
         const startOfDay = new Date(); startOfDay.setHours(0,0,0,0);
         const todayRuns = gameState.runHistory.filter(run => new Date(run.date) >= startOfDay);
         const todayKm = todayRuns.reduce((acc, run) => acc + run.km, 0);
         if (todayKm <= 0) return alert("System Error: No movement detected today.\n\nYou must log a run today before you can boost it.");
-        
         const boostAmount = parseFloat((todayKm * 0.15).toFixed(2));
         if (!confirm(`Activate Nitrous Boost?\n\nCost: FREE (First Time)\nEffect: +${boostAmount}km`)) return;
-        
         const newRun = { id: Date.now(), date: new Date().toISOString(), km: boostAmount, notes: 'Nitrous Boost (Free)', type: 'boost' };
         const newState = { ...gameState, totalKmRun: gameState.totalKmRun + boostAmount, runHistory: [newRun, ...gameState.runHistory], boostUsageCount: 1 };
         await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
     } else {
         if (!confirm("PURCHASE NITROUS BOOST?\n\nCost: $1.00\nEffect: Instant +3km distance.\n\nYou will be redirected to secure checkout.")) return;
-        window.location.href = "https://buy.stripe.com/test_67890..."; // Replace with real link
+        window.location.href = "https://buy.stripe.com/test_67890"; 
     }
   };
 
@@ -632,12 +600,7 @@ export default function TheEntity() {
 
   const handleAcceptQuest = async () => {
       if (!user || !gameState.activeQuest) return;
-      const updatedQuest = { 
-          ...gameState.activeQuest, 
-          status: 'active',
-          progress: gameState.activeQuest.progress || 0, 
-          distance: gameState.activeQuest.distance || 5  
-      };
+      const updatedQuest = { ...gameState.activeQuest, status: 'active', progress: gameState.activeQuest.progress || 0, distance: gameState.activeQuest.distance || 5 };
       await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), { ...gameState, activeQuest: updatedQuest });
   };
 
@@ -707,9 +670,15 @@ export default function TheEntity() {
   const diffLabel = DIFFICULTIES[gameState.difficulty]?.label || 'Standard';
 
   let BannerContent;
-  if (isEmpActive) { BannerContent = (<><div className="absolute inset-0 bg-cyan-500/10 animate-pulse pointer-events-none"></div><span className="text-cyan-400 uppercase text-xs font-bold tracking-widest mb-1 block flex items-center justify-center gap-1"><ZapOff size={12} /> Countermeasure Active</span><div className="text-2xl font-black text-white mb-1 uppercase tracking-wider">ENTITY STUNNED</div><p className="text-cyan-200 font-medium text-sm">The Entity is frozen. It will not move for the duration.</p></>);
-  } else if (isGracePeriod) { BannerContent = (<><div className="absolute inset-0 bg-emerald-600/5 pointer-events-none"></div><span className="text-slate-400 uppercase text-xs font-bold tracking-widest mb-1 block flex items-center justify-center gap-1"><ShieldCheck size={12} /> Status</span><div className="text-2xl font-black text-white mb-1 uppercase tracking-wider">ENTITY INITIALISATION</div><p className="text-slate-400 font-medium text-sm">The Entity is dormant. It starts moving in 24h.</p></>);
-  } else { BannerContent = (<><span className="text-slate-400 uppercase text-xs font-bold tracking-widest mb-1 block">Current Status</span><div className="text-4xl font-black text-white mb-1">{Math.abs(distanceGap).toFixed(3)} <span className="text-xl text-slate-500">km</span></div><p className="text-emerald-400 font-medium flex items-center justify-center gap-1">Ahead of the Entity</p>{daysUntilCaught < 10 && (<div className="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-orange-900/30 text-orange-400 rounded-full text-xs font-bold border border-orange-900/50"><AlertTriangle size={12} />{daysUntilCaught === 0 ? "Catch imminent (< 24h)" : `${daysUntilCaught} days of safety remaining`}</div>)}</>); }
+  if (isEmpActive) { 
+    BannerContent = (<><div className="absolute inset-0 bg-cyan-500/10 animate-pulse pointer-events-none"></div><span className="text-cyan-400 uppercase text-xs font-bold tracking-widest mb-1 block flex items-center justify-center gap-1"><ZapOff size={12} /> Countermeasure Active</span><div className="text-2xl font-black text-white mb-1 uppercase tracking-wider">ENTITY STUNNED</div><p className="text-cyan-200 font-medium text-sm">The Entity is frozen. It will not move for the duration.</p></>);
+  } else if (isGracePeriod) { 
+    // UPDATED: Countdown Clock for Grace Period
+    BannerContent = (<><div className="absolute inset-0 bg-emerald-600/5 pointer-events-none"></div><span className="text-slate-400 uppercase text-xs font-bold tracking-widest mb-1 block flex items-center justify-center gap-1"><ShieldCheck size={12} /> SAFETY PROTOCOL</span><div className="text-3xl font-black text-white mb-1 uppercase tracking-wider font-mono">{formatDuration(timeUntilActive)}</div><p className="text-slate-400 font-medium text-sm">Time until Entity activation.</p></>);
+  } else { 
+    // UPDATED: Time-based "Doomsday Clock" for Active Mode
+    BannerContent = (<><span className="text-slate-400 uppercase text-xs font-bold tracking-widest mb-1 block">INTERCEPTION ESTIMATE</span><div className="text-4xl font-black text-white mb-1 font-mono">{formatDuration(msUntilCatch)}</div><div className="flex items-center justify-center gap-2 text-xs"><span className="text-emerald-400 font-bold">{distanceGap.toFixed(2)}km Gap</span><span className="text-slate-600">|</span><span className="text-slate-400">Speed: {gameState.entitySpeed}km/d</span></div>{daysUntilCaught < 1 && (<div className="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-red-900/30 text-red-400 rounded-full text-xs font-bold border border-red-900/50 animate-pulse"><AlertTriangle size={12} /> CRITICAL PROXIMITY</div>)}</>);
+  }
 
   // FIX: Safely access quest name to prevent crash if quest is null/empty
   const activeQuestName = gameState.activeQuest?.rewardPart 
@@ -809,16 +778,12 @@ export default function TheEntity() {
                 <div className="animate-pulse w-2 h-2 rounded-full bg-[#FC4C02] ml-1"></div>
             </div>
         ) : (
-            <div className="flex gap-2 mb-8">
-                <button onClick={handleStravaLogin} className="flex-1 bg-[#FC4C02] hover:bg-[#E34402] transition-all py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg group">
-                    <svg role="img" viewBox="0 0 24 24" className="w-5 h-5 fill-white" xmlns="http://www.w3.org/2000/svg"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
-                    <span className="text-white font-bold text-sm">Connect Strava</span>
-                </button>
-                <button onClick={() => setShowLogModal(true)} className="flex-1 bg-emerald-600 hover:bg-emerald-500 transition-all py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg">
-                    <Footprints size={20} className="text-white" />
-                    <span className="text-white font-bold text-sm">Manual Log</span>
-                </button>
-            </div>
+            <button onClick={handleStravaLogin} className="w-full bg-[#FC4C02] hover:bg-[#E34402] transition-all py-4 rounded-xl flex items-center justify-center gap-3 mb-8 shadow-lg group">
+                <svg role="img" viewBox="0 0 24 24" className="w-6 h-6 fill-white" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
+                </svg>
+                <span className="text-white font-bold text-lg">Connect with Strava</span>
+            </button>
         )}
         
         {/* RECENT LOGS */}
@@ -843,8 +808,15 @@ export default function TheEntity() {
                             <div className="flex items-center gap-2">
                                 <button onClick={() => handleDeleteRun(run.id)} className="p-2 rounded-lg text-slate-600 hover:bg-red-900/20 hover:text-red-500 transition-all" title="Delete Activity"><Trash2 size={16} /></button>
                                 {run.type !== 'quest' && run.type !== 'boost' && gameState.activeQuest?.status === 'active' && (
-                                    <button onClick={() => handleConvertRunToQuest(run.id)} className="p-2 rounded-lg bg-slate-800 text-slate-500 hover:bg-amber-900/30 hover:text-amber-500 transition-colors" title="Assign to Mission"><ArrowRightLeft size={16} /></button>
+                                    <button 
+                                        onClick={() => handleConvertRunToQuest(run.id)}
+                                        className="p-2 rounded-lg bg-slate-800 text-slate-500 hover:bg-amber-900/30 hover:text-amber-500 transition-colors"
+                                        title="Assign to Mission"
+                                    >
+                                        <ArrowRightLeft size={16} />
+                                    </button>
                                 )}
+                                
                                 <div className="bg-slate-800 p-2 rounded-lg text-slate-400">
                                     {run.type === 'boost' ? <Rocket size={16} className="text-yellow-400" /> : run.type === 'quest' ? <Award size={16} className="text-amber-400" /> : <Activity size={16} />}
                                 </div>

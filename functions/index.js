@@ -1,18 +1,34 @@
-const functions = require('firebase-functions');
-const admin = require('firebase-admin');
-const fetch = require('node-fetch');
+const { onRequest } = require("firebase-functions/v2/https");
+const { defineSecret } = require("firebase-functions/params");
+const admin = require("firebase-admin");
+const fetch = require("node-fetch");
 
 admin.initializeApp();
 const db = admin.firestore();
 
-exports.stravaWebhook = functions.https.onRequest(async (req, res) => {
-  // 1. VERIFICATION (Strava Handshake)
+// Secrets
+const stravaClientId = defineSecret('STRAVA_CLIENT_ID');
+const stravaClientSecret = defineSecret('STRAVA_CLIENT_SECRET');
+const stravaVerifyToken = defineSecret('STRAVA_VERIFY_TOKEN');
+
+// GEN 2 SERVER SETUP (Native for Node 20)
+exports.stravaWebhook = onRequest(
+  { 
+      secrets: [stravaClientId, stravaClientSecret, stravaVerifyToken],
+      timeoutSeconds: 60,
+      region: "us-central1",
+      cors: true
+  },
+  async (req, res) => {
+
+  // 1. VERIFICATION (SECURE VERSION)
   const mode = req.query['hub.mode'];
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
 
   if (mode && token) {
-    if (mode === 'subscribe' && token === 'MY_SECRET_VERIFY_TOKEN') {
+    // SECURE: We check against the Vault value, not a hardcoded string
+    if (mode === 'subscribe' && token === stravaVerifyToken.value()) {
       res.json({ "hub.challenge": challenge });
       return;
     }
@@ -23,38 +39,55 @@ exports.stravaWebhook = functions.https.onRequest(async (req, res) => {
   // 2. EVENT HANDLING
   const event = req.body;
   
-  // We only care about NEW activities
   if (event.object_type === 'activity' && event.aspect_type === 'create') {
     const stravaId = event.owner_id.toString();
-    const activityId = event.object_id; // Unique ID from Strava
+    const activityId = event.object_id;
 
     try {
-      // A. Find the Firebase User
       const mapDoc = await db.collection('strava_mappings').doc(stravaId).get();
       if (!mapDoc.exists) {
-          console.log(`No user found for Strava ID: ${stravaId}`);
-          return res.sendStatus(200);
+          console.log(`User not found: ${stravaId}`);
+          res.sendStatus(200);
+          return;
       }
       
       const { firebaseUid, appId } = mapDoc.data();
       const userRef = db.doc(`artifacts/${appId}/users/${firebaseUid}/game_data/main_save`);
-      
       const userSnap = await userRef.get();
       const userData = userSnap.data();
 
-      // --- B. IDEMPOTENCY CHECK (The Fix) ---
-      // Check if we have already saved a run with this exact Strava ID
-      const alreadyProcessed = userData.runHistory?.some(run => run.stravaId === activityId);
-      
-      if (alreadyProcessed) {
-          console.log(`Duplicate event detected for Activity ${activityId}. Ignoring.`);
-          return res.sendStatus(200); // Stop here. Do not add it again.
+      // Idempotency
+      if (userData.runHistory?.some(r => r.stravaId === activityId)) {
+          res.sendStatus(200);
+          return;
       }
-      // -----------------------------------
 
-      // C. Get Run Details from Strava
+      // Refresh Token
+      let accessToken = userData.stravaAccessToken;
+      const now = Math.floor(Date.now() / 1000);
+
+      if (userData.stravaExpiresAt && now >= (userData.stravaExpiresAt - 300)) {
+          console.log("Refreshing token...");
+          const refreshUrl = `https://www.strava.com/oauth/token?client_id=${stravaClientId.value()}&client_secret=${stravaClientSecret.value()}&grant_type=refresh_token&refresh_token=${userData.stravaRefreshToken}`;
+          const refreshRes = await fetch(refreshUrl, { method: 'POST' });
+          const refreshData = await refreshRes.json();
+
+          if (refreshData.access_token) {
+              accessToken = refreshData.access_token;
+              await userRef.update({
+                  stravaAccessToken: refreshData.access_token,
+                  stravaRefreshToken: refreshData.refresh_token,
+                  stravaExpiresAt: refreshData.expires_at
+              });
+          } else {
+              res.sendStatus(200);
+              return;
+          }
+      }
+
+      // Fetch Activity
       const response = await fetch(`https://www.strava.com/api/v3/activities/${activityId}`, {
-         headers: { 'Authorization': `Bearer ${userData.stravaAccessToken}` }
+         headers: { 'Authorization': `Bearer ${accessToken}` }
       });
       const activity = await response.json();
 
@@ -67,42 +100,26 @@ exports.stravaWebhook = functions.https.onRequest(async (req, res) => {
           let runType = 'survival';
           let runNotes = activity.name;
 
-          // D. Smart Quest Logic
           if (activeQuest && activeQuest.status === 'active') {
               const remainingNeeded = activeQuest.distance - activeQuest.progress;
-
               if (runKm >= remainingNeeded) {
-                  // Overflow: Complete Quest + Add leftovers to Safety
                   const safetyContribution = runKm - remainingNeeded;
-
                   activeQuest.progress = activeQuest.distance;
                   activeQuest.status = 'completed';
-                  
-                  if (inventory[activeQuest.rewardPart] !== undefined) {
-                      inventory[activeQuest.rewardPart]++;
-                  }
-                  badges.push({ 
-                      id: Date.now(), 
-                      title: activeQuest.title, 
-                      date: new Date().toISOString() 
-                  });
-
+                  if (inventory[activeQuest.rewardPart] !== undefined) inventory[activeQuest.rewardPart]++;
+                  badges.push({ id: Date.now(), title: activeQuest.title, date: new Date().toISOString() });
                   newTotalKm += safetyContribution;
                   runType = 'quest_complete';
-                  runNotes = `${activity.name} (Quest Complete + ${safetyContribution.toFixed(2)}km Safety)`;
-
+                  runNotes = `${activity.name} (Quest Complete)`;
               } else {
-                  // Sacrifice: All distance goes to Quest
                   activeQuest.progress += runKm;
                   runType = 'quest_partial';
-                  runNotes = `${activity.name} (Dedicated to Quest)`;
+                  runNotes = `${activity.name} (Quest Contribution)`;
               }
           } else {
-              // Normal Survival Run
               newTotalKm += runKm;
           }
 
-          // E. Save to Database (Including the stravaId tag)
           const newRun = {
               id: Date.now(),
               date: new Date().toISOString(),
@@ -110,7 +127,7 @@ exports.stravaWebhook = functions.https.onRequest(async (req, res) => {
               notes: runNotes,
               type: runType,
               source: 'strava',
-              stravaId: activityId // <--- This tag prevents future duplicates
+              stravaId: activityId
           };
           
           await userRef.update({
@@ -120,20 +137,16 @@ exports.stravaWebhook = functions.https.onRequest(async (req, res) => {
               badges: badges,
               runHistory: [newRun, ...userData.runHistory]
           });
-          
-          console.log(`Processed run for ${firebaseUid}: ${runKm}km`);
       }
-
     } catch (error) {
-      console.error('Webhook Error:', error);
+      console.error(error);
     }
   }
 
-  // 3. DEAUTHORIZE HANDLING (Compliance)
+  // Deauthorize
   if (event.aspect_type === 'update' && event.updates.authorized === 'false') {
       const stravaId = event.owner_id.toString();
       await db.collection('strava_mappings').doc(stravaId).delete();
-      console.log(`User ${stravaId} revoked access.`);
   }
 
   res.sendStatus(200);
