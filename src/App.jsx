@@ -80,7 +80,56 @@ const formatDuration = (ms) => {
 
 // --- SUB-COMPONENTS ---
 
-// 1. Secret Store
+// NEW: Cyberpunk Digital Clock Component
+const CyberClock = ({ ms, label, color = "text-white" }) => {
+    if (ms <= 0) ms = 0;
+    const d = Math.floor(ms / (1000 * 60 * 60 * 24));
+    const h = Math.floor((ms / (1000 * 60 * 60)) % 24);
+    const m = Math.floor((ms / (1000 * 60)) % 60);
+    const s = Math.floor((ms / 1000) % 60);
+    const pad = (n) => n.toString().padStart(2, '0');
+
+    return (
+      <div className="flex flex-col items-center w-full">
+         <div className={`text-xs font-bold uppercase tracking-[0.2em] mb-3 ${color} opacity-80`}>{label}</div>
+         
+         <div className="flex items-center justify-center gap-1 sm:gap-2 font-mono">
+            {/* DAYS */}
+            {d > 0 && (
+                <>
+                <div className="flex flex-col items-center">
+                    <div className="bg-slate-950 border border-slate-800 rounded px-2 sm:px-3 py-2 text-2xl sm:text-4xl font-black tracking-widest text-white shadow-lg">{pad(d)}</div>
+                    <span className="text-[8px] uppercase text-slate-500 mt-1 tracking-wider">Day</span>
+                </div>
+                <span className="text-xl text-slate-700 pb-4 mx-1">:</span>
+                </>
+            )}
+
+            {/* HOURS */}
+             <div className="flex flex-col items-center">
+                <div className="bg-slate-950 border border-slate-800 rounded px-2 sm:px-3 py-2 text-2xl sm:text-4xl font-black tracking-widest text-white shadow-lg">{pad(h)}</div>
+                <span className="text-[8px] uppercase text-slate-500 mt-1 tracking-wider">Hr</span>
+            </div>
+            <span className="text-xl text-slate-700 pb-4 mx-1 animate-pulse">:</span>
+
+            {/* MINS */}
+             <div className="flex flex-col items-center">
+                <div className="bg-slate-950 border border-slate-800 rounded px-2 sm:px-3 py-2 text-2xl sm:text-4xl font-black tracking-widest text-white shadow-lg">{pad(m)}</div>
+                <span className="text-[8px] uppercase text-slate-500 mt-1 tracking-wider">Min</span>
+            </div>
+            <span className="text-xl text-slate-700 pb-4 mx-1 animate-pulse">:</span>
+
+            {/* SECS */}
+             <div className="flex flex-col items-center">
+                <div className={`bg-slate-950 border ${ms < 3600000 ? 'border-red-900/50 text-red-500' : 'border-slate-800 text-white'} rounded px-2 sm:px-3 py-2 text-2xl sm:text-4xl font-black tracking-widest shadow-lg`}>{pad(s)}</div>
+                <span className="text-[8px] uppercase text-slate-500 mt-1 tracking-wider">Sec</span>
+            </div>
+         </div>
+      </div>
+    );
+};
+
+// 1. Secret Store (E-Commerce Logic)
 const SecretStore = ({ duration, onClose }) => {
     const LINKS = {
         tee30: "#", sticker: "#", hoodie90: "#", cap: "#", jacket: "#", medal: "#",
@@ -268,7 +317,7 @@ export default function TheEntity() {
   const [showLogModal, setShowLogModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showStore, setShowStore] = useState(false);
-  const [viewMode, setViewMode] = useState('clock'); // Toggle for Clock/Distance
+  const [viewMode, setViewMode] = useState('clock'); // Toggle: 'clock' or 'distance'
   const hasExchangedCode = useRef(false);
   
   // Game Data State
@@ -297,9 +346,9 @@ export default function TheEntity() {
   });
 
   // --- REAL TIME CALCULATIONS ---
-  const [now, setNow] = useState(new Date()); 
+  const [now, setNow] = useState(new Date()); // HEARTBEAT CLOCK
   useEffect(() => { 
-      const timer = setInterval(() => { setNow(new Date()); }, 1000); // Tick every second
+      const timer = setInterval(() => { setNow(new Date()); }, 1000); // 1s tick
       return () => clearInterval(timer); 
   }, []);
   
@@ -332,13 +381,13 @@ export default function TheEntity() {
   const isBoostFree = (gameState.boostUsageCount || 0) === 0;
   
   const daysUntilCaught = distanceGap > 0 ? Math.floor(distanceGap / gameState.entitySpeed) : 0;
-  const daysToNextUpdate = 4 - (daysSinceStart % 4);
-  
-  // Clock Variables
-  const gracePeriodMs = 24 * 60 * 60 * 1000;
-  const timeUntilActive = Math.max(0, gracePeriodMs - msElapsed);
   const hoursUntilCatch = distanceGap > 0 ? (distanceGap / speedPerHour) : 0;
   const msUntilCatch = hoursUntilCatch * 60 * 60 * 1000;
+
+  const gracePeriodMs = 24 * 60 * 60 * 1000;
+  const timeUntilActive = Math.max(0, gracePeriodMs - msElapsed);
+
+  const daysToNextUpdate = 4 - (daysSinceStart % 4);
 
   // --- AUTHENTICATION ---
   useEffect(() => {
@@ -699,16 +748,27 @@ export default function TheEntity() {
         ? (EMP_PARTS.find(p => p.id === gameState.activeQuest.rewardPart)?.name || 'Unknown Part')
         : 'Unknown Part';
 
-  // DYNAMIC BANNER (CLOCK TOGGLE)
+  // DYNAMIC BANNER WITH CYBER CLOCK
   let BannerContent;
   if (isEmpActive) { 
     BannerContent = (<><div className="absolute inset-0 bg-cyan-500/10 animate-pulse pointer-events-none"></div><span className="text-cyan-400 uppercase text-xs font-bold tracking-widest mb-1 block flex items-center justify-center gap-1"><ZapOff size={12} /> Countermeasure Active</span><div className="text-2xl font-black text-white mb-1 uppercase tracking-wider">ENTITY STUNNED</div><p className="text-cyan-200 font-medium text-sm">The Entity is frozen. It will not move for the duration.</p></>);
   } else if (isGracePeriod) { 
-    BannerContent = (<><div className="absolute inset-0 bg-emerald-600/5 pointer-events-none"></div><span className="text-slate-400 uppercase text-xs font-bold tracking-widest mb-1 block flex items-center justify-center gap-1"><ShieldCheck size={12} /> SAFETY PROTOCOL</span><div className="text-3xl font-black text-white mb-1 uppercase tracking-wider font-mono">{formatDuration(timeUntilActive)}</div><p className="text-slate-400 font-medium text-sm">Time until Entity activation.</p></>);
+    BannerContent = (<><div className="absolute inset-0 bg-emerald-600/5 pointer-events-none"></div><span className="text-slate-400 uppercase text-xs font-bold tracking-widest mb-1 block flex items-center justify-center gap-1"><ShieldCheck size={12} /> SAFETY PROTOCOL</span><CyberClock ms={timeUntilActive} label="ACTIVATION IN" /><p className="text-slate-400 font-medium text-sm mt-2">Time until Entity activation.</p></>);
   } else { 
     // ACTIVE MODE: Toggle between Clock and Distance
     if (viewMode === 'clock') {
-        BannerContent = (<><span className="text-slate-400 uppercase text-xs font-bold tracking-widest mb-1 block">INTERCEPTION ESTIMATE</span><div className="text-4xl font-black text-white mb-1 font-mono">{formatDuration(msUntilCatch)}</div><div className="flex items-center justify-center gap-2 text-xs"><span className="text-emerald-400 font-bold">{distanceGap.toFixed(2)}km Gap</span><span className="text-slate-600">|</span><span className="text-slate-400">Speed: {gameState.entitySpeed}km/d</span></div><div className="mt-2 text-[9px] text-slate-600 uppercase tracking-widest">Tap to switch view</div>{daysUntilCaught < 1 && (<div className="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-red-900/30 text-red-400 rounded-full text-xs font-bold border border-red-900/50 animate-pulse"><AlertTriangle size={12} /> CRITICAL PROXIMITY</div>)}</>);
+        BannerContent = (
+            <>
+                <CyberClock ms={msUntilCatch} label="INTERCEPTION ESTIMATE" color={daysUntilCaught < 1 ? "text-red-500" : "text-slate-400"} />
+                <div className="flex items-center justify-center gap-2 text-xs mt-2">
+                    <span className="text-emerald-400 font-bold">{distanceGap.toFixed(2)}km Gap</span>
+                    <span className="text-slate-600">|</span>
+                    <span className="text-slate-400">Speed: {gameState.entitySpeed}km/d</span>
+                </div>
+                <div className="mt-2 text-[9px] text-slate-600 uppercase tracking-widest">Tap to switch view</div>
+                {daysUntilCaught < 1 && (<div className="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-red-900/30 text-red-400 rounded-full text-xs font-bold border border-red-900/50 animate-pulse"><AlertTriangle size={12} /> CRITICAL PROXIMITY</div>)}
+            </>
+        );
     } else {
         BannerContent = (<><span className="text-slate-400 uppercase text-xs font-bold tracking-widest mb-1 block">Current Status</span><div className="text-4xl font-black text-white mb-1">{Math.abs(distanceGap).toFixed(3)} <span className="text-xl text-slate-500">km</span></div><p className="text-emerald-400 font-medium flex items-center justify-center gap-1">Ahead of the Entity</p><div className="mt-2 text-[9px] text-slate-600 uppercase tracking-widest">Tap to switch view</div></>);
     }
