@@ -750,12 +750,36 @@ export default function TheEntity() {
 
   // DYNAMIC BANNER WITH CYBER CLOCK
   let BannerContent;
+  
   if (isEmpActive) { 
-    BannerContent = (<><div className="absolute inset-0 bg-cyan-500/10 animate-pulse pointer-events-none"></div><span className="text-cyan-400 uppercase text-xs font-bold tracking-widest mb-1 block flex items-center justify-center gap-1"><ZapOff size={12} /> Countermeasure Active</span><div className="text-2xl font-black text-white mb-1 uppercase tracking-wider">ENTITY STUNNED</div><p className="text-cyan-200 font-medium text-sm">The Entity is frozen. It will not move for the duration.</p></>);
+    // SCENARIO 1: EMP ACTIVE (Frozen)
+    BannerContent = (
+      <>
+        <div className="absolute inset-0 bg-cyan-500/10 animate-pulse pointer-events-none"></div>
+        <span className="text-cyan-400 uppercase text-xs font-bold tracking-widest mb-1 block flex items-center justify-center gap-1">
+            <ZapOff size={12} /> Countermeasure Active
+        </span>
+        <div className="text-2xl font-black text-white mb-1 uppercase tracking-wider">ENTITY STUNNED</div>
+        <p className="text-cyan-200 font-medium text-sm">The Entity is frozen. It will not move for the duration.</p>
+      </>
+    );
+
   } else if (isGracePeriod) { 
-    BannerContent = (<><div className="absolute inset-0 bg-emerald-600/5 pointer-events-none"></div><span className="text-slate-400 uppercase text-xs font-bold tracking-widest mb-1 block flex items-center justify-center gap-1"><ShieldCheck size={12} /> SAFETY PROTOCOL</span><CyberClock ms={timeUntilActive} label="ACTIVATION IN" /><p className="text-slate-400 font-medium text-sm mt-2">Time until Entity activation.</p></>);
+    // SCENARIO 2: GRACE PERIOD (The Countdown you asked for)
+    BannerContent = (
+      <>
+        <div className="absolute inset-0 bg-emerald-600/5 pointer-events-none"></div>
+        {/* Reusing the CyberClock for the countdown */}
+        <CyberClock ms={timeUntilActive} label="ENTITY ACTIVATION IN" color="text-emerald-400" />
+        <div className="flex items-center justify-center gap-2 mt-3 text-xs text-slate-500">
+            <ShieldCheck size={12} />
+            <span>System Calibrating...</span>
+        </div>
+      </>
+    );
+
   } else { 
-    // ACTIVE MODE: Toggle between Clock and Distance
+    // SCENARIO 3: ACTIVE CHASE (Toggle View)
     if (viewMode === 'clock') {
         BannerContent = (
             <>
@@ -770,10 +794,16 @@ export default function TheEntity() {
             </>
         );
     } else {
-        BannerContent = (<><span className="text-slate-400 uppercase text-xs font-bold tracking-widest mb-1 block">Current Status</span><div className="text-4xl font-black text-white mb-1">{Math.abs(distanceGap).toFixed(3)} <span className="text-xl text-slate-500">km</span></div><p className="text-emerald-400 font-medium flex items-center justify-center gap-1">Ahead of the Entity</p><div className="mt-2 text-[9px] text-slate-600 uppercase tracking-widest">Tap to switch view</div></>);
+        BannerContent = (
+            <>
+                <span className="text-slate-400 uppercase text-xs font-bold tracking-widest mb-1 block">Current Status</span>
+                <div className="text-4xl font-black text-white mb-1">{Math.abs(distanceGap).toFixed(3)} <span className="text-xl text-slate-500">km</span></div>
+                <p className="text-emerald-400 font-medium flex items-center justify-center gap-1">Ahead of the Entity</p>
+                <div className="mt-2 text-[9px] text-slate-600 uppercase tracking-widest">Tap to switch view</div>
+            </>
+        );
     }
   }
-
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-red-500/30">
       <style>{`.bg-stripes-slate {background-image: linear-gradient(45deg, #1e293b 25%, transparent 25%, transparent 50%, #1e293b 50%, #1e293b 75%, transparent 75%, transparent);background-size: 10px 10px;}`}</style>
