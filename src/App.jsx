@@ -19,7 +19,7 @@ import {
   Link as LinkIcon, CheckCircle2, Zap, Timer, RefreshCw, 
   ShieldCheck, Compass, Map as MapIcon, Shield, ChevronRight, ZapOff, 
   Lock, Rocket, Wrench, Cpu, Disc, Award, ArrowRightLeft, HeartPulse, 
-  RotateCcw, ShoppingBag, BarChart3, User, Trash2, LogOut
+  RotateCcw, ShoppingBag, BarChart3, User, Trash2, LogOut, Footprints
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
@@ -63,6 +63,19 @@ const MIN_ENTITY_SPEED = 3.0;
 // --- HELPER FUNCTIONS ---
 const formatDate = (date) => {
   return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
+const formatDuration = (ms) => {
+    if (ms <= 0) return "00:00:00";
+    const seconds = Math.floor((ms / 1000) % 60);
+    const minutes = Math.floor((ms / (1000 * 60)) % 60);
+    const hours = Math.floor((ms / (1000 * 60 * 60)) % 24);
+    const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+    
+    const pad = (n) => n.toString().padStart(2, '0');
+    
+    if (days > 0) return `${days}d ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
 };
 
 // --- SUB-COMPONENTS ---
@@ -111,20 +124,38 @@ const SecretStore = ({ duration, onClose }) => {
     return (
         <div className="fixed inset-0 z-[60] bg-black flex flex-col animate-in fade-in duration-500 overflow-hidden">
             <div className={`p-6 border-b border-slate-800 flex justify-between items-center ${theme.bg}`}>
-                <div><div className={`text-[10px] uppercase tracking-[0.2em] text-white/60 mb-1`}>Clearance Level: {duration} Days</div><h2 className={`text-2xl font-black uppercase tracking-wider ${theme.color} flex items-center gap-2`}><Lock size={20} className="mb-1" /> {theme.title}</h2></div>
+                <div>
+                    <div className={`text-[10px] uppercase tracking-[0.2em] text-white/60 mb-1`}>Clearance Level: {duration} Days</div>
+                    <h2 className={`text-2xl font-black uppercase tracking-wider ${theme.color} flex items-center gap-2`}>
+                        <Lock size={20} className="mb-1" /> {theme.title}
+                    </h2>
+                </div>
                 <button onClick={onClose} className="p-2 bg-black/30 rounded-full text-white hover:bg-white/10 transition-colors"><X size={24}/></button>
             </div>
             <div className="flex-1 overflow-y-auto p-6 bg-slate-950">
                 <div className="grid grid-cols-1 gap-4">
                     {theme.items.map(item => (
                         <div key={item.id} className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center gap-4 group hover:border-slate-600 transition-all">
-                            <div className={`w-16 h-16 rounded-lg ${theme.bg} ${theme.border} border flex items-center justify-center shrink-0`}><ItemIcon type={item.icon} /></div>
-                            <div className="flex-1"><div className="flex justify-between items-start"><h3 className="text-white font-bold uppercase tracking-wide">{item.name}</h3><span className="text-slate-400 font-mono text-sm">{item.price}</span></div><p className="text-xs text-slate-500 mt-1">{item.desc}</p></div>
-                            <a href={item.link} target="_blank" rel="noopener noreferrer" className={`px-4 py-2 rounded-lg font-bold text-xs uppercase bg-slate-800 text-white hover:${theme.bg} transition-colors border border-slate-700 flex flex-col items-center justify-center`}>BUY</a>
+                            <div className={`w-16 h-16 rounded-lg ${theme.bg} ${theme.border} border flex items-center justify-center shrink-0`}>
+                                <ItemIcon type={item.icon} />
+                            </div>
+                            <div className="flex-1">
+                                <div className="flex justify-between items-start">
+                                    <h3 className="text-white font-bold uppercase tracking-wide">{item.name}</h3>
+                                    <span className="text-slate-400 font-mono text-sm">{item.price}</span>
+                                </div>
+                                <p className="text-xs text-slate-500 mt-1">{item.desc}</p>
+                            </div>
+                            <a href={item.link} target="_blank" rel="noopener noreferrer" className={`px-4 py-2 rounded-lg font-bold text-xs uppercase bg-slate-800 text-white hover:${theme.bg} transition-colors border border-slate-700 flex flex-col items-center justify-center`}>
+                                BUY
+                            </a>
                         </div>
                     ))}
                 </div>
-                <div className="mt-8 p-6 rounded-xl border border-dashed border-slate-800 text-center"><p className="text-slate-500 text-xs mb-2">ACCESS CODE: ENTITY-{duration}-VICTOR</p><p className="text-slate-600 text-[10px]">This store is hidden from the public. Only survivors with verified completion logs can access these items.</p></div>
+                <div className="mt-8 p-6 rounded-xl border border-dashed border-slate-800 text-center">
+                    <p className="text-slate-500 text-xs mb-2">ACCESS CODE: ENTITY-{duration}-VICTOR</p>
+                    <p className="text-slate-600 text-[10px]">This store is hidden from the public. Only survivors with verified completion logs can access these items.</p>
+                </div>
             </div>
         </div>
     );
@@ -284,7 +315,10 @@ export default function TheEntity() {
 
   // --- REAL TIME CALCULATIONS ---
   const [now, setNow] = useState(new Date()); // HEARTBEAT CLOCK
-  useEffect(() => { const timer = setInterval(() => { setNow(new Date()); }, 1000); return () => clearInterval(timer); }, []);
+  useEffect(() => { 
+      const timer = setInterval(() => { setNow(new Date()); }, 1000); 
+      return () => clearInterval(timer); 
+  }, []);
   
   const today = now;
   const gameStart = new Date(gameState.startDate);
@@ -419,11 +453,14 @@ export default function TheEntity() {
   // --- GAME LOOP & CLEANUP ---
   useEffect(() => {
       if (!user || loading) return;
+      
+      // 1. CLEANUP: Kill zombie quests
       if (daysSinceStart < 5 && gameState.activeQuest) {
           const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
           setDoc(userDocRef, { ...gameState, activeQuest: null });
           return;
       }
+
       if (daysSinceStart > 0 && daysSinceStart % 5 === 0 && daysSinceStart !== gameState.lastQuestGenerationDay) {
           if (!gameState.activeQuest) {
               const parts = ['battery', 'emitter', 'casing'];
@@ -638,7 +675,7 @@ export default function TheEntity() {
   // --- UI RENDER: VICTORY ---
   if (isVictory) return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-1000">
-        <style jsx global>{`.bg-stripes-slate {background-image: linear-gradient(45deg, #1e293b 25%, transparent 25%, transparent 50%, #1e293b 50%, #1e293b 75%, transparent 75%, transparent);background-size: 10px 10px;}`}</style>
+        <style>{`.bg-stripes-slate {background-image: linear-gradient(45deg, #1e293b 25%, transparent 25%, transparent 50%, #1e293b 50%, #1e293b 75%, transparent 75%, transparent);background-size: 10px 10px;}`}</style>
         
         {showStore && <SecretStore duration={gameState.duration} onClose={() => setShowStore(false)} />}
         
