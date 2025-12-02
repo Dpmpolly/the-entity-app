@@ -19,8 +19,7 @@ import {
   Link as LinkIcon, CheckCircle2, Zap, Timer, RefreshCw, 
   ShieldCheck, Compass, Map as MapIcon, Shield, ChevronRight, ZapOff, 
   Lock, Rocket, Wrench, Cpu, Disc, Award, ArrowRightLeft, HeartPulse, 
-  RotateCcw, ShoppingBag, BarChart3, User, Trash2, LogOut, Footprints,
-  Terminal, Radio
+  RotateCcw, ShoppingBag, BarChart3, User, Trash2, LogOut, Footprints
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
@@ -64,6 +63,19 @@ const MIN_ENTITY_SPEED = 3.0;
 // --- HELPER FUNCTIONS ---
 const formatDate = (date) => {
   return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
+const formatDuration = (ms) => {
+    if (ms <= 0) return "00:00:00";
+    const seconds = Math.floor((ms / 1000) % 60);
+    const minutes = Math.floor((ms / (1000 * 60)) % 60);
+    const hours = Math.floor((ms / (1000 * 60 * 60)) % 24);
+    const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+    
+    const pad = (n) => n.toString().padStart(2, '0');
+    
+    if (days > 0) return `${days}d ${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
 };
 
 // --- SUB-COMPONENTS ---
@@ -247,56 +259,6 @@ const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnect
     );
 };
 
-// --- CYBER CLOCK COMPONENT (The new Visuals) ---
-const CyberClock = ({ ms }) => {
-    if (ms <= 0) ms = 0;
-    const seconds = Math.floor((ms / 1000) % 60);
-    const minutes = Math.floor((ms / (1000 * 60)) % 60);
-    const hours = Math.floor((ms / (1000 * 60 * 60)) % 24);
-    const days = Math.floor(ms / (1000 * 60 * 60 * 24));
-    
-    const pad = (n) => n.toString().padStart(2, '0');
-
-    return (
-        <div className="flex items-center justify-center gap-2 md:gap-4 font-mono my-2">
-            {/* Days */}
-            <div className="flex flex-col items-center">
-                <div className="bg-black/40 border border-slate-800 rounded px-2 py-1 text-2xl md:text-4xl font-black text-white tracking-wider" style={{textShadow: '0 0 10px currentColor'}}>
-                    {pad(days)}
-                </div>
-                <span className="text-[8px] uppercase text-slate-500 tracking-widest mt-1">Days</span>
-            </div>
-            <div className="text-slate-700 text-2xl md:text-4xl pb-4">:</div>
-            
-            {/* Hours */}
-            <div className="flex flex-col items-center">
-                <div className="bg-black/40 border border-slate-800 rounded px-2 py-1 text-2xl md:text-4xl font-black text-white tracking-wider" style={{textShadow: '0 0 10px currentColor'}}>
-                    {pad(hours)}
-                </div>
-                <span className="text-[8px] uppercase text-slate-500 tracking-widest mt-1">Hrs</span>
-            </div>
-            <div className="text-slate-700 text-2xl md:text-4xl pb-4 animate-pulse">:</div>
-
-            {/* Mins */}
-            <div className="flex flex-col items-center">
-                <div className="bg-black/40 border border-slate-800 rounded px-2 py-1 text-2xl md:text-4xl font-black text-white tracking-wider" style={{textShadow: '0 0 10px currentColor'}}>
-                    {pad(minutes)}
-                </div>
-                <span className="text-[8px] uppercase text-slate-500 tracking-widest mt-1">Min</span>
-            </div>
-            <div className="text-slate-700 text-2xl md:text-4xl pb-4 animate-pulse">:</div>
-
-            {/* Secs */}
-            <div className="flex flex-col items-center">
-                <div className="bg-black/40 border border-slate-800 rounded px-2 py-1 text-2xl md:text-4xl font-black text-white tracking-wider" style={{textShadow: '0 0 10px currentColor'}}>
-                    {pad(seconds)}
-                </div>
-                <span className="text-[8px] uppercase text-slate-500 tracking-widest mt-1">Sec</span>
-            </div>
-        </div>
-    );
-};
-
 // --- MAIN COMPONENT ---
 export default function TheEntity() {
   const [user, setUser] = useState(null);
@@ -306,7 +268,7 @@ export default function TheEntity() {
   const [showLogModal, setShowLogModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showStore, setShowStore] = useState(false);
-  const [viewMode, setViewMode] = useState('clock'); // Default to Clock View
+  const [viewMode, setViewMode] = useState('clock'); // Toggle for Clock/Distance
   const hasExchangedCode = useRef(false);
   
   // Game Data State
@@ -335,7 +297,7 @@ export default function TheEntity() {
   });
 
   // --- REAL TIME CALCULATIONS ---
-  const [now, setNow] = useState(new Date()); // HEARTBEAT CLOCK
+  const [now, setNow] = useState(new Date()); 
   useEffect(() => { 
       const timer = setInterval(() => { setNow(new Date()); }, 1000); // Tick every second
       return () => clearInterval(timer); 
@@ -370,12 +332,13 @@ export default function TheEntity() {
   const isBoostFree = (gameState.boostUsageCount || 0) === 0;
   
   const daysUntilCaught = distanceGap > 0 ? Math.floor(distanceGap / gameState.entitySpeed) : 0;
-  const hoursUntilCatch = distanceGap > 0 ? (distanceGap / speedPerHour) : 0;
-  const msUntilCatch = hoursUntilCatch * 60 * 60 * 1000;
+  const daysToNextUpdate = 4 - (daysSinceStart % 4);
+  
+  // Clock Variables
   const gracePeriodMs = 24 * 60 * 60 * 1000;
   const timeUntilActive = Math.max(0, gracePeriodMs - msElapsed);
-
-  const daysToNextUpdate = 4 - (daysSinceStart % 4);
+  const hoursUntilCatch = distanceGap > 0 ? (distanceGap / speedPerHour) : 0;
+  const msUntilCatch = hoursUntilCatch * 60 * 60 * 1000;
 
   // --- AUTHENTICATION ---
   useEffect(() => {
