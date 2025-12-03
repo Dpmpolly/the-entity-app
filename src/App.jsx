@@ -5,12 +5,15 @@ import {
   signInAnonymously, 
   onAuthStateChanged,
   deleteUser,
-  signOut
+  signOut,
+  GoogleAuthProvider,
+  linkWithPopup
 } from 'firebase/auth';
 import { 
   getFirestore, 
   doc, 
   setDoc, 
+  getDoc, 
   onSnapshot,
   deleteDoc
 } from 'firebase/firestore';
@@ -20,7 +23,7 @@ import {
   ShieldCheck, Compass, Map as MapIcon, Shield, ChevronRight, ZapOff, 
   Lock, Rocket, Wrench, Cpu, Disc, Award, ArrowRightLeft, HeartPulse, 
   RotateCcw, ShoppingBag, BarChart3, User, Trash2, LogOut, Footprints,
-  Terminal, Radio
+  Smartphone
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
@@ -58,7 +61,6 @@ const DIFFICULTIES = {
     hard:   { id: 'hard',   label: 'Nightmare',multiplier: 0.95, color: 'text-red-500',     desc: 'Entity matches 95% of Avg.' }
 };
 
-// --- GAME BALANCE SETTINGS ---
 const MIN_ENTITY_SPEED = 3.0; 
 
 // --- HELPER FUNCTIONS ---
@@ -81,7 +83,7 @@ const formatDuration = (ms) => {
 
 // --- SUB-COMPONENTS ---
 
-// 1. Cyberpunk Digital Clock
+// 1. Cyberpunk Digital Clock (With Panic Mode)
 const CyberClock = ({ ms, label, color = "text-white" }) => {
     if (ms <= 0) ms = 0;
     const d = Math.floor(ms / (1000 * 60 * 60 * 24));
@@ -90,7 +92,6 @@ const CyberClock = ({ ms, label, color = "text-white" }) => {
     const s = Math.floor((ms / 1000) % 60);
     const pad = (n) => n.toString().padStart(2, '0');
 
-    // PANIC LOGIC: Is the entity less than 1 hour away?
     const isPanic = ms < 3600000; // < 1 Hour
 
     return (
@@ -100,7 +101,6 @@ const CyberClock = ({ ms, label, color = "text-white" }) => {
          </div>
          
          <div className="flex items-center justify-center gap-1 sm:gap-2 font-mono">
-            {/* DAYS */}
             {d > 0 && (
                 <>
                 <div className="flex flex-col items-center">
@@ -111,21 +111,18 @@ const CyberClock = ({ ms, label, color = "text-white" }) => {
                 </>
             )}
 
-            {/* HOURS */}
              <div className="flex flex-col items-center">
                 <div className={`bg-slate-950 border ${isPanic ? 'border-red-500 text-red-500' : 'border-slate-800 text-white'} rounded px-2 sm:px-3 py-2 text-2xl sm:text-4xl font-black tracking-widest shadow-lg`}>{pad(h)}</div>
                 <span className="text-[8px] uppercase text-slate-500 mt-1 tracking-wider">Hr</span>
             </div>
             <span className={`text-xl pb-4 mx-1 ${isPanic ? 'text-red-600 animate-ping' : 'text-slate-700 animate-pulse'}`}>:</span>
 
-            {/* MINS */}
              <div className="flex flex-col items-center">
                 <div className={`bg-slate-950 border ${isPanic ? 'border-red-500 text-red-500' : 'border-slate-800 text-white'} rounded px-2 sm:px-3 py-2 text-2xl sm:text-4xl font-black tracking-widest shadow-lg`}>{pad(m)}</div>
                 <span className="text-[8px] uppercase text-slate-500 mt-1 tracking-wider">Min</span>
             </div>
             <span className={`text-xl pb-4 mx-1 ${isPanic ? 'text-red-600 animate-ping' : 'text-slate-700 animate-pulse'}`}>:</span>
 
-            {/* SECS */}
              <div className="flex flex-col items-center">
                 <div className={`border rounded px-2 sm:px-3 py-2 text-2xl sm:text-4xl font-black tracking-widest shadow-lg ${isPanic ? 'bg-red-600 border-red-600 text-black' : 'bg-slate-950 border-slate-800 text-white'}`}>
                     {pad(s)}
@@ -137,28 +134,7 @@ const CyberClock = ({ ms, label, color = "text-white" }) => {
     );
 };
 
-// 2. Onboarding Wizard (MOVED OUTSIDE)
-const OnboardingWizard = ({ onComplete }) => {
-    const [step, setStep] = useState(1);
-    const [duration, setDuration] = useState(30);
-    const [difficulty, setDifficulty] = useState('easy');
-    const [avatarId, setAvatarId] = useState('sprinter');
-    const [codename, setCodename] = useState('');
-
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950 p-6">
-        <div className="w-full max-w-lg">
-          <div className="mb-8 text-center"><h1 className="text-3xl font-black text-white italic uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><Skull className="text-purple-500" /> The Entity</h1><p className="text-slate-500">Setup your escape protocol.</p></div>
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
-            {step === 1 && (<div className="animate-in fade-in slide-in-from-right-8 duration-300"><h2 className="text-xl font-bold text-white mb-6">1. Choose Challenge Duration</h2><div className="grid grid-cols-1 gap-4 mb-8">{[30, 90, 365].map(d => (<button key={d} onClick={() => setDuration(d)} className={`p-4 rounded-xl border-2 text-left transition-all flex justify-between items-center ${duration === d ? 'border-purple-500 bg-purple-900/20' : 'border-slate-700 bg-slate-800 hover:border-slate-600'}`}><div><div className="font-bold text-lg text-white">{d === 365 ? '1 Year' : `${d} Days`}</div><div className="text-sm text-slate-400">Survival Goal</div></div>{duration === d && <CheckCircle2 className="text-purple-500" />}</button>))}</div><button onClick={() => setStep(2)} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">Next Step <ChevronRight size={20} /></button></div>)}
-            {step === 2 && (<div className="animate-in fade-in slide-in-from-right-8 duration-300"><h2 className="text-xl font-bold text-white mb-6">2. Select Difficulty</h2><div className="grid grid-cols-1 gap-4 mb-8">{Object.values(DIFFICULTIES).map(diff => (<button key={diff.id} onClick={() => setDifficulty(diff.id)} className={`p-4 rounded-xl border-2 text-left transition-all flex justify-between items-center ${difficulty === diff.id ? 'border-purple-500 bg-purple-900/20' : 'border-slate-700 bg-slate-800 hover:border-slate-600'}`}><div><div className={`font-bold text-lg ${diff.color}`}>{diff.label}</div><div className="text-sm text-slate-400">{diff.desc}</div></div>{difficulty === diff.id && <CheckCircle2 className="text-purple-500" />}</button>))}</div><div className="flex gap-3"><button onClick={() => setStep(1)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button><button onClick={() => setStep(3)} className="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">Next Step <ChevronRight size={20} /></button></div></div>)}
-            {step === 3 && (<div className="animate-in fade-in slide-in-from-right-8 duration-300"><h2 className="text-xl font-bold text-white mb-6">3. Operative Codename</h2><input type="text" value={codename} onChange={(e) => setCodename(e.target.value)} placeholder="Enter your alias..." className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-white text-center text-lg focus:ring-2 focus:ring-purple-500 outline-none mb-8 uppercase tracking-widest" /><div className="flex gap-3"><button onClick={() => setStep(2)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button><button disabled={!codename} onClick={() => setStep(4)} className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">Next Step <ChevronRight size={20} /></button></div></div>)}
-            {step === 4 && (<div className="animate-in fade-in slide-in-from-right-8 duration-300"><h2 className="text-xl font-bold text-white mb-6">4. Select Your Runner</h2><div className="grid grid-cols-2 gap-4 mb-8">{Object.values(AVATARS).map((av) => {const Icon = av.icon; const isSelected = avatarId === av.id; return (<button key={av.id} onClick={() => setAvatarId(av.id)} className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center text-center gap-2 ${isSelected ? 'border-purple-500 bg-purple-900/20' : 'border-slate-700 bg-slate-800 hover:border-slate-600'}`}><div className={`p-3 rounded-full ${isSelected ? av.bg : 'bg-slate-700'} text-white transition-colors`}><Icon size={24} /></div><div><div className="font-bold text-white text-sm">{av.name}</div><div className="text-[10px] text-slate-400 leading-tight mt-1">{av.desc}</div></div></button>)})}</div><div className="flex gap-3"><button onClick={() => setStep(3)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button><button onClick={() => onComplete({ duration, avatarId, difficulty, username: codename })} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">INITIATE PROTOCOL</button></div></div>)}
-          </div></div></div>
-    );
-};
-
-// 3. Secret Store
+// 2. Secret Store
 const SecretStore = ({ duration, onClose }) => {
     const LINKS = {
         tee30: "#", sticker: "#", hoodie90: "#", cap: "#", jacket: "#", medal: "#",
@@ -221,6 +197,27 @@ const SecretStore = ({ duration, onClose }) => {
     );
 };
 
+// 3. Onboarding Wizard
+const OnboardingWizard = ({ onComplete }) => {
+    const [step, setStep] = useState(1);
+    const [duration, setDuration] = useState(30);
+    const [difficulty, setDifficulty] = useState('easy');
+    const [avatarId, setAvatarId] = useState('sprinter');
+    const [codename, setCodename] = useState('');
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950 p-6">
+        <div className="w-full max-w-lg">
+          <div className="mb-8 text-center"><h1 className="text-3xl font-black text-white italic uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><Skull className="text-purple-500" /> The Entity</h1><p className="text-slate-500">Setup your escape protocol.</p></div>
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
+            {step === 1 && (<div className="animate-in fade-in slide-in-from-right-8 duration-300"><h2 className="text-xl font-bold text-white mb-6">1. Choose Challenge Duration</h2><div className="grid grid-cols-1 gap-4 mb-8">{[30, 90, 365].map(d => (<button key={d} onClick={() => setDuration(d)} className={`p-4 rounded-xl border-2 text-left transition-all flex justify-between items-center ${duration === d ? 'border-purple-500 bg-purple-900/20' : 'border-slate-700 bg-slate-800 hover:border-slate-600'}`}><div><div className="font-bold text-lg text-white">{d === 365 ? '1 Year' : `${d} Days`}</div><div className="text-sm text-slate-400">Survival Goal</div></div>{duration === d && <CheckCircle2 className="text-purple-500" />}</button>))}</div><button onClick={() => setStep(2)} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">Next Step <ChevronRight size={20} /></button></div>)}
+            {step === 2 && (<div className="animate-in fade-in slide-in-from-right-8 duration-300"><h2 className="text-xl font-bold text-white mb-6">2. Select Difficulty</h2><div className="grid grid-cols-1 gap-4 mb-8">{Object.values(DIFFICULTIES).map(diff => (<button key={diff.id} onClick={() => setDifficulty(diff.id)} className={`p-4 rounded-xl border-2 text-left transition-all flex justify-between items-center ${difficulty === diff.id ? 'border-purple-500 bg-purple-900/20' : 'border-slate-700 bg-slate-800 hover:border-slate-600'}`}><div><div className={`font-bold text-lg ${diff.color}`}>{diff.label}</div><div className="text-sm text-slate-400">{diff.desc}</div></div>{difficulty === diff.id && <CheckCircle2 className="text-purple-500" />}</button>))}</div><div className="flex gap-3"><button onClick={() => setStep(1)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button><button onClick={() => setStep(3)} className="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">Next Step <ChevronRight size={20} /></button></div></div>)}
+            {step === 3 && (<div className="animate-in fade-in slide-in-from-right-8 duration-300"><h2 className="text-xl font-bold text-white mb-6">3. Operative Codename</h2><input type="text" value={codename} onChange={(e) => setCodename(e.target.value)} placeholder="Enter your alias..." className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-white text-center text-lg focus:ring-2 focus:ring-purple-500 outline-none mb-8 uppercase tracking-widest" /><div className="flex gap-3"><button onClick={() => setStep(2)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button><button disabled={!codename} onClick={() => setStep(4)} className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">Next Step <ChevronRight size={20} /></button></div></div>)}
+            {step === 4 && (<div className="animate-in fade-in slide-in-from-right-8 duration-300"><h2 className="text-xl font-bold text-white mb-6">4. Select Your Runner</h2><div className="grid grid-cols-2 gap-4 mb-8">{Object.values(AVATARS).map((av) => {const Icon = av.icon; const isSelected = avatarId === av.id; return (<button key={av.id} onClick={() => setAvatarId(av.id)} className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center text-center gap-2 ${isSelected ? 'border-purple-500 bg-purple-900/20' : 'border-slate-700 bg-slate-800 hover:border-slate-600'}`}><div className={`p-3 rounded-full ${isSelected ? av.bg : 'bg-slate-700'} text-white transition-colors`}><Icon size={24} /></div><div><div className="font-bold text-white text-sm">{av.name}</div><div className="text-[10px] text-slate-400 leading-tight mt-1">{av.desc}</div></div></button>)})}</div><div className="flex gap-3"><button onClick={() => setStep(3)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button><button onClick={() => onComplete({ duration, avatarId, difficulty, username: codename })} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">INITIATE PROTOCOL</button></div></div>)}
+          </div></div></div>
+    );
+};
+
 // 4. Log Run Modal
 const LogRunModal = ({ onClose, onSave, activeQuest }) => {
     const [km, setKm] = useState('');
@@ -269,8 +266,12 @@ const LogRunModal = ({ onClose, onSave, activeQuest }) => {
     );
 };
   
-// 5. Settings Modal
-const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnectStrava }) => {
+// 5. Settings Modal (With Android-Only Google Link)
+const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnectStrava, onLinkGoogle }) => {
+    
+    // DETECT ANDROID (Simple User Agent Check)
+    const isAndroid = /Android/i.test(navigator.userAgent);
+
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-6 animate-in fade-in duration-200">
         <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden relative">
@@ -281,11 +282,29 @@ const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnect
           <div className="p-6 space-y-6">
             <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center gap-3">
                 <div className="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center text-slate-400"><User size={20}/></div>
-                <div className="overflow-hidden">
-                    <div className="text-white font-bold truncate">{gameState.username || 'Agent'}</div>
-                    <div className="text-xs text-slate-500 truncate">ID: {user?.uid.slice(0,8)}...</div>
-                </div>
+                <div className="overflow-hidden"><div className="text-white font-bold truncate">{gameState.username || 'Agent'}</div><div className="text-xs text-slate-500 truncate">ID: {user?.uid.slice(0,8)}...</div></div>
             </div>
+
+            {/* ANDROID ONLY - SAVE PROGRESS SECTION */}
+            {isAndroid && user?.isAnonymous && (
+                <div className="bg-amber-900/10 border border-amber-900/30 p-4 rounded-xl">
+                    <div className="flex items-center gap-2 text-amber-500 mb-2">
+                        <Smartphone size={16} />
+                        <span className="text-xs font-bold uppercase tracking-wide">Android Secure</span>
+                    </div>
+                    <p className="text-[10px] text-slate-400 mb-3">
+                        Link a Google Account to save your progress across devices.
+                    </p>
+                    <button 
+                        onClick={onLinkGoogle}
+                        className="w-full bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold py-3 rounded-lg border border-slate-700 flex items-center justify-center gap-2 transition-all"
+                    >
+                        {/* Simple Google G Icon */}
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z"/></svg>
+                        Link Google Account
+                    </button>
+                </div>
+            )}
 
             <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Data Source</label>
@@ -375,9 +394,9 @@ export default function TheEntity() {
   });
 
   // --- REAL TIME CALCULATIONS ---
-  const [now, setNow] = useState(new Date()); 
+  const [now, setNow] = useState(new Date()); // HEARTBEAT CLOCK
   useEffect(() => { 
-      const timer = setInterval(() => { setNow(new Date()); }, 1000); // Tick every second
+      const timer = setInterval(() => { setNow(new Date()); }, 1000); // 1s tick
       return () => clearInterval(timer); 
   }, []);
   
@@ -428,7 +447,26 @@ export default function TheEntity() {
     return () => unsubscribe();
   }, []);
 
-  // --- STRAVA TOKEN EXCHANGE (With Date Filter) ---
+  // --- ACCOUNT LINKING (Upgrade Anonymous to Google) ---
+  const handleLinkGoogle = async () => {
+      if (!user) return;
+      const provider = new GoogleAuthProvider();
+      
+      try {
+          await linkWithPopup(user, provider);
+          alert("IDENTITY SECURED. Your progress is now saved to your Google Account.");
+          setGameState(prev => ({ ...prev })); 
+      } catch (error) {
+          if (error.code === 'auth/credential-already-in-use') {
+             alert("Error: That Google account is already used by another player.");
+          } else {
+             console.error("Linking Error:", error);
+             alert("Failed to link account: " + error.message);
+          }
+      }
+  };
+
+  // --- STRAVA TOKEN EXCHANGE & BACKFILL (Safe & Bulletproof) ---
   useEffect(() => {
     if (!user) return;
     const params = new URLSearchParams(window.location.search);
@@ -445,7 +483,15 @@ export default function TheEntity() {
              const data = await response.json();
              
              if (data.access_token) {
-                 // 1. Fetch History
+                 // 1. FETCH THE TRUTH (Read DB directly)
+                 const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
+                 const docSnap = await getDoc(userDocRef);
+                 
+                 const currentData = docSnap.exists() ? docSnap.data() : gameState;
+                 const currentHistory = currentData.runHistory || [];
+                 const currentTotal = currentData.totalKmRun || 0;
+
+                 // 2. Fetch Strava History
                  const historyResponse = await fetch(`https://www.strava.com/api/v3/athlete/activities?per_page=30`, {
                     headers: { 'Authorization': `Bearer ${data.access_token}` }
                  });
@@ -454,19 +500,18 @@ export default function TheEntity() {
                  let recoveredRuns = [];
                  let addedDistance = 0;
                  
-                 // 2. Filter and Process
                  if (Array.isArray(historyData)) {
                      const recentRuns = historyData.filter(act => act.type === 'Run');
-                     const gameStartTime = new Date(gameState.startDate).getTime(); // When did you start the game?
+                     
+                     // "Start of Day" Logic
+                     const gameStartDate = new Date(currentData.startDate);
+                     gameStartDate.setHours(0,0,0,0);
 
                      recentRuns.forEach(act => {
-                         // DATE CHECK: Ignore runs that happened before the game started
-                         const runTime = new Date(act.start_date).getTime();
-                         if (runTime < gameStartTime) return; 
+                         const runDate = new Date(act.start_date);
+                         if (runDate < gameStartDate) return; 
 
-                         // DUPLICATE CHECK: Check if we already have this run
-                         const alreadyExists = gameState.runHistory.some(r => r.stravaId === act.id || r.id === act.id);
-                         
+                         const alreadyExists = currentHistory.some(r => r.stravaId === act.id || r.id === act.id);
                          if (!alreadyExists) {
                              const runKm = parseFloat((act.distance / 1000).toFixed(2));
                              recoveredRuns.push({
@@ -483,15 +528,14 @@ export default function TheEntity() {
                      });
                  }
 
-                 // 3. Save
-                 const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
+                 // 3. SAVE SAFELY
                  await setDoc(userDocRef, { 
                      isStravaLinked: true,
                      stravaAccessToken: data.access_token,
                      stravaRefreshToken: data.refresh_token,
                      stravaExpiresAt: data.expires_at,
-                     runHistory: [...recoveredRuns, ...gameState.runHistory],
-                     totalKmRun: gameState.totalKmRun + addedDistance
+                     runHistory: [...recoveredRuns, ...currentHistory],
+                     totalKmRun: currentTotal + addedDistance
                  }, { merge: true });
 
                  await setDoc(doc(db, 'strava_mappings', data.athlete.id.toString()), {
@@ -502,10 +546,11 @@ export default function TheEntity() {
                  window.history.replaceState({}, document.title, "/");
                  
                  if (recoveredRuns.length > 0) {
-                     alert(`SYNC COMPLETE.\n\nFound ${recoveredRuns.length} new runs matching your timeline.`);
+                     alert(`SYNC COMPLETE.\n\nFound ${recoveredRuns.length} new runs totaling ${addedDistance.toFixed(2)}km.`);
                  } else {
-                     alert("Strava Connected! No new runs found since game start.");
+                     alert("Strava Connected! No missing runs found.");
                  }
+                 window.location.reload();
              }
           } catch (error) {
              console.error("Strava Auth Failed", error);
@@ -513,7 +558,8 @@ export default function TheEntity() {
        };
        exchangeToken();
     }
-  }, [user, gameState]); // Re-runs if gameState changes (to get correct start date)
+  }, [user]);
+
   // --- PAYMENT LISTENER ---
   useEffect(() => {
       const params = new URLSearchParams(window.location.search);
@@ -565,11 +611,14 @@ export default function TheEntity() {
   // --- GAME LOOP & CLEANUP ---
   useEffect(() => {
       if (!user || loading) return;
+      
+      // 1. CLEANUP: Kill zombie quests
       if (daysSinceStart < 5 && gameState.activeQuest) {
           const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
           setDoc(userDocRef, { ...gameState, activeQuest: null });
           return;
       }
+
       if (daysSinceStart > 0 && daysSinceStart % 5 === 0 && daysSinceStart !== gameState.lastQuestGenerationDay) {
           if (!gameState.activeQuest) {
               const parts = ['battery', 'emitter', 'casing'];
@@ -812,7 +861,7 @@ export default function TheEntity() {
       <style>{`.bg-stripes-slate {background-image: linear-gradient(45deg, #1e293b 25%, transparent 25%, transparent 50%, #1e293b 50%, #1e293b 75%, transparent 75%, transparent);background-size: 10px 10px;}`}</style>
       
       {showLogModal && <LogRunModal onClose={() => setShowLogModal(false)} onSave={handleAddRun} activeQuest={gameState.activeQuest} />}
-      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} user={user} gameState={gameState} onLogout={handleLogout} onDelete={handleDeleteAccount} onConnectStrava={handleStravaLogin} />}
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} user={user} gameState={gameState} onLogout={handleLogout} onDelete={handleDeleteAccount} onConnectStrava={handleStravaLogin} onLinkGoogle={handleLinkGoogle} />}
       {showStore && <SecretStore duration={gameState.duration} onClose={() => setShowStore(false)} />}
       
       <div className="sticky top-0 z-30 bg-slate-950/80 backdrop-blur-md border-b border-slate-800">
@@ -843,17 +892,37 @@ export default function TheEntity() {
         {/* QUESTS */}
         <div className="mb-6">
             <div className="flex justify-between items-center mb-4"><h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider flex items-center gap-2"><Award size={16} /> Current Mission</h3>{gameState.badges.length > 0 && <span className="text-xs bg-slate-800 px-2 py-1 rounded-full text-slate-400">{gameState.badges.length} Badges</span>}</div>
+            
+            {/* Quest Card (Safe Render) */}
             {!gameState.activeQuest ? (
                 <div className="bg-slate-900/50 border border-slate-800 border-dashed rounded-xl p-6 text-center text-slate-500 text-sm">No signals detected. Next mission available in {5 - (daysSinceStart % 5)} days.</div>
             ) : (
                 <div className={`bg-gradient-to-r from-slate-900 to-slate-900 border rounded-xl p-4 relative overflow-hidden ${gameState.activeQuest.status === 'active' ? 'border-amber-600' : 'border-slate-700'}`}>
                     {gameState.activeQuest.status === 'active' && <div className="absolute top-0 right-0 bg-amber-600 text-black text-[10px] font-bold px-2 py-1 rounded-bl">ACTIVE</div>}
                     <div className="flex justify-between items-start mb-2">
-                        <div><h4 className="font-bold text-white flex items-center gap-2"><ArrowRightLeft className="text-amber-500" size={16} /> {gameState.activeQuest.title || "Unknown Mission"}</h4><p className="text-xs text-slate-400 mt-1 max-w-[80%]">Run {gameState.activeQuest.distance}km off-track to recover parts. Entity continues moving.</p></div>
-                        <div className="flex flex-col items-end"><span className="text-xs text-slate-500 uppercase tracking-wide">Reward</span><div className="flex items-center gap-1 text-amber-400 text-sm font-bold">{React.createElement(getPartIcon(gameState.activeQuest.rewardPart), {size: 14})}{activeQuestName}</div></div>
+                        <div>
+                            <h4 className="font-bold text-white flex items-center gap-2"><ArrowRightLeft className="text-amber-500" size={16} /> {gameState.activeQuest.title || "Unknown Mission"}</h4>
+                            <p className="text-xs text-slate-400 mt-1 max-w-[80%]">Run {gameState.activeQuest.distance}km off-track to recover parts. Entity continues moving.</p>
+                        </div>
+                        <div className="flex flex-col items-end">
+                            <span className="text-xs text-slate-500 uppercase tracking-wide">Reward</span>
+                            <div className="flex items-center gap-1 text-amber-400 text-sm font-bold">
+                                {React.createElement(getPartIcon(gameState.activeQuest.rewardPart), {size: 14})}
+                                {activeQuestName}
+                            </div>
+                        </div>
                     </div>
                     {gameState.activeQuest.status === 'active' ? (
-                        <div className="mt-4"><div className="flex justify-between text-xs text-slate-400 mb-1"><span>Progress</span><span>{(gameState.activeQuest.progress || 0).toFixed(1)} / {gameState.activeQuest.distance} km</span></div><div className="h-2 bg-slate-800 rounded-full overflow-hidden"><div className="h-full bg-amber-500 transition-all" style={{width: `${((gameState.activeQuest.progress || 0) / gameState.activeQuest.distance) * 100}%`}}></div></div></div>
+                        <div className="mt-4">
+                            <div className="flex justify-between text-xs text-slate-400 mb-1">
+                                {/* SAFETY FIX: Use optional chaining (?) and default values */}
+                                <span>Progress</span>
+                                <span>{(gameState.activeQuest.progress || 0).toFixed(1)} / {gameState.activeQuest.distance} km</span>
+                            </div>
+                            <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                                <div className="h-full bg-amber-500 transition-all" style={{width: `${((gameState.activeQuest.progress || 0) / gameState.activeQuest.distance) * 100}%`}}></div>
+                            </div>
+                        </div>
                     ) : (
                         <button onClick={handleAcceptQuest} className="mt-4 w-full bg-slate-800 hover:bg-slate-700 text-amber-500 border border-slate-700 font-bold py-2 rounded-lg text-sm transition-colors">Accept Mission</button>
                     )}
