@@ -723,7 +723,7 @@ export default function TheEntity() {
     } else {
         // PAID PATH
         if (!confirm("PURCHASE EMP BURST?\n\nCost: $1.00\n\nYou will be redirected to secure checkout.")) return;
-        window.location.href = "REPLACE_WITH_YOUR_EMP_LINK"; 
+        window.location.href = "https://buy.stripe.com/test_5kQ6oG8c0fk5cLZ8UA5J600"; 
     }
   };
 
@@ -748,7 +748,7 @@ export default function TheEntity() {
     } else {
         // PAID PATH
         if (!confirm("PURCHASE NITROUS BOOST?\n\nCost: $1.00\nEffect: Instant +3km distance.\n\nYou will be redirected to secure checkout.")) return;
-        window.location.href = "REPLACE_WITH_YOUR_BOOST_LINK"; 
+        window.location.href = "https://buy.stripe.com/test_6oU7sK77Wb3PdQ3c6M5J601"; 
     }
   };
 
