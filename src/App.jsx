@@ -466,7 +466,7 @@ export default function TheEntity() {
       }
   };
 
-// --- STRAVA TOKEN EXCHANGE (Safe & Bulletproof) ---
+// --- STRAVA TOKEN EXCHANGE (With Sorting & Backfill) ---
   useEffect(() => {
     if (!user) return;
     const params = new URLSearchParams(window.location.search);
@@ -483,16 +483,13 @@ export default function TheEntity() {
              const data = await response.json();
              
              if (data.access_token) {
-                 // 1. FETCH THE TRUTH (Read DB directly to avoid "0km" overwrite bugs)
                  const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
                  const docSnap = await getDoc(userDocRef);
-                 
-                 // Use existing data if it exists, otherwise default
                  const currentData = docSnap.exists() ? docSnap.data() : gameState;
                  const currentHistory = currentData.runHistory || [];
                  const currentTotal = currentData.totalKmRun || 0;
 
-                 // 2. Fetch Strava History
+                 // Fetch History (Last 30 runs)
                  const historyResponse = await fetch(`https://www.strava.com/api/v3/athlete/activities?per_page=30`, {
                     headers: { 'Authorization': `Bearer ${data.access_token}` }
                  });
@@ -503,18 +500,11 @@ export default function TheEntity() {
                  
                  if (Array.isArray(historyData)) {
                      const recentRuns = historyData.filter(act => act.type === 'Run');
-                     
-                     // "Start of Day" Logic: Allow runs from the morning of the start date
-                     const gameStartDate = new Date(currentData.startDate);
-                     gameStartDate.setHours(0,0,0,0);
+                     // Remove the date filter so ALL 30 previous runs are imported
+                     // const gameStartDate = new Date(currentData.startDate); 
 
                      recentRuns.forEach(act => {
-                         const runDate = new Date(act.start_date);
-                         
-                         // IGNORE runs older than the start DAY (not just start time)
-                         if (runDate < gameStartDate) return; 
-
-                         // DUPLICATE CHECK
+                         // Check against BOTH ID types (Strava ID and our internal ID)
                          const alreadyExists = currentHistory.some(r => r.stravaId === act.id || r.id === act.id);
                          
                          if (!alreadyExists) {
@@ -533,13 +523,16 @@ export default function TheEntity() {
                      });
                  }
 
-                 // 3. SAVE SAFELY (Merge with the fetched data, not the local state)
+                 // --- THE FIX: SORT BY DATE (Newest First) ---
+                 const unsortedHistory = [...recoveredRuns, ...currentHistory];
+                 const sortedHistory = unsortedHistory.sort((a, b) => new Date(b.date) - new Date(a.date));
+
                  await setDoc(userDocRef, { 
                      isStravaLinked: true,
                      stravaAccessToken: data.access_token,
                      stravaRefreshToken: data.refresh_token,
                      stravaExpiresAt: data.expires_at,
-                     runHistory: [...recoveredRuns, ...currentHistory],
+                     runHistory: sortedHistory, // <--- SAVING SORTED LIST
                      totalKmRun: currentTotal + addedDistance
                  }, { merge: true });
 
@@ -551,11 +544,10 @@ export default function TheEntity() {
                  window.history.replaceState({}, document.title, "/");
                  
                  if (recoveredRuns.length > 0) {
-                     alert(`SYNC COMPLETE.\n\nFound ${recoveredRuns.length} new runs totaling ${addedDistance.toFixed(2)}km.`);
+                     alert(`SYNC COMPLETE.\n\nImported ${recoveredRuns.length} historic runs.`);
                  } else {
-                     alert("Strava Connected! No missing runs found.");
+                     alert("Strava Connected! List is up to date.");
                  }
-                 // Force reload to clear the "Death Screen" if it happened
                  window.location.reload();
              }
           } catch (error) {
@@ -564,7 +556,7 @@ export default function TheEntity() {
        };
        exchangeToken();
     }
-  }, [user]); // Removed gameState dependency to prevent loops
+  }, [user]);
 
   // --- PAYMENT LISTENER ---
   useEffect(() => {
