@@ -99,6 +99,7 @@ const CyberClock = ({ ms, label, color = "text-white" }) => {
          <div className={`text-xs font-bold uppercase tracking-[0.2em] mb-3 ${isPanic ? 'text-red-500' : color} opacity-80`}>
              {isPanic ? "⚠️ IMMINENT CONTACT ⚠️" : label}
          </div>
+         
          <div className="flex items-center justify-center gap-1 sm:gap-2 font-mono">
             {d > 0 && (
                 <>
@@ -372,6 +373,7 @@ const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnect
                         onClick={onLinkGoogle}
                         className="w-full bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold py-3 rounded-lg border border-slate-700 flex items-center justify-center gap-2 transition-all"
                     >
+                        {/* Simple Google G Icon */}
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z"/></svg>
                         Link Google Account
                     </button>
@@ -458,7 +460,7 @@ export default function TheEntity() {
     totalPausedHours: 0,
     empUsageCount: 0,
     boostUsageCount: 0,
-    inventory: { battery: 0, emitter: 0, casing: 0, empCharges: 0, boostCharges: 0 }, // Added Charge Counts
+    inventory: { battery: 0, emitter: 0, casing: 0, empCharges: 0, boostCharges: 0 },
     activeQuest: null,
     badges: [], 
     lastQuestGenerationDay: 0,
@@ -494,17 +496,19 @@ export default function TheEntity() {
   const lastEmpDate = gameState.lastEmpUsage ? new Date(gameState.lastEmpUsage) : null;
   const isEmpActive = lastEmpDate && (today.getTime() - lastEmpDate.getTime()) < (EMP_DURATION_HOURS * 3600000);
   
-  // --- AMMO LOGIC ---
-  const empAmmo = (gameState.inventory?.empCharges || 0);
-  const boostAmmo = (gameState.inventory?.boostCharges || 0);
+  // --- UNLIMITED SHOP LOGIC ---
   const isEmpFree = (gameState.empUsageCount || 0) === 0;
   const isBoostFree = (gameState.boostUsageCount || 0) === 0;
-  const hasCraftedEmp = gameState.inventory.battery > 0 && gameState.inventory.emitter > 0 && gameState.inventory.casing > 0;
-
-  // Should we show DEPLOY or BUY?
-  const canDeployEmp = empAmmo > 0 || hasCraftedEmp || isEmpFree;
-  const canDeployBoost = boostAmmo > 0 || isBoostFree;
   
+  // Inventory Counts (Safe Check)
+  const empAmmo = (gameState.inventory?.empCharges || 0);
+  const boostAmmo = (gameState.inventory?.boostCharges || 0);
+  const playerHasCrafted = gameState.inventory.battery > 0 && gameState.inventory.emitter > 0 && gameState.inventory.casing > 0;
+  
+  // Logic: Can we deploy right now?
+  const canDeployEmp = empAmmo > 0 || playerHasCrafted || isEmpFree;
+  const canDeployBoost = boostAmmo > 0 || isBoostFree;
+
   const daysUntilCaught = distanceGap > 0 ? Math.floor(distanceGap / gameState.entitySpeed) : 0;
   const hoursUntilCatch = distanceGap > 0 ? (distanceGap / speedPerHour) : 0;
   const msUntilCatch = hoursUntilCatch * 60 * 60 * 1000;
@@ -542,7 +546,7 @@ export default function TheEntity() {
       }
   };
 
-  // --- STRAVA TOKEN EXCHANGE ---
+  // --- STRAVA TOKEN EXCHANGE & BACKFILL ---
   useEffect(() => {
     if (!user) return;
     const params = new URLSearchParams(window.location.search);
@@ -559,6 +563,7 @@ export default function TheEntity() {
              const data = await response.json();
              
              if (data.access_token) {
+                 // 1. FETCH THE TRUTH
                  const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
                  const docSnap = await getDoc(userDocRef);
                  
@@ -566,6 +571,7 @@ export default function TheEntity() {
                  const currentHistory = currentData.runHistory || [];
                  const currentTotal = currentData.totalKmRun || 0;
 
+                 // 2. Fetch Strava History
                  const historyResponse = await fetch(`https://www.strava.com/api/v3/athlete/activities?per_page=30`, {
                     headers: { 'Authorization': `Bearer ${data.access_token}` }
                  });
@@ -601,6 +607,7 @@ export default function TheEntity() {
                      });
                  }
 
+                 // 3. SAVE SAFELY
                  const mergedHistory = [...recoveredRuns, ...currentHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
 
                  await setDoc(userDocRef, { 
@@ -634,7 +641,7 @@ export default function TheEntity() {
     }
   }, [user]);
 
-  // --- PAYMENT LISTENER (STOCKPILING LOGIC) ---
+  // --- PAYMENT LISTENER (Safe & Stockpile) ---
   useEffect(() => {
       if (loading || !user) return; 
       
@@ -647,18 +654,16 @@ export default function TheEntity() {
               const docSnap = await getDoc(userDocRef);
               
               let currentSave = docSnap.exists() ? docSnap.data() : { ...gameState };
-              // Initialize inventory if missing
+              // Ensure inventory exists
               if (!currentSave.inventory) currentSave.inventory = { battery:0, emitter:0, casing:0, empCharges:0, boostCharges:0 };
 
               let message = "";
 
               if (purchaseType === 'emp_success') {
-                  // Add to STOCK, don't use immediately
                   currentSave.inventory.empCharges = (currentSave.inventory.empCharges || 0) + 1;
                   message = "PAYMENT CONFIRMED. +1 EMP Added to Inventory.";
               } 
               else if (purchaseType === 'boost_success') {
-                  // Add to STOCK
                   currentSave.inventory.boostCharges = (currentSave.inventory.boostCharges || 0) + 1;
                   message = "PAYMENT CONFIRMED. +1 Nitrous Boost Added to Inventory.";
               }
@@ -793,11 +798,11 @@ export default function TheEntity() {
     
     if (canDeployEmp) {
         // DEPLOY LOGIC
-        if (!confirm(`DEPLOY EMP?\n\n(You have ${empAmmo} in stock + ${hasCraftedEmp ? 1 : 0} crafted + ${isEmpFree ? 1 : 0} free)`)) return;
+        if (!confirm(`DEPLOY EMP?\n\n(You have ${empAmmo} in stock + ${playerHasCrafted ? 1 : 0} crafted + ${isEmpFree ? 1 : 0} free)`)) return;
         
         let newInventory = { ...gameState.inventory };
         // Priorities: Use Crafted -> Use Free -> Use Stock
-        if (hasCraftedEmp) { 
+        if (playerHasCrafted) { 
             newInventory.battery--; newInventory.emitter--; newInventory.casing--; 
         } else if (isEmpFree) {
             // Just mark usage, don't touch ammo
@@ -821,7 +826,6 @@ export default function TheEntity() {
     }
   };
 
-  // Separate Buy Function for the small button
   const handleBuyMoreEmp = () => {
      window.location.href = "https://buy.stripe.com/test_5kQ6oG8c0fk5cLZ8UA5J600";
   };
@@ -834,10 +838,9 @@ export default function TheEntity() {
         if (!confirm(`INJECT NITROUS?\n\n(You have ${boostAmmo} in stock + ${isBoostFree ? 1 : 0} free)`)) return;
         
         let newInventory = { ...gameState.inventory };
-        const boostVal = 3.0; // Standard boost
+        const boostVal = 3.0; 
 
         if (isBoostFree) {
-            // Verify they ran today for the free one
             const startOfDay = new Date(); startOfDay.setHours(0,0,0,0);
             const todayRuns = gameState.runHistory.filter(run => new Date(run.date) >= startOfDay);
             const todayKm = todayRuns.reduce((acc, run) => acc + run.km, 0);
@@ -1122,3 +1125,72 @@ export default function TheEntity() {
                 </div>
             </div>
         </div>
+
+        {/* SYNC / STRAVA STATUS SECTION */}
+        {gameState.isStravaLinked ? (
+            <div className="w-full bg-[#FC4C02]/10 border border-[#FC4C02] text-[#FC4C02] py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-3 mb-8 shadow-[0_0_15px_rgba(252,76,2,0.15)]">
+                <svg role="img" viewBox="0 0 24 24" className="w-6 h-6 fill-[#FC4C02]" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
+                </svg>
+                <span>Strava Active</span>
+                <div className="animate-pulse w-2 h-2 rounded-full bg-[#FC4C02] ml-1"></div>
+            </div>
+        ) : (
+            <div className="flex gap-2 mb-8">
+                <button onClick={handleStravaLogin} className="flex-1 bg-[#FC4C02] hover:bg-[#E34402] transition-all py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg group">
+                    <svg role="img" viewBox="0 0 24 24" className="w-5 h-5 fill-white" xmlns="http://www.w3.org/2000/svg"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+                    <span className="text-white font-bold text-sm">Connect Strava</span>
+                </button>
+                <button onClick={() => setShowLogModal(true)} className="flex-1 bg-emerald-600 hover:bg-emerald-500 transition-all py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg">
+                    <Footprints size={20} className="text-white" />
+                    <span className="text-white font-bold text-sm">Manual Log</span>
+                </button>
+            </div>
+        )}
+        
+        {/* RECENT LOGS */}
+        <div className="mb-8">
+            <h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-4 flex items-center gap-2"><History size={16} /> Recent Logs</h3>
+            <div className="space-y-3">
+                {gameState.runHistory.length === 0 ? (
+                    <div className="text-center p-8 border-2 border-dashed border-slate-800 rounded-xl text-slate-600">No runs logged yet. Start running.</div>
+                ) : (
+                    gameState.runHistory.slice(0, 5).map((run) => (
+                        <div key={run.id} className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex justify-between items-center group relative overflow-hidden">
+                            <div>
+                                <div className="text-white font-bold flex items-center gap-2">
+                                    {run.km} km
+                                    {run.source?.includes('strava') && <span className="text-[10px] bg-[#FC4C02]/20 text-[#FC4C02] px-1.5 py-0.5 rounded border border-[#FC4C02]/30">STRAVA</span>}
+                                    {run.type === 'boost' && <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded border border-yellow-500/30">BOOST</span>}
+                                    {run.type === 'quest' && <span className="text-[10px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded border border-amber-500/30">QUEST</span>}
+                                </div>
+                                <div className="text-slate-500 text-xs">{formatDate(new Date(run.date))} &bull; {run.notes}</div>
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                                <button onClick={() => handleDeleteRun(run.id)} className="p-2 rounded-lg text-slate-600 hover:bg-red-900/20 hover:text-red-500 transition-all" title="Delete Activity"><Trash2 size={16} /></button>
+                                {run.type !== 'quest' && run.type !== 'boost' && gameState.activeQuest?.status === 'active' && (
+                                    <button 
+                                        onClick={() => handleConvertRunToQuest(run.id)}
+                                        className="p-2 rounded-lg bg-slate-800 text-slate-500 hover:bg-amber-900/30 hover:text-amber-500 transition-colors"
+                                        title="Assign to Mission"
+                                    >
+                                        <ArrowRightLeft size={16} />
+                                    </button>
+                                )}
+                                
+                                <div className="bg-slate-800 p-2 rounded-lg text-slate-400">
+                                    {run.type === 'boost' ? <Rocket size={16} className="text-yellow-400" /> : run.type === 'quest' ? <Award size={16} className="text-amber-400" /> : <Activity size={16} />}
+                                </div>
+                            </div>
+                        </div>
+                    ))
+                )}
+            </div>
+        </div>
+        
+        <div className="text-center text-slate-600 text-xs">Start Date: {formatDate(gameStart)} &bull; Day {daysSinceStart} of {gameState.duration} &bull; Agent: {gameState.username}</div>
+      </div>
+    </div>
+  );
+}
