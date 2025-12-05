@@ -986,10 +986,51 @@ export default function TheEntity() {
 
         {/* INVENTORY / ACTIONS */}
         <div className="grid grid-cols-2 gap-2 mb-8">
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-3"><h3 className="text-[10px] uppercase font-bold text-slate-500 mb-2 tracking-wider">EMP Components</h3><div className="flex justify-between items-center px-1">{EMP_PARTS.map(part => {const count = gameState.inventory[part.id]; const hasPart = count > 0; const Icon = part.icon; return (<div key={part.id} className={`flex flex-col items-center gap-1 ${hasPart ? 'text-white' : 'text-slate-700'}`}><div className={`w-8 h-8 rounded-full border flex items-center justify-center relative ${hasPart ? `bg-slate-800 ${part.color||'text-white'} border-slate-600` : 'bg-slate-950 border-slate-800'}`}><Icon size={16} />{count > 1 && <span className="absolute -top-1 -right-1 bg-white text-black text-[9px] w-3 h-3 flex items-center justify-center rounded-full font-bold">{count}</span>}</div></div>)})}</div>{hasCraftedEmp && <div className="mt-2 text-center text-[10px] text-emerald-400 animate-pulse font-bold">COMPONENTS ASSEMBLED</div>}</div>
+            {/* Left Side: Parts Inventory */}
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-3">
+                <h3 className="text-[10px] uppercase font-bold text-slate-500 mb-2 tracking-wider">EMP Components</h3>
+                <div className="flex justify-between items-center px-1">
+                    {EMP_PARTS.map(part => {
+                        const count = gameState.inventory[part.id]; 
+                        const hasPart = count > 0; 
+                        const Icon = part.icon; 
+                        return (
+                            <div key={part.id} className={`flex flex-col items-center gap-1 ${hasPart ? 'text-white' : 'text-slate-700'}`}>
+                                <div className={`w-8 h-8 rounded-full border flex items-center justify-center relative ${hasPart ? `bg-slate-800 ${part.color||'text-white'} border-slate-600` : 'bg-slate-950 border-slate-800'}`}>
+                                    <Icon size={16} />
+                                    {count > 1 && <span className="absolute -top-1 -right-1 bg-white text-black text-[9px] w-3 h-3 flex items-center justify-center rounded-full font-bold">{count}</span>}
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
+                {hasCraftedEmp && <div className="mt-2 text-center text-[10px] text-emerald-400 animate-pulse font-bold">COMPONENTS ASSEMBLED</div>}
+            </div>
+
+            {/* Right Side: Buy Buttons (Unlimited) */}
             <div className="space-y-2">
-                 <button onClick={handleBuyEMP} disabled={!isEmpAvailable || isGracePeriod} className={`w-full p-2 rounded-lg font-bold text-xs flex flex-col items-center justify-center gap-1 transition-all ${!isEmpAvailable || isGracePeriod ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-cyan-950 text-cyan-400 hover:bg-cyan-900'}`}>{isEmpAvailable ? (<><div className="flex items-center gap-1"><ZapOff size={14} /> EMP Burst</div><span className="text-[9px] bg-slate-950 px-1.5 py-0.5 rounded text-slate-300 border border-slate-800 uppercase tracking-wider">{hasCraftedEmp ? "CRAFTED" : isEmpFree ? "FREE" : "$1.00"}</span></>) : (<><Lock size={14} /> <span className="text-[9px]">{empCooldownRemaining}d Left</span></>)}</button>
-                <button onClick={handleBuyBoost} className="w-full p-2 rounded-lg font-bold text-xs flex flex-col items-center justify-center gap-1 transition-all bg-yellow-950 text-yellow-400 hover:bg-yellow-900"><div className="flex items-center gap-1"><Rocket size={14} /> Boost 15%</div><span className="text-[9px] bg-slate-950 px-1.5 py-0.5 rounded text-slate-300 border border-slate-800 uppercase tracking-wider">{isBoostFree ? "FREE" : "$1.00"}</span></button>
+                 {/* EMP BUTTON */}
+                 <button 
+                    onClick={handleBuyEMP} 
+                    disabled={isGracePeriod} 
+                    className={`w-full p-2 rounded-lg font-bold text-xs flex flex-col items-center justify-center gap-1 transition-all ${isGracePeriod ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-cyan-950 text-cyan-400 hover:bg-cyan-900'}`}
+                 >
+                    <div className="flex items-center gap-1"><ZapOff size={14} /> EMP Burst</div>
+                    <span className="text-[9px] bg-slate-950 px-1.5 py-0.5 rounded text-slate-300 border border-slate-800 uppercase tracking-wider">
+                        {hasCraftedEmp ? "CRAFTED" : isEmpFree ? "FREE" : "$1.00"}
+                    </span>
+                 </button>
+
+                {/* BOOST BUTTON */}
+                <button 
+                    onClick={handleBuyBoost} 
+                    className="w-full p-2 rounded-lg font-bold text-xs flex flex-col items-center justify-center gap-1 transition-all bg-yellow-950 text-yellow-400 hover:bg-yellow-900"
+                >
+                    <div className="flex items-center gap-1"><Rocket size={14} /> Nitrous Boost</div>
+                    <span className="text-[9px] bg-slate-950 px-1.5 py-0.5 rounded text-slate-300 border border-slate-800 uppercase tracking-wider">
+                        {isBoostFree ? "FREE" : "$1.00"}
+                    </span>
+                </button>
             </div>
         </div>
 
