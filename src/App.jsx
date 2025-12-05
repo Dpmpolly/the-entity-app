@@ -419,12 +419,8 @@ export default function TheEntity() {
   const isVictory = daysSinceStart >= gameState.duration && !isCaught;
   
   const EMP_DURATION_HOURS = 25;
-  const EMP_COOLDOWN_DAYS = 90;
-  const lastEmpDate = gameState.lastEmpUsage ? new Date(gameState.lastEmpUsage) : null;
-  const isEmpActive = lastEmpDate && (today.getTime() - lastEmpDate.getTime()) < (EMP_DURATION_HOURS * 3600000);
-  const daysSinceEmp = lastEmpDate ? (today.getTime() - lastEmpDate.getTime()) / 86400000 : 999;
-  const isEmpAvailable = daysSinceEmp >= EMP_COOLDOWN_DAYS;
-  const empCooldownRemaining = Math.max(0, Math.ceil(EMP_COOLDOWN_DAYS - daysSinceEmp));
+  // REMOVED COOLDOWN LIMITS
+  const isEmpAvailable = true; // Always available to buy
   const isEmpFree = (gameState.empUsageCount || 0) === 0;
   const isBoostFree = (gameState.boostUsageCount || 0) === 0;
   
@@ -745,36 +741,56 @@ export default function TheEntity() {
   };
 
   const handleBuyEMP = async () => {
-    if (!user || !isEmpAvailable) return;
+    if (!user) return; // Removed !isEmpAvailable check
+
     const hasCraftedEmp = gameState.inventory.battery > 0 && gameState.inventory.emitter > 0 && gameState.inventory.casing > 0;
+    
     if (hasCraftedEmp || isEmpFree) {
+        // FREE PATH (Crafting/Bonus)
         if (!confirm(`Deploy EMP Burst?\n\nCost: ${hasCraftedEmp ? "FREE (Crafted)" : "FREE (Bonus)"}\nEffect: Stuns Entity for 25h.`)) return;
+        
         let newInventory = { ...gameState.inventory };
         if (hasCraftedEmp) { newInventory.battery--; newInventory.emitter--; newInventory.casing--; }
-        const newState = { ...gameState, lastEmpUsage: new Date().toISOString(), totalPausedHours: (gameState.totalPausedHours || 0) + EMP_DURATION_HOURS, empUsageCount: (gameState.empUsageCount || 0) + 1, inventory: newInventory };
+        
+        const newState = { 
+            ...gameState, 
+            lastEmpUsage: new Date().toISOString(), 
+            // Accumulate hours: Buying 2 EMPs = 50 hours of safety
+            totalPausedHours: (gameState.totalPausedHours || 0) + 25, 
+            empUsageCount: (gameState.empUsageCount || 0) + 1, 
+            inventory: newInventory 
+        };
         await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
         alert("EMP DEPLOYED. The Entity is stunned.");
     } else {
+        // PAID PATH (Unlimited)
         if (!confirm("PURCHASE EMP BURST?\n\nCost: $1.00\n\nYou will be redirected to secure checkout.")) return;
-        window.location.href = "https://buy.stripe.com/test_5kQ6oG8c0fk5cLZ8UA5J600"; 
+        window.location.href = "https://buy.stripe.com/test_..."; // YOUR STRIPE LINK HERE
     }
   };
 
   const handleBuyBoost = async () => {
     if (!user) return;
+
+    // 1. FREE BOOST (Still requires a run to calculate 15%)
     if (isBoostFree) {
         const startOfDay = new Date(); startOfDay.setHours(0,0,0,0);
         const todayRuns = gameState.runHistory.filter(run => new Date(run.date) >= startOfDay);
         const todayKm = todayRuns.reduce((acc, run) => acc + run.km, 0);
-        if (todayKm <= 0) return alert("System Error: No movement detected today.\n\nYou must log a run today before you can boost it.");
+        
+        // Keep restriction ONLY for the free one (otherwise 15% of 0 is 0)
+        if (todayKm <= 0) return alert("Free Boost Error: You must log a run today to claim your free 15% boost.");
+        
         const boostAmount = parseFloat((todayKm * 0.15).toFixed(2));
         if (!confirm(`Activate Nitrous Boost?\n\nCost: FREE (First Time)\nEffect: +${boostAmount}km`)) return;
+        
         const newRun = { id: Date.now(), date: new Date().toISOString(), km: boostAmount, notes: 'Nitrous Boost (Free)', type: 'boost' };
         const newState = { ...gameState, totalKmRun: gameState.totalKmRun + boostAmount, runHistory: [newRun, ...gameState.runHistory], boostUsageCount: 1 };
         await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
     } else {
+        // 2. PAID BOOST (No restrictions - Pure distance)
         if (!confirm("PURCHASE NITROUS BOOST?\n\nCost: $1.00\nEffect: Instant +3km distance.\n\nYou will be redirected to secure checkout.")) return;
-        window.location.href = "https://buy.stripe.com/test_6oU7sK77Wb3PdQ3c6M5J601"; 
+        window.location.href = "https://buy.stripe.com/test_..."; // YOUR STRIPE LINK HERE
     }
   };
 
