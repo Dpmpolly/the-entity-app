@@ -466,7 +466,7 @@ export default function TheEntity() {
       }
   };
 
-// --- STRAVA TOKEN EXCHANGE & BACKFILL ---
+// --- STRAVA TOKEN EXCHANGE (Safe & Bulletproof) ---
   useEffect(() => {
     if (!user) return;
     const params = new URLSearchParams(window.location.search);
@@ -479,48 +479,52 @@ export default function TheEntity() {
              const clientId = import.meta.env.VITE_STRAVA_CLIENT_ID;
              const clientSecret = import.meta.env.VITE_STRAVA_CLIENT_SECRET;
              
-             // 1. Get the Tokens
              const response = await fetch(`https://www.strava.com/oauth/token?client_id=${clientId}&client_secret=${clientSecret}&code=${stravaCode}&grant_type=authorization_code`, { method: 'POST' });
              const data = await response.json();
              
              if (data.access_token) {
-                 // 2. THE NEW PART: Ask Strava for recent history (The Backfill)
+                 // 1. FETCH THE TRUTH (Read DB directly to avoid "0km" overwrite bugs)
+                 const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
+                 const docSnap = await getDoc(userDocRef);
+                 
+                 // Use existing data if it exists, otherwise default
+                 const currentData = docSnap.exists() ? docSnap.data() : gameState;
+                 const currentHistory = currentData.runHistory || [];
+                 const currentTotal = currentData.totalKmRun || 0;
+
+                 // 2. Fetch Strava History
                  const historyResponse = await fetch(`https://www.strava.com/api/v3/athlete/activities?per_page=30`, {
                     headers: { 'Authorization': `Bearer ${data.access_token}` }
                  });
                  const historyData = await historyResponse.json();
                  
-                 // 3. Process the history
                  let recoveredRuns = [];
                  let addedDistance = 0;
                  
-                 // Get current history to check against
-                 const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
-                 // We need to read the doc first to get current history, 
-                 // but since we are inside a setState loop, we can use the local 'gameState' if available, 
-                 // or better, just assume the backend merge will handle it. 
-                 // To be safe, let's trust the gameState variable we have in the component closure, 
-                 // but filtered to ensure no ID collisions.
-
-                 // Actually, safer to rely on the fact that we are about to OVERWRITE the DB with a merge.
-                 // Let's construct the new runs.
-                 
                  if (Array.isArray(historyData)) {
-                     // Filter for Runs only
                      const recentRuns = historyData.filter(act => act.type === 'Run');
                      
+                     // "Start of Day" Logic: Allow runs from the morning of the start date
+                     const gameStartDate = new Date(currentData.startDate);
+                     gameStartDate.setHours(0,0,0,0);
+
                      recentRuns.forEach(act => {
-                         // Check if we already have this run in our local state
-                         const alreadyExists = gameState.runHistory.some(r => r.stravaId === act.id || r.id === act.id);
+                         const runDate = new Date(act.start_date);
+                         
+                         // IGNORE runs older than the start DAY (not just start time)
+                         if (runDate < gameStartDate) return; 
+
+                         // DUPLICATE CHECK
+                         const alreadyExists = currentHistory.some(r => r.stravaId === act.id || r.id === act.id);
                          
                          if (!alreadyExists) {
                              const runKm = parseFloat((act.distance / 1000).toFixed(2));
                              recoveredRuns.push({
-                                 id: Date.now() + Math.random(), // Unique ID for React
+                                 id: Date.now() + Math.random(), 
                                  date: act.start_date,
                                  km: runKm,
                                  notes: act.name,
-                                 type: 'survival', // Default to survival, user can assign to quest later
+                                 type: 'survival', 
                                  source: 'strava_backfill',
                                  stravaId: act.id
                              });
@@ -529,15 +533,14 @@ export default function TheEntity() {
                      });
                  }
 
-                 // 4. Save Everything
+                 // 3. SAVE SAFELY (Merge with the fetched data, not the local state)
                  await setDoc(userDocRef, { 
                      isStravaLinked: true,
                      stravaAccessToken: data.access_token,
                      stravaRefreshToken: data.refresh_token,
                      stravaExpiresAt: data.expires_at,
-                     // Add the recovered runs to the TOP of the history
-                     runHistory: [...recoveredRuns, ...gameState.runHistory],
-                     totalKmRun: gameState.totalKmRun + addedDistance
+                     runHistory: [...recoveredRuns, ...currentHistory],
+                     totalKmRun: currentTotal + addedDistance
                  }, { merge: true });
 
                  await setDoc(doc(db, 'strava_mappings', data.athlete.id.toString()), {
@@ -548,10 +551,12 @@ export default function TheEntity() {
                  window.history.replaceState({}, document.title, "/");
                  
                  if (recoveredRuns.length > 0) {
-                     alert(`CONNECTION REPAIRED.\n\nRecovered ${recoveredRuns.length} missing runs totaling ${addedDistance.toFixed(2)}km.`);
+                     alert(`SYNC COMPLETE.\n\nFound ${recoveredRuns.length} new runs totaling ${addedDistance.toFixed(2)}km.`);
                  } else {
                      alert("Strava Connected! No missing runs found.");
                  }
+                 // Force reload to clear the "Death Screen" if it happened
+                 window.location.reload();
              }
           } catch (error) {
              console.error("Strava Auth Failed", error);
@@ -559,7 +564,7 @@ export default function TheEntity() {
        };
        exchangeToken();
     }
-  }, [user, gameState]); // Make sure gameState is in dependency to check history
+  }, [user]); // Removed gameState dependency to prevent loops
 
   // --- PAYMENT LISTENER ---
   useEffect(() => {
