@@ -23,7 +23,7 @@ import {
   ShieldCheck, Compass, Map as MapIcon, Shield, ChevronRight, ZapOff, 
   Lock, Rocket, Wrench, Cpu, Disc, Award, ArrowRightLeft, HeartPulse, 
   RotateCcw, ShoppingBag, BarChart3, User, Trash2, LogOut, Footprints,
-  Smartphone
+  Smartphone, ShoppingCart
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
@@ -61,7 +61,6 @@ const DIFFICULTIES = {
     hard:   { id: 'hard',   label: 'Nightmare',multiplier: 0.95, color: 'text-red-500',     desc: 'Entity matches 95% of Avg.' }
 };
 
-// --- GAME BALANCE SETTINGS ---
 const MIN_ENTITY_SPEED = 3.0; 
 
 // --- HELPER FUNCTIONS ---
@@ -100,7 +99,6 @@ const CyberClock = ({ ms, label, color = "text-white" }) => {
          <div className={`text-xs font-bold uppercase tracking-[0.2em] mb-3 ${isPanic ? 'text-red-500' : color} opacity-80`}>
              {isPanic ? "⚠️ IMMINENT CONTACT ⚠️" : label}
          </div>
-         
          <div className="flex items-center justify-center gap-1 sm:gap-2 font-mono">
             {d > 0 && (
                 <>
@@ -111,19 +109,16 @@ const CyberClock = ({ ms, label, color = "text-white" }) => {
                 <span className="text-xl text-slate-700 pb-4 mx-1">:</span>
                 </>
             )}
-
              <div className="flex flex-col items-center">
                 <div className={`bg-slate-950 border ${isPanic ? 'border-red-500 text-red-500' : 'border-slate-800 text-white'} rounded px-2 sm:px-3 py-2 text-2xl sm:text-4xl font-black tracking-widest shadow-lg`}>{pad(h)}</div>
                 <span className="text-[8px] uppercase text-slate-500 mt-1 tracking-wider">Hr</span>
             </div>
             <span className={`text-xl pb-4 mx-1 ${isPanic ? 'text-red-600 animate-ping' : 'text-slate-700 animate-pulse'}`}>:</span>
-
              <div className="flex flex-col items-center">
                 <div className={`bg-slate-950 border ${isPanic ? 'border-red-500 text-red-500' : 'border-slate-800 text-white'} rounded px-2 sm:px-3 py-2 text-2xl sm:text-4xl font-black tracking-widest shadow-lg`}>{pad(m)}</div>
                 <span className="text-[8px] uppercase text-slate-500 mt-1 tracking-wider">Min</span>
             </div>
             <span className={`text-xl pb-4 mx-1 ${isPanic ? 'text-red-600 animate-ping' : 'text-slate-700 animate-pulse'}`}>:</span>
-
              <div className="flex flex-col items-center">
                 <div className={`border rounded px-2 sm:px-3 py-2 text-2xl sm:text-4xl font-black tracking-widest shadow-lg ${isPanic ? 'bg-red-600 border-red-600 text-black' : 'bg-slate-950 border-slate-800 text-white'}`}>
                     {pad(s)}
@@ -377,7 +372,6 @@ const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnect
                         onClick={onLinkGoogle}
                         className="w-full bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold py-3 rounded-lg border border-slate-700 flex items-center justify-center gap-2 transition-all"
                     >
-                        {/* Simple Google G Icon */}
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z"/></svg>
                         Link Google Account
                     </button>
@@ -464,7 +458,7 @@ export default function TheEntity() {
     totalPausedHours: 0,
     empUsageCount: 0,
     boostUsageCount: 0,
-    inventory: { battery: 0, emitter: 0, casing: 0 },
+    inventory: { battery: 0, emitter: 0, casing: 0, empCharges: 0, boostCharges: 0 }, // Added Charge Counts
     activeQuest: null,
     badges: [], 
     lastQuestGenerationDay: 0,
@@ -500,11 +494,16 @@ export default function TheEntity() {
   const lastEmpDate = gameState.lastEmpUsage ? new Date(gameState.lastEmpUsage) : null;
   const isEmpActive = lastEmpDate && (today.getTime() - lastEmpDate.getTime()) < (EMP_DURATION_HOURS * 3600000);
   
-  // --- UNLIMITED SHOP LOGIC ---
+  // --- AMMO LOGIC ---
+  const empAmmo = (gameState.inventory?.empCharges || 0);
+  const boostAmmo = (gameState.inventory?.boostCharges || 0);
   const isEmpFree = (gameState.empUsageCount || 0) === 0;
   const isBoostFree = (gameState.boostUsageCount || 0) === 0;
-  const isEmpAvailable = true; // Always available
-  const empCooldownRemaining = 0; 
+  const hasCraftedEmp = gameState.inventory.battery > 0 && gameState.inventory.emitter > 0 && gameState.inventory.casing > 0;
+
+  // Should we show DEPLOY or BUY?
+  const canDeployEmp = empAmmo > 0 || hasCraftedEmp || isEmpFree;
+  const canDeployBoost = boostAmmo > 0 || isBoostFree;
   
   const daysUntilCaught = distanceGap > 0 ? Math.floor(distanceGap / gameState.entitySpeed) : 0;
   const hoursUntilCatch = distanceGap > 0 ? (distanceGap / speedPerHour) : 0;
@@ -525,7 +524,7 @@ export default function TheEntity() {
     return () => unsubscribe();
   }, []);
 
-  // --- ACCOUNT LINKING (Upgrade Anonymous to Google) ---
+  // --- ACCOUNT LINKING ---
   const handleLinkGoogle = async () => {
       if (!user) return;
       const provider = new GoogleAuthProvider();
@@ -543,7 +542,7 @@ export default function TheEntity() {
       }
   };
 
-  // --- STRAVA TOKEN EXCHANGE & BACKFILL (Safe & Bulletproof) ---
+  // --- STRAVA TOKEN EXCHANGE ---
   useEffect(() => {
     if (!user) return;
     const params = new URLSearchParams(window.location.search);
@@ -560,7 +559,6 @@ export default function TheEntity() {
              const data = await response.json();
              
              if (data.access_token) {
-                 // 1. FETCH THE TRUTH (Read DB directly)
                  const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
                  const docSnap = await getDoc(userDocRef);
                  
@@ -568,7 +566,6 @@ export default function TheEntity() {
                  const currentHistory = currentData.runHistory || [];
                  const currentTotal = currentData.totalKmRun || 0;
 
-                 // 2. Fetch Strava History
                  const historyResponse = await fetch(`https://www.strava.com/api/v3/athlete/activities?per_page=30`, {
                     headers: { 'Authorization': `Bearer ${data.access_token}` }
                  });
@@ -579,8 +576,6 @@ export default function TheEntity() {
                  
                  if (Array.isArray(historyData)) {
                      const recentRuns = historyData.filter(act => act.type === 'Run');
-                     
-                     // "Start of Day" Logic: Allow runs from the morning of the start date
                      const rawStartDate = currentData.startDate || new Date().toISOString();
                      const gameStartDate = new Date(rawStartDate);
                      gameStartDate.setHours(0,0,0,0);
@@ -606,7 +601,6 @@ export default function TheEntity() {
                      });
                  }
 
-                 // 3. SAVE SAFELY
                  const mergedHistory = [...recoveredRuns, ...currentHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
 
                  await setDoc(userDocRef, { 
@@ -640,7 +634,7 @@ export default function TheEntity() {
     }
   }, [user]);
 
-  // --- PAYMENT LISTENER (Safe & Bulletproof) ---
+  // --- PAYMENT LISTENER (STOCKPILING LOGIC) ---
   useEffect(() => {
       if (loading || !user) return; 
       
@@ -649,35 +643,27 @@ export default function TheEntity() {
 
       if (purchaseType) {
           const handlePurchase = async () => {
-              // 1. Get the latest data from DB
               const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
               const docSnap = await getDoc(userDocRef);
               
               let currentSave = docSnap.exists() ? docSnap.data() : { ...gameState };
+              // Initialize inventory if missing
+              if (!currentSave.inventory) currentSave.inventory = { battery:0, emitter:0, casing:0, empCharges:0, boostCharges:0 };
+
               let message = "";
 
               if (purchaseType === 'emp_success') {
-                  currentSave.lastEmpUsage = new Date().toISOString();
-                  currentSave.totalPausedHours = (currentSave.totalPausedHours || 0) + 25;
-                  currentSave.empUsageCount = (currentSave.empUsageCount || 0) + 1;
-                  message = "PAYMENT CONFIRMED. EMP DEPLOYED. Entity Stunned for 25h.";
+                  // Add to STOCK, don't use immediately
+                  currentSave.inventory.empCharges = (currentSave.inventory.empCharges || 0) + 1;
+                  message = "PAYMENT CONFIRMED. +1 EMP Added to Inventory.";
               } 
               else if (purchaseType === 'boost_success') {
-                  const boostKm = 3.0; 
-                  currentSave.totalKmRun = (currentSave.totalKmRun || 0) + boostKm;
-                  currentSave.runHistory = [{ 
-                      id: Date.now(), 
-                      date: new Date().toISOString(), 
-                      km: boostKm, 
-                      notes: 'Nitrous Boost (Paid)', 
-                      type: 'boost' 
-                  }, ...(currentSave.runHistory || [])];
-                  currentSave.boostUsageCount = (currentSave.boostUsageCount || 0) + 1;
-                  message = `PAYMENT CONFIRMED. NITROUS INJECTED (+${boostKm}km).`;
+                  // Add to STOCK
+                  currentSave.inventory.boostCharges = (currentSave.inventory.boostCharges || 0) + 1;
+                  message = "PAYMENT CONFIRMED. +1 Nitrous Boost Added to Inventory.";
               }
 
               if (message) {
-                  // Save the merge
                   await setDoc(userDocRef, currentSave, { merge: true });
                   window.history.replaceState({}, document.title, window.location.pathname);
                   alert(message);
@@ -708,7 +694,6 @@ export default function TheEntity() {
   useEffect(() => {
       if (!user || loading) return;
       
-      // 1. CLEANUP: Kill zombie quests
       if (daysSinceStart < 5 && gameState.activeQuest) {
           const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
           setDoc(userDocRef, { ...gameState, activeQuest: null });
@@ -802,58 +787,84 @@ export default function TheEntity() {
       await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
   };
 
-  // NEW: handleBuyEMP (Unlimited Version)
-  const handleBuyEMP = async () => {
+  // --- UNLIMITED ITEM LOGIC ---
+  const handleUseEMP = async () => {
     if (!user) return;
-
-    const hasCraftedEmp = gameState.inventory.battery > 0 && gameState.inventory.emitter > 0 && gameState.inventory.casing > 0;
     
-    if (hasCraftedEmp || isEmpFree) {
-        // FREE PATH
-        if (!confirm(`Deploy EMP Burst?\n\nCost: ${hasCraftedEmp ? "FREE (Crafted)" : "FREE (Bonus)"}\nEffect: Stuns Entity for 25h.`)) return;
+    if (canDeployEmp) {
+        // DEPLOY LOGIC
+        if (!confirm(`DEPLOY EMP?\n\n(You have ${empAmmo} in stock + ${hasCraftedEmp ? 1 : 0} crafted + ${isEmpFree ? 1 : 0} free)`)) return;
         
         let newInventory = { ...gameState.inventory };
-        if (hasCraftedEmp) { newInventory.battery--; newInventory.emitter--; newInventory.casing--; }
-        
+        // Priorities: Use Crafted -> Use Free -> Use Stock
+        if (hasCraftedEmp) { 
+            newInventory.battery--; newInventory.emitter--; newInventory.casing--; 
+        } else if (isEmpFree) {
+            // Just mark usage, don't touch ammo
+        } else {
+            newInventory.empCharges = (newInventory.empCharges || 0) - 1;
+        }
+
         const newState = { 
             ...gameState, 
             lastEmpUsage: new Date().toISOString(), 
-            totalPausedHours: (gameState.totalPausedHours || 0) + EMP_DURATION_HOURS, 
+            totalPausedHours: (gameState.totalPausedHours || 0) + 25, 
             empUsageCount: (gameState.empUsageCount || 0) + 1, 
             inventory: newInventory 
         };
         await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
         alert("EMP DEPLOYED. The Entity is stunned.");
     } else {
-        // PAID PATH - UNLIMITED
+        // BUY LOGIC
         if (!confirm("PURCHASE EMP BURST?\n\nCost: $1.00\n\nYou will be redirected to secure checkout.")) return;
-        window.location.href = "https://buy.stripe.com/test_5kQ6oG8c0fk5cLZ8UA5J600"; 
+        window.location.href = "https://buy.stripe.com/test_5kQ6oG8c0fk5cLZ8UA5J600";
     }
   };
 
-  // NEW: handleBuyBoost (Unlimited Version)
-  const handleBuyBoost = async () => {
+  // Separate Buy Function for the small button
+  const handleBuyMoreEmp = () => {
+     window.location.href = "https://buy.stripe.com/test_5kQ6oG8c0fk5cLZ8UA5J600";
+  };
+
+  const handleUseBoost = async () => {
     if (!user) return;
-    
-    if (isBoostFree) {
-        // FREE PATH
-        const startOfDay = new Date(); startOfDay.setHours(0,0,0,0);
-        const todayRuns = gameState.runHistory.filter(run => new Date(run.date) >= startOfDay);
-        const todayKm = todayRuns.reduce((acc, run) => acc + run.km, 0);
+
+    if (canDeployBoost) {
+        // USE LOGIC
+        if (!confirm(`INJECT NITROUS?\n\n(You have ${boostAmmo} in stock + ${isBoostFree ? 1 : 0} free)`)) return;
         
-        if (todayKm <= 0) return alert("Free Boost Error: You must log a run today to claim your free 15% boost.");
-        
-        const boostAmount = parseFloat((todayKm * 0.15).toFixed(2));
-        if (!confirm(`Activate Nitrous Boost?\n\nCost: FREE (First Time)\nEffect: +${boostAmount}km`)) return;
-        
-        const newRun = { id: Date.now(), date: new Date().toISOString(), km: boostAmount, notes: 'Nitrous Boost (Free)', type: 'boost' };
-        const newState = { ...gameState, totalKmRun: gameState.totalKmRun + boostAmount, runHistory: [newRun, ...gameState.runHistory], boostUsageCount: 1 };
+        let newInventory = { ...gameState.inventory };
+        const boostVal = 3.0; // Standard boost
+
+        if (isBoostFree) {
+            // Verify they ran today for the free one
+            const startOfDay = new Date(); startOfDay.setHours(0,0,0,0);
+            const todayRuns = gameState.runHistory.filter(run => new Date(run.date) >= startOfDay);
+            const todayKm = todayRuns.reduce((acc, run) => acc + run.km, 0);
+            if (todayKm <= 0) return alert("Free Boost Error: You must log a run today to claim the free boost.");
+        } else {
+            newInventory.boostCharges = (newInventory.boostCharges || 0) - 1;
+        }
+
+        const newRun = { id: Date.now(), date: new Date().toISOString(), km: boostVal, notes: 'Nitrous Boost', type: 'boost' };
+        const newState = { 
+            ...gameState, 
+            totalKmRun: gameState.totalKmRun + boostVal, 
+            runHistory: [newRun, ...gameState.runHistory], 
+            boostUsageCount: (gameState.boostUsageCount || 0) + 1,
+            inventory: newInventory
+        };
         await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
+        alert(`BOOST ACTIVE. +${boostVal}km added.`);
     } else {
-        // PAID PATH
+        // BUY LOGIC
         if (!confirm("PURCHASE NITROUS BOOST?\n\nCost: $1.00\nEffect: Instant +3km distance.\n\nYou will be redirected to secure checkout.")) return;
-        window.location.href = "https://buy.stripe.com/test_6oU7sK77Wb3PdQ3c6M5J601"; 
+        window.location.href = "https://buy.stripe.com/test_6oU7sK77Wb3PdQ3c6M5J601";
     }
+  };
+  
+  const handleBuyMoreBoost = () => {
+     window.location.href = "https://buy.stripe.com/test_6oU7sK77Wb3PdQ3c6M5J601";
   };
 
   const handleContinueGame = async () => {
@@ -955,7 +966,6 @@ export default function TheEntity() {
   } else if (isGracePeriod) { 
     BannerContent = (<><div className="absolute inset-0 bg-emerald-600/5 pointer-events-none"></div><span className="text-slate-400 uppercase text-xs font-bold tracking-widest mb-1 block flex items-center justify-center gap-1"><ShieldCheck size={12} /> SAFETY PROTOCOL</span><CyberClock ms={timeUntilActive} label="ACTIVATION IN" color="text-emerald-400" /><p className="text-slate-400 font-medium text-sm mt-2">Time until Entity activation.</p></>);
   } else { 
-    // ACTIVE MODE: Toggle between Clock and Distance
     if (viewMode === 'clock') {
         BannerContent = (
             <>
@@ -1050,98 +1060,65 @@ export default function TheEntity() {
 
         {/* INVENTORY / ACTIONS */}
         <div className="grid grid-cols-2 gap-2 mb-8">
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-3"><h3 className="text-[10px] uppercase font-bold text-slate-500 mb-2 tracking-wider">EMP Components</h3><div className="flex justify-between items-center px-1">{EMP_PARTS.map(part => {const count = gameState.inventory[part.id]; const hasPart = count > 0; const Icon = part.icon; return (<div key={part.id} className={`flex flex-col items-center gap-1 ${hasPart ? 'text-white' : 'text-slate-700'}`}><div className={`w-8 h-8 rounded-full border flex items-center justify-center relative ${hasPart ? `bg-slate-800 ${part.color||'text-white'} border-slate-600` : 'bg-slate-950 border-slate-800'}`}><Icon size={16} />{count > 1 && <span className="absolute -top-1 -right-1 bg-white text-black text-[9px] w-3 h-3 flex items-center justify-center rounded-full font-bold">{count}</span>}</div></div>)})}</div>{hasCraftedEmp && <div className="mt-2 text-center text-[10px] text-emerald-400 animate-pulse font-bold">COMPONENTS ASSEMBLED</div>}</div>
+            {/* Left Side: Parts Inventory */}
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-3">
+                <h3 className="text-[10px] uppercase font-bold text-slate-500 mb-2 tracking-wider">EMP Components</h3>
+                <div className="flex justify-between items-center px-1">
+                    {EMP_PARTS.map(part => {
+                        const count = gameState.inventory[part.id]; 
+                        const hasPart = count > 0; 
+                        const Icon = part.icon; 
+                        return (
+                            <div key={part.id} className={`flex flex-col items-center gap-1 ${hasPart ? 'text-white' : 'text-slate-700'}`}>
+                                <div className={`w-8 h-8 rounded-full border flex items-center justify-center relative ${hasPart ? `bg-slate-800 ${part.color||'text-white'} border-slate-600` : 'bg-slate-950 border-slate-800'}`}>
+                                    <Icon size={16} />
+                                    {count > 1 && <span className="absolute -top-1 -right-1 bg-white text-black text-[9px] w-3 h-3 flex items-center justify-center rounded-full font-bold">{count}</span>}
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
+                {hasCraftedEmp && <div className="mt-2 text-center text-[10px] text-emerald-400 animate-pulse font-bold">COMPONENTS ASSEMBLED</div>}
+            </div>
+
+            {/* Right Side: Buy Buttons (Unlimited + Stackable) */}
             <div className="space-y-2">
                  {/* EMP BUTTON */}
-                 <button 
-                    onClick={handleBuyEMP} 
-                    disabled={isGracePeriod} 
-                    className={`w-full p-2 rounded-lg font-bold text-xs flex flex-col items-center justify-center gap-1 transition-all ${isGracePeriod ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-cyan-950 text-cyan-400 hover:bg-cyan-900'}`}
-                 >
-                    <div className="flex items-center gap-1"><ZapOff size={14} /> EMP Burst</div>
-                    <span className="text-[9px] bg-slate-950 px-1.5 py-0.5 rounded text-slate-300 border border-slate-800 uppercase tracking-wider">
-                        {hasCraftedEmp ? "CRAFTED" : isEmpFree ? "FREE" : "$1.00"}
-                    </span>
-                 </button>
+                 <div className="flex gap-1">
+                    <button 
+                        onClick={handleUseEMP} 
+                        disabled={isGracePeriod} 
+                        className={`flex-1 p-2 rounded-lg font-bold text-xs flex flex-col items-center justify-center gap-1 transition-all ${isGracePeriod ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-cyan-950 text-cyan-400 hover:bg-cyan-900'}`}
+                    >
+                        <div className="flex items-center gap-1"><ZapOff size={14} /> {canDeployEmp ? "DEPLOY" : "BUY"}</div>
+                        <span className="text-[9px] bg-slate-950 px-1.5 py-0.5 rounded text-slate-300 border border-slate-800 uppercase tracking-wider">
+                            {hasCraftedEmp ? "CRAFTED" : isEmpFree ? "FREE" : canDeployEmp ? `READY (x${empAmmo})` : "$1.00"}
+                        </span>
+                    </button>
+                    {/* Small Buy Button if they have ammo */}
+                    {canDeployEmp && !isGracePeriod && (
+                        <button onClick={handleBuyMoreEmp} className="w-8 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center text-slate-400" title="Buy More">
+                           <ShoppingCart size={14} />
+                        </button>
+                    )}
+                 </div>
 
                 {/* BOOST BUTTON */}
-                <button 
-                    onClick={handleBuyBoost} 
-                    className="w-full p-2 rounded-lg font-bold text-xs flex flex-col items-center justify-center gap-1 transition-all bg-yellow-950 text-yellow-400 hover:bg-yellow-900"
-                >
-                    <div className="flex items-center gap-1"><Rocket size={14} /> Nitrous Boost</div>
-                    <span className="text-[9px] bg-slate-950 px-1.5 py-0.5 rounded text-slate-300 border border-slate-800 uppercase tracking-wider">
-                        {isBoostFree ? "FREE" : "$1.00"}
-                    </span>
-                </button>
+                 <div className="flex gap-1">
+                    <button 
+                        onClick={handleUseBoost} 
+                        className="flex-1 p-2 rounded-lg font-bold text-xs flex flex-col items-center justify-center gap-1 transition-all bg-yellow-950 text-yellow-400 hover:bg-yellow-900"
+                    >
+                        <div className="flex items-center gap-1"><Rocket size={14} /> {canDeployBoost ? "BOOST" : "BUY"}</div>
+                        <span className="text-[9px] bg-slate-950 px-1.5 py-0.5 rounded text-slate-300 border border-slate-800 uppercase tracking-wider">
+                            {isBoostFree ? "FREE" : canDeployBoost ? `READY (x${boostAmmo})` : "$1.00"}
+                        </span>
+                    </button>
+                    {canDeployBoost && (
+                        <button onClick={handleBuyMoreBoost} className="w-8 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center text-slate-400" title="Buy More">
+                           <ShoppingCart size={14} />
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
-
-        {/* SYNC / STRAVA STATUS SECTION */}
-        {gameState.isStravaLinked ? (
-            <div className="w-full bg-[#FC4C02]/10 border border-[#FC4C02] text-[#FC4C02] py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-3 mb-8 shadow-[0_0_15px_rgba(252,76,2,0.15)]">
-                <svg role="img" viewBox="0 0 24 24" className="w-6 h-6 fill-[#FC4C02]" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
-                </svg>
-                <span>Strava Active</span>
-                <div className="animate-pulse w-2 h-2 rounded-full bg-[#FC4C02] ml-1"></div>
-            </div>
-        ) : (
-            <div className="flex gap-2 mb-8">
-                <button onClick={handleStravaLogin} className="flex-1 bg-[#FC4C02] hover:bg-[#E34402] transition-all py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg group">
-                    <svg role="img" viewBox="0 0 24 24" className="w-5 h-5 fill-white" xmlns="http://www.w3.org/2000/svg"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
-                    <span className="text-white font-bold text-sm">Connect Strava</span>
-                </button>
-                <button onClick={() => setShowLogModal(true)} className="flex-1 bg-emerald-600 hover:bg-emerald-500 transition-all py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg">
-                    <Footprints size={20} className="text-white" />
-                    <span className="text-white font-bold text-sm">Manual Log</span>
-                </button>
-            </div>
-        )}
-        
-        {/* RECENT LOGS */}
-        <div className="mb-8">
-            <h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-4 flex items-center gap-2"><History size={16} /> Recent Logs</h3>
-            <div className="space-y-3">
-                {gameState.runHistory.length === 0 ? (
-                    <div className="text-center p-8 border-2 border-dashed border-slate-800 rounded-xl text-slate-600">No runs logged yet. Start running.</div>
-                ) : (
-                    gameState.runHistory.slice(0, 5).map((run) => (
-                        <div key={run.id} className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex justify-between items-center group relative overflow-hidden">
-                            <div>
-                                <div className="text-white font-bold flex items-center gap-2">
-                                    {run.km} km
-                                    {run.source?.includes('strava') && <span className="text-[10px] bg-[#FC4C02]/20 text-[#FC4C02] px-1.5 py-0.5 rounded border border-[#FC4C02]/30">STRAVA</span>}
-                                    {run.type === 'boost' && <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded border border-yellow-500/30">BOOST</span>}
-                                    {run.type === 'quest' && <span className="text-[10px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded border border-amber-500/30">QUEST</span>}
-                                </div>
-                                <div className="text-slate-500 text-xs">{formatDate(new Date(run.date))} &bull; {run.notes}</div>
-                            </div>
-                            
-                            <div className="flex items-center gap-2">
-                                <button onClick={() => handleDeleteRun(run.id)} className="p-2 rounded-lg text-slate-600 hover:bg-red-900/20 hover:text-red-500 transition-all" title="Delete Activity"><Trash2 size={16} /></button>
-                                {run.type !== 'quest' && run.type !== 'boost' && gameState.activeQuest?.status === 'active' && (
-                                    <button 
-                                        onClick={() => handleConvertRunToQuest(run.id)}
-                                        className="p-2 rounded-lg bg-slate-800 text-slate-500 hover:bg-amber-900/30 hover:text-amber-500 transition-colors"
-                                        title="Assign to Mission"
-                                    >
-                                        <ArrowRightLeft size={16} />
-                                    </button>
-                                )}
-                                
-                                <div className="bg-slate-800 p-2 rounded-lg text-slate-400">
-                                    {run.type === 'boost' ? <Rocket size={16} className="text-yellow-400" /> : run.type === 'quest' ? <Award size={16} className="text-amber-400" /> : <Activity size={16} />}
-                                </div>
-                            </div>
-                        </div>
-                    ))
-                )}
-            </div>
-        </div>
-        
-        <div className="text-center text-slate-600 text-xs">Start Date: {formatDate(gameStart)} &bull; Day {daysSinceStart} of {gameState.duration} &bull; Agent: {gameState.username}</div>
-      </div>
-    </div>
-  );
-}
