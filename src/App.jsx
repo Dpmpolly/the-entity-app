@@ -618,6 +618,34 @@ export default function TheEntity() {
     return () => unsubscribeSnapshot();
   }, [user]);
 
+  // --- AUTO-FIX: SYNCHRONIZE MATH ---
+  // This automatically corrects "Ghost Distance" by forcing the Total to match the History sum.
+  useEffect(() => {
+      if (!loading && gameState.runHistory) {
+          // 1. Calculate what the total SHOULD be based on your visible logs
+          const historySum = gameState.runHistory.reduce((sum, run) => {
+               // We sum up the 'km' of every run in your history
+               return sum + run.km;
+          }, 0);
+
+          // 2. Check if there is a mismatch (allowing for tiny rounding differences)
+          const difference = Math.abs(gameState.totalKmRun - historySum);
+
+          // 3. If your Total is wrong by more than 0.1km, fix it immediately.
+          if (difference > 0.1) {
+              console.log(` Healing Data: Correcting ${gameState.totalKmRun.toFixed(2)}km to ${historySum.toFixed(2)}km`);
+              
+              const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
+              
+              // Force the database to use the correct sum
+              setDoc(userDocRef, { 
+                  ...gameState, 
+                  totalKmRun: parseFloat(historySum.toFixed(2)) 
+              });
+          }
+      }
+  }, [gameState.runHistory, gameState.totalKmRun, loading]);
+  
   // --- GAME LOOP & CLEANUP ---
   useEffect(() => {
       if (!user || loading) return;
