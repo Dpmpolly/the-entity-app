@@ -264,8 +264,10 @@ const LogRunModal = ({ onClose, onSave, activeQuest }) => {
     );
 };
   
-// 5. Settings Modal
+// 5. Settings Modal (With Android-Only Google Link)
 const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnectStrava, onLinkGoogle }) => {
+    
+    // DETECT ANDROID (Simple User Agent Check)
     const isAndroid = /Android/i.test(navigator.userAgent);
 
     return (
@@ -281,14 +283,20 @@ const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnect
                 <div className="overflow-hidden"><div className="text-white font-bold truncate">{gameState.username || 'Agent'}</div><div className="text-xs text-slate-500 truncate">ID: {user?.uid.slice(0,8)}...</div></div>
             </div>
 
+            {/* ANDROID ONLY - SAVE PROGRESS SECTION */}
             {isAndroid && user?.isAnonymous && (
                 <div className="bg-amber-900/10 border border-amber-900/30 p-4 rounded-xl">
                     <div className="flex items-center gap-2 text-amber-500 mb-2">
                         <Smartphone size={16} />
                         <span className="text-xs font-bold uppercase tracking-wide">Android Secure</span>
                     </div>
-                    <p className="text-[10px] text-slate-400 mb-3">Link a Google Account to save your progress across devices.</p>
-                    <button onClick={onLinkGoogle} className="w-full bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold py-3 rounded-lg border border-slate-700 flex items-center justify-center gap-2 transition-all">
+                    <p className="text-[10px] text-slate-400 mb-3">
+                        Link a Google Account to save your progress across devices.
+                    </p>
+                    <button 
+                        onClick={onLinkGoogle}
+                        className="w-full bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold py-3 rounded-lg border border-slate-700 flex items-center justify-center gap-2 transition-all"
+                    >
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z"/></svg>
                         Link Google Account
                     </button>
@@ -303,24 +311,43 @@ const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnect
                             <CheckCircle2 size={18} />
                             <span className="font-bold text-sm">Strava Connected</span>
                         </div>
-                        <button onClick={onConnectStrava} className="w-full text-[10px] text-slate-500 hover:text-amber-400 flex items-center justify-center gap-1 transition-colors"><RefreshCw size={10} /> Sync issues? Repair Connection</button>
+                        <button onClick={onConnectStrava} className="w-full text-[10px] text-slate-500 hover:text-amber-400 flex items-center justify-center gap-1 transition-colors">
+                            <RefreshCw size={10} /> Sync issues? Repair Connection
+                        </button>
                     </div>
                 ) : (
-                    <button onClick={onConnectStrava} className="w-full bg-[#FC4C02] hover:bg-[#E34402] transition-all py-3 rounded-lg flex items-center justify-center gap-3 shadow-lg group"><svg role="img" viewBox="0 0 24 24" className="w-5 h-5 fill-white" xmlns="http://www.w3.org/2000/svg"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg><span className="text-white font-bold text-sm">Connect with Strava</span></button>
+                    <button onClick={onConnectStrava} className="w-full bg-[#FC4C02] hover:bg-[#E34402] transition-all py-3 rounded-lg flex items-center justify-center gap-3 shadow-lg group">
+                        <svg role="img" viewBox="0 0 24 24" className="w-5 h-5 fill-white" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
+                        </svg>
+                        <span className="text-white font-bold text-sm">Connect with Strava</span>
+                    </button>
                 )}
             </div>
 
             <div className="pt-2 space-y-3">
-                <a href="mailto:russellpollard77@gmail.com?subject=The Entity Support" className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2"><HeartPulse size={16} /> Contact Support</a>
-                <button onClick={onLogout} className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2"><LogOut size={16} /> Disconnect (Logout)</button>
-                <button onClick={onDelete} className="w-full py-3 rounded-xl border border-red-900/30 text-red-500 font-bold hover:bg-red-900/10 flex items-center justify-center gap-2"><Trash2 size={16} /> Burn Identity (Delete)</button>
+                <a href="mailto:russellpollard77@gmail.com?subject=The Entity Support" className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2">
+                    <HeartPulse size={16} /> Contact Support
+                </a>
+                <button onClick={onLogout} className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2">
+                    <LogOut size={16} /> Disconnect (Logout)
+                </button>
+                <button onClick={onDelete} className="w-full py-3 rounded-xl border border-red-900/30 text-red-500 font-bold hover:bg-red-900/10 flex items-center justify-center gap-2">
+                    <Trash2 size={16} /> Burn Identity (Delete)
+                </button>
             </div>
           </div>
 
           <div className="bg-slate-950 p-4 border-t border-slate-800 flex flex-col items-center justify-center gap-1 opacity-60">
               <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Powered by</span>
-              <div className="flex items-center gap-1.5"><svg role="img" viewBox="0 0 24 24" className="w-4 h-4 fill-[#FC4C02]" xmlns="http://www.w3.org/2000/svg"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg><span className="text-sm font-black text-slate-300 tracking-tight leading-none">STRAVA</span></div>
+              <div className="flex items-center gap-1.5">
+                  <svg role="img" viewBox="0 0 24 24" className="w-4 h-4 fill-[#FC4C02]" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
+                  </svg>
+                  <span className="text-sm font-black text-slate-300 tracking-tight leading-none">STRAVA</span>
+              </div>
           </div>
+
         </div>
       </div>
     );
@@ -335,7 +362,7 @@ export default function TheEntity() {
   const [showLogModal, setShowLogModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showStore, setShowStore] = useState(false);
-  const [viewMode, setViewMode] = useState('clock');
+  const [viewMode, setViewMode] = useState('clock'); // Toggle: 'clock' or 'distance'
   const hasExchangedCode = useRef(false);
   
   // Game Data State
@@ -395,6 +422,8 @@ export default function TheEntity() {
   const daysSinceEmp = lastEmpDate ? (today.getTime() - lastEmpDate.getTime()) / 86400000 : 999;
   const isEmpAvailable = daysSinceEmp >= EMP_COOLDOWN_DAYS;
   const empCooldownRemaining = Math.max(0, Math.ceil(EMP_COOLDOWN_DAYS - daysSinceEmp));
+  
+  // CHANGED: EMP and Boost are always available (Unlimited)
   const isEmpFree = (gameState.empUsageCount || 0) === 0;
   const isBoostFree = (gameState.boostUsageCount || 0) === 0;
   
@@ -421,22 +450,21 @@ export default function TheEntity() {
   const handleLinkGoogle = async () => {
       if (!user) return;
       const provider = new GoogleAuthProvider();
-      
-      try {
-          await linkWithPopup(user, provider);
-          alert("IDENTITY SECURED. Your progress is now saved to your Google Account.");
+      try { 
+          await linkWithPopup(user, provider); 
+          alert("IDENTITY SECURED. Your progress is now saved to your Google Account."); 
           setGameState(prev => ({ ...prev })); 
-      } catch (error) {
-          if (error.code === 'auth/credential-already-in-use') {
-             alert("Error: That Google account is already used by another player.");
-          } else {
-             console.error("Linking Error:", error);
-             alert("Failed to link account: " + error.message);
-          }
+      } catch (error) { 
+          if (error.code === 'auth/credential-already-in-use') { 
+             alert("Error: That Google account is already used by another player."); 
+          } else { 
+             console.error("Linking Error:", error); 
+             alert("Failed to link account: " + error.message); 
+          } 
       }
   };
 
-  // --- STRAVA TOKEN EXCHANGE & BACKFILL ---
+  // --- STRAVA TOKEN EXCHANGE ---
   useEffect(() => {
     if (!user) return;
     const params = new URLSearchParams(window.location.search);
@@ -559,7 +587,7 @@ export default function TheEntity() {
       }
   }, [user, gameState]);
 
-  // --- DATABASE LISTENER & AUTO-FIX ---
+  // --- DATABASE LISTENER ---
   useEffect(() => {
     if (!user) return;
     const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
@@ -567,14 +595,6 @@ export default function TheEntity() {
       if (docSnap.exists()) {
         const data = docSnap.data();
         setGameState(prev => ({ ...prev, ...data }));
-        
-        // AUTO-CORRECT MATH (Ghost Data Fix)
-        if (data.runHistory) {
-             const historySum = data.runHistory.reduce((sum, r) => sum + r.km, 0);
-             // Only correct if mismatch is significant (>0.1km) AND if user hasn't just spent points on a quest (tricky logic)
-             // For now, let's just trust the history if total is WILDLY wrong.
-             // Actually, let's disable auto-correct for now to prevent it fighting the "Quest Deduction" logic.
-        }
       } else {
         setGameState(prev => ({ ...prev, onboardingComplete: false }));
       }
@@ -678,37 +698,57 @@ export default function TheEntity() {
       await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
   };
 
+  // NEW: handleBuyEMP (Unlimited Version)
   const handleBuyEMP = async () => {
-    if (!user || !isEmpAvailable) return;
+    if (!user) return;
+
     const hasCraftedEmp = gameState.inventory.battery > 0 && gameState.inventory.emitter > 0 && gameState.inventory.casing > 0;
+    
     if (hasCraftedEmp || isEmpFree) {
+        // FREE PATH
         if (!confirm(`Deploy EMP Burst?\n\nCost: ${hasCraftedEmp ? "FREE (Crafted)" : "FREE (Bonus)"}\nEffect: Stuns Entity for 25h.`)) return;
+        
         let newInventory = { ...gameState.inventory };
         if (hasCraftedEmp) { newInventory.battery--; newInventory.emitter--; newInventory.casing--; }
-        const newState = { ...gameState, lastEmpUsage: new Date().toISOString(), totalPausedHours: (gameState.totalPausedHours || 0) + EMP_DURATION_HOURS, empUsageCount: (gameState.empUsageCount || 0) + 1, inventory: newInventory };
+        
+        const newState = { 
+            ...gameState, 
+            lastEmpUsage: new Date().toISOString(), 
+            totalPausedHours: (gameState.totalPausedHours || 0) + EMP_DURATION_HOURS, 
+            empUsageCount: (gameState.empUsageCount || 0) + 1, 
+            inventory: newInventory 
+        };
         await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
         alert("EMP DEPLOYED. The Entity is stunned.");
     } else {
+        // PAID PATH
         if (!confirm("PURCHASE EMP BURST?\n\nCost: $1.00\n\nYou will be redirected to secure checkout.")) return;
-        window.location.href = "https://buy.stripe.com/test_12345"; 
+        window.location.href = "REPLACE_WITH_YOUR_EMP_LINK"; 
     }
   };
 
+  // NEW: handleBuyBoost (Unlimited Version)
   const handleBuyBoost = async () => {
     if (!user) return;
+    
     if (isBoostFree) {
+        // FREE PATH
         const startOfDay = new Date(); startOfDay.setHours(0,0,0,0);
         const todayRuns = gameState.runHistory.filter(run => new Date(run.date) >= startOfDay);
         const todayKm = todayRuns.reduce((acc, run) => acc + run.km, 0);
-        if (todayKm <= 0) return alert("System Error: No movement detected today.\n\nYou must log a run today before you can boost it.");
+        
+        if (todayKm <= 0) return alert("Free Boost Error: You must log a run today to claim your free 15% boost.");
+        
         const boostAmount = parseFloat((todayKm * 0.15).toFixed(2));
         if (!confirm(`Activate Nitrous Boost?\n\nCost: FREE (First Time)\nEffect: +${boostAmount}km`)) return;
+        
         const newRun = { id: Date.now(), date: new Date().toISOString(), km: boostAmount, notes: 'Nitrous Boost (Free)', type: 'boost' };
         const newState = { ...gameState, totalKmRun: gameState.totalKmRun + boostAmount, runHistory: [newRun, ...gameState.runHistory], boostUsageCount: 1 };
         await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
     } else {
+        // PAID PATH
         if (!confirm("PURCHASE NITROUS BOOST?\n\nCost: $1.00\nEffect: Instant +3km distance.\n\nYou will be redirected to secure checkout.")) return;
-        window.location.href = "https://buy.stripe.com/test_67890"; 
+        window.location.href = "REPLACE_WITH_YOUR_BOOST_LINK"; 
     }
   };
 
@@ -811,6 +851,7 @@ export default function TheEntity() {
   } else if (isGracePeriod) { 
     BannerContent = (<><div className="absolute inset-0 bg-emerald-600/5 pointer-events-none"></div><span className="text-slate-400 uppercase text-xs font-bold tracking-widest mb-1 block flex items-center justify-center gap-1"><ShieldCheck size={12} /> SAFETY PROTOCOL</span><CyberClock ms={timeUntilActive} label="ACTIVATION IN" color="text-emerald-400" /><p className="text-slate-400 font-medium text-sm mt-2">Time until Entity activation.</p></>);
   } else { 
+    // ACTIVE MODE: Toggle between Clock and Distance
     if (viewMode === 'clock') {
         BannerContent = (
             <>
