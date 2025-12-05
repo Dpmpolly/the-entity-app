@@ -252,7 +252,7 @@ const OnboardingWizard = ({ onComplete }) => {
                     </button>
                 </div>
             )}
-
+            {/* Steps 2,3,4 */}
             {step === 2 && (
                 <div className="animate-in fade-in slide-in-from-right-8 duration-300">
                     <h2 className="text-xl font-bold text-white mb-6">2. Select Difficulty</h2>
@@ -267,29 +267,24 @@ const OnboardingWizard = ({ onComplete }) => {
                             </button>
                         ))}
                     </div>
-                    <div className="flex gap-3">
-                        <button onClick={() => setStep(1)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button>
-                        <button onClick={() => setStep(3)} className="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">Next Step <ChevronRight size={20} /></button>
-                    </div>
+                    <div className="flex gap-3"><button onClick={() => setStep(1)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button><button onClick={() => setStep(3)} className="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">Next Step <ChevronRight size={20} /></button></div>
                 </div>
             )}
-
             {step === 3 && (
                 <div className="animate-in fade-in slide-in-from-right-8 duration-300">
                     <h2 className="text-xl font-bold text-white mb-6">3. Operative Codename</h2>
                     <input type="text" value={codename} onChange={(e) => setCodename(e.target.value)} placeholder="Enter your alias..." className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-white text-center text-lg focus:ring-2 focus:ring-purple-500 outline-none mb-8 uppercase tracking-widest" />
-                    <div className="flex gap-3">
-                        <button onClick={() => setStep(2)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button>
-                        <button disabled={!codename} onClick={() => setStep(4)} className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">Next Step <ChevronRight size={20} /></button>
-                    </div>
+                    <div className="flex gap-3"><button onClick={() => setStep(2)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button><button disabled={!codename} onClick={() => setStep(4)} className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">Next Step <ChevronRight size={20} /></button></div>
                 </div>
             )}
-
             {step === 4 && (
                 <div className="animate-in fade-in slide-in-from-right-8 duration-300">
                     <h2 className="text-xl font-bold text-white mb-6">4. Select Your Runner</h2>
                     <div className="grid grid-cols-2 gap-4 mb-8">
-                        {Object.values(AVATARS).map((av) => {const Icon = av.icon; const isSelected = avatarId === av.id; return (<button key={av.id} onClick={() => setAvatarId(av.id)} className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center text-center gap-2 ${isSelected ? 'border-purple-500 bg-purple-900/20' : 'border-slate-700 bg-slate-800 hover:border-slate-600'}`}><div className={`p-3 rounded-full ${isSelected ? av.bg : 'bg-slate-700'} text-white transition-colors`}><Icon size={24} /></div><div><div className="font-bold text-white text-sm">{av.name}</div><div className="text-[10px] text-slate-400 leading-tight mt-1">{av.desc}</div></div></button>)})}</div><div className="flex gap-3"><button onClick={() => setStep(3)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button><button onClick={() => onComplete({ duration, avatarId, difficulty, username: codename })} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">INITIATE PROTOCOL</button></div></div>)}
+                        {Object.values(AVATARS).map((av) => {const Icon = av.icon; const isSelected = avatarId === av.id; return (<button key={av.id} onClick={() => setAvatarId(av.id)} className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center text-center gap-2 ${isSelected ? 'border-purple-500 bg-purple-900/20' : 'border-slate-700 bg-slate-800 hover:border-slate-600'}`}><div className={`p-3 rounded-full ${isSelected ? av.bg : 'bg-slate-700'} text-white transition-colors`}><Icon size={24} /></div><div><div className="font-bold text-white text-sm">{av.name}</div><div className="text-[10px] text-slate-400 leading-tight mt-1">{av.desc}</div></div></button>)})}</div>
+                    <div className="flex gap-3"><button onClick={() => setStep(3)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button><button onClick={() => onComplete({ duration, avatarId, difficulty, username: codename })} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">INITIATE PROTOCOL</button></div>
+                </div>
+            )}
           </div></div></div>
     );
 };
@@ -299,42 +294,16 @@ const LogRunModal = ({ onClose, onSave, activeQuest }) => {
     const [km, setKm] = useState('');
     const [notes, setNotes] = useState('');
     const [isQuestRun, setIsQuestRun] = useState(false);
-  
-    const handleSubmit = () => {
-      if (!km || parseFloat(km) <= 0) return alert("Please enter a valid distance.");
-      onSave(km, notes, isQuestRun);
-      onClose();
-    };
-  
+    const handleSubmit = () => { if (!km || parseFloat(km) <= 0) return alert("Please enter a valid distance."); onSave(km, notes, isQuestRun); onClose(); };
     const isQuestActive = activeQuest && activeQuest.status === 'active' && activeQuest.title;
-
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-6 animate-in fade-in duration-200">
         <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden">
-          <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
-            <h3 className="font-bold text-white flex items-center gap-2"><Plus size={18} className="text-emerald-400"/> Manual Log</h3>
-            <button onClick={onClose} className="text-slate-500 hover:text-white"><X size={20} /></button>
-          </div>
+          <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950"><h3 className="font-bold text-white flex items-center gap-2"><Plus size={18} className="text-emerald-400"/> Manual Log</h3><button onClick={onClose} className="text-slate-500 hover:text-white"><X size={20} /></button></div>
           <div className="p-6 space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Distance (km)</label>
-              <input type="number" step="0.01" value={km} onChange={(e) => setKm(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white text-2xl font-bold focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="0.0" />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Mission Notes</label>
-              <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Morning run..." />
-            </div>
-            {isQuestActive && (
-                <div className={`p-3 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between ${isQuestRun ? 'bg-amber-900/20 border-amber-500/50' : 'bg-slate-950 border-slate-800'}`} onClick={() => setIsQuestRun(!isQuestRun)}>
-                    <div className="flex items-center gap-2">
-                        <div className={`w-5 h-5 rounded border flex items-center justify-center ${isQuestRun ? 'bg-amber-500 border-amber-500 text-black' : 'border-slate-600'}`}>
-                            {isQuestRun && <CheckCircle2 size={14} />}
-                        </div>
-                        <div className="text-sm text-slate-300">Apply to Quest?</div>
-                    </div>
-                    <Award size={16} className={isQuestRun ? 'text-amber-500' : 'text-slate-600'} />
-                </div>
-            )}
+            <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Distance (km)</label><input type="number" step="0.01" value={km} onChange={(e) => setKm(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white text-2xl font-bold focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="0.0" /></div>
+            <div><label className="block text-xs font-bold text-slate-500 uppercase mb-1">Mission Notes</label><input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="Morning run..." /></div>
+            {isQuestActive && (<div className={`p-3 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-between ${isQuestRun ? 'bg-amber-900/20 border-amber-500/50' : 'bg-slate-950 border-slate-800'}`} onClick={() => setIsQuestRun(!isQuestRun)}><div className="flex items-center gap-2"><div className={`w-5 h-5 rounded border flex items-center justify-center ${isQuestRun ? 'bg-amber-500 border-amber-500 text-black' : 'border-slate-600'}`}>{isQuestRun && <CheckCircle2 size={14} />}</div><div className="text-sm text-slate-300">Apply to Quest?</div></div><Award size={16} className={isQuestRun ? 'text-amber-500' : 'text-slate-600'} /></div>)}
             <button onClick={handleSubmit} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 mt-2">SAVE LOG</button>
           </div>
         </div>
@@ -345,86 +314,17 @@ const LogRunModal = ({ onClose, onSave, activeQuest }) => {
 // 5. Settings Modal
 const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnectStrava, onLinkGoogle }) => {
     const isAndroid = /Android/i.test(navigator.userAgent);
-
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-6 animate-in fade-in duration-200">
         <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden relative">
-          <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950">
-            <h3 className="font-bold text-white flex items-center gap-2"><Settings size={18} className="text-slate-400"/> Settings</h3>
-            <button onClick={onClose} className="text-slate-500 hover:text-white"><X size={20} /></button>
-          </div>
+          <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950"><h3 className="font-bold text-white flex items-center gap-2"><Settings size={18} className="text-slate-400"/> Settings</h3><button onClick={onClose} className="text-slate-500 hover:text-white"><X size={20} /></button></div>
           <div className="p-6 space-y-6">
-            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center gap-3">
-                <div className="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center text-slate-400"><User size={20}/></div>
-                <div className="overflow-hidden"><div className="text-white font-bold truncate">{gameState.username || 'Agent'}</div><div className="text-xs text-slate-500 truncate">ID: {user?.uid.slice(0,8)}...</div></div>
-            </div>
-
-            {/* ANDROID ONLY - SAVE PROGRESS SECTION */}
-            {isAndroid && user?.isAnonymous && (
-                <div className="bg-amber-900/10 border border-amber-900/30 p-4 rounded-xl">
-                    <div className="flex items-center gap-2 text-amber-500 mb-2">
-                        <Smartphone size={16} />
-                        <span className="text-xs font-bold uppercase tracking-wide">Android Secure</span>
-                    </div>
-                    <p className="text-[10px] text-slate-400 mb-3">
-                        Link a Google Account to save your progress across devices.
-                    </p>
-                    <button 
-                        onClick={onLinkGoogle}
-                        className="w-full bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold py-3 rounded-lg border border-slate-700 flex items-center justify-center gap-2 transition-all"
-                    >
-                        {/* Simple Google G Icon */}
-                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z"/></svg>
-                        Link Google Account
-                    </button>
-                </div>
-            )}
-
-            <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Data Source</label>
-                {gameState.isStravaLinked ? (
-                    <div className="space-y-2">
-                        <div className="w-full p-4 rounded-xl border bg-[#FC4C02]/10 border-[#FC4C02] text-[#FC4C02] flex items-center justify-center gap-2 shadow-[0_0_10px_rgba(252,76,2,0.15)]">
-                            <CheckCircle2 size={18} />
-                            <span className="font-bold text-sm">Strava Connected</span>
-                        </div>
-                        <button onClick={onConnectStrava} className="w-full text-[10px] text-slate-500 hover:text-amber-400 flex items-center justify-center gap-1 transition-colors">
-                            <RefreshCw size={10} /> Sync issues? Repair Connection
-                        </button>
-                    </div>
-                ) : (
-                    <button onClick={onConnectStrava} className="w-full bg-[#FC4C02] hover:bg-[#E34402] transition-all py-3 rounded-lg flex items-center justify-center gap-3 shadow-lg group">
-                        <svg role="img" viewBox="0 0 24 24" className="w-5 h-5 fill-white" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
-                        </svg>
-                        <span className="text-white font-bold text-sm">Connect with Strava</span>
-                    </button>
-                )}
-            </div>
-
-            <div className="pt-2 space-y-3">
-                <a href="mailto:russellpollard77@gmail.com?subject=The Entity Support" className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2">
-                    <HeartPulse size={16} /> Contact Support
-                </a>
-                <button onClick={onLogout} className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2">
-                    <LogOut size={16} /> Disconnect (Logout)
-                </button>
-                <button onClick={onDelete} className="w-full py-3 rounded-xl border border-red-900/30 text-red-500 font-bold hover:bg-red-900/10 flex items-center justify-center gap-2">
-                    <Trash2 size={16} /> Burn Identity (Delete)
-                </button>
-            </div>
+            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center gap-3"><div className="w-10 h-10 bg-slate-800 rounded-full flex items-center justify-center text-slate-400"><User size={20}/></div><div className="overflow-hidden"><div className="text-white font-bold truncate">{gameState.username || 'Agent'}</div><div className="text-xs text-slate-500 truncate">ID: {user?.uid.slice(0,8)}...</div></div></div>
+            {isAndroid && user?.isAnonymous && (<div className="bg-amber-900/10 border border-amber-900/30 p-4 rounded-xl"><div className="flex items-center gap-2 text-amber-500 mb-2"><Smartphone size={16} /><span className="text-xs font-bold uppercase tracking-wide">Android Secure</span></div><p className="text-[10px] text-slate-400 mb-3">Link a Google Account to save your progress across devices.</p><button onClick={onLinkGoogle} className="w-full bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold py-3 rounded-lg border border-slate-700 flex items-center justify-center gap-2 transition-all"><svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z"/></svg>Link Google Account</button></div>)}
+            <div><label className="block text-xs font-bold text-slate-500 uppercase mb-2">Data Source</label>{gameState.isStravaLinked ? (<div className="space-y-2"><div className="w-full p-4 rounded-xl border bg-[#FC4C02]/10 border-[#FC4C02] text-[#FC4C02] flex items-center justify-center gap-2 shadow-[0_0_10px_rgba(252,76,2,0.15)]"><CheckCircle2 size={18} /><span className="font-bold text-sm">Strava Connected</span></div><button onClick={onConnectStrava} className="w-full text-[10px] text-slate-500 hover:text-amber-400 flex items-center justify-center gap-1 transition-colors"><RefreshCw size={10} /> Sync issues? Repair Connection</button></div>) : (<button onClick={onConnectStrava} className="w-full bg-[#FC4C02] hover:bg-[#E34402] transition-all py-3 rounded-lg flex items-center justify-center gap-3 shadow-lg group"><svg role="img" viewBox="0 0 24 24" className="w-5 h-5 fill-white" xmlns="http://www.w3.org/2000/svg"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg><span className="text-white font-bold text-sm">Connect with Strava</span></button>)}</div>
+            <div className="pt-2 space-y-3"><a href="mailto:russellpollard77@gmail.com?subject=The Entity Support" className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2"><HeartPulse size={16} /> Contact Support</a><button onClick={onLogout} className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2"><LogOut size={16} /> Disconnect (Logout)</button><button onClick={onDelete} className="w-full py-3 rounded-xl border border-red-900/30 text-red-500 font-bold hover:bg-red-900/10 flex items-center justify-center gap-2"><Trash2 size={16} /> Burn Identity (Delete)</button></div>
           </div>
-
-          <div className="bg-slate-950 p-4 border-t border-slate-800 flex flex-col items-center justify-center gap-1 opacity-60">
-              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Powered by</span>
-              <div className="flex items-center gap-1.5">
-                  <svg role="img" viewBox="0 0 24 24" className="w-4 h-4 fill-[#FC4C02]" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
-                  </svg>
-                  <span className="text-sm font-black text-slate-300 tracking-tight leading-none">STRAVA</span>
-              </div>
-          </div>
-
+          <div className="bg-slate-950 p-4 border-t border-slate-800 flex flex-col items-center justify-center gap-1 opacity-60"><span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Powered by</span><div className="flex items-center gap-1.5"><svg role="img" viewBox="0 0 24 24" className="w-4 h-4 fill-[#FC4C02]" xmlns="http://www.w3.org/2000/svg"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg><span className="text-sm font-black text-slate-300 tracking-tight leading-none">STRAVA</span></div></div>
         </div>
       </div>
     );
@@ -444,27 +344,10 @@ export default function TheEntity() {
   
   // Game Data State
   const [gameState, setGameState] = useState({
-    onboardingComplete: false,
-    startDate: new Date().toISOString(),
-    duration: 365,
-    avatarId: 'sprinter',
-    difficulty: 'easy',
-    username: 'Runner',
-    entitySpeed: MIN_ENTITY_SPEED, 
-    lastSpeedUpdateDay: 0,
-    adaptiveMode: true,
-    totalKmRun: 0,
-    runHistory: [],
-    isStravaLinked: false,
-    lastEmpUsage: null,
-    totalPausedHours: 0,
-    empUsageCount: 0,
-    boostUsageCount: 0,
-    inventory: { battery: 0, emitter: 0, casing: 0, empCharges: 0, boostCharges: 0 },
-    activeQuest: null,
-    badges: [], 
-    lastQuestGenerationDay: 0,
-    continuesUsed: 0
+    onboardingComplete: false, startDate: new Date().toISOString(), duration: 365, avatarId: 'sprinter', difficulty: 'easy', username: 'Runner',
+    entitySpeed: MIN_ENTITY_SPEED, lastSpeedUpdateDay: 0, adaptiveMode: true, totalKmRun: 0, runHistory: [], isStravaLinked: false,
+    lastEmpUsage: null, totalPausedHours: 0, empUsageCount: 0, boostUsageCount: 0, inventory: { battery: 0, emitter: 0, casing: 0, empCharges: 0, boostCharges: 0 },
+    activeQuest: null, badges: [], lastQuestGenerationDay: 0, continuesUsed: 0
   });
 
   // --- REAL TIME CALCULATIONS ---
@@ -499,6 +382,8 @@ export default function TheEntity() {
   // --- UNLIMITED SHOP LOGIC ---
   const isEmpFree = (gameState.empUsageCount || 0) === 0;
   const isBoostFree = (gameState.boostUsageCount || 0) === 0;
+  
+  // SAFE INVENTORY CHECKS (Defensive Coding)
   const empAmmo = (gameState.inventory?.empCharges || 0);
   const boostAmmo = (gameState.inventory?.boostCharges || 0);
   const playerHasCrafted = (gameState.inventory?.battery > 0 && gameState.inventory?.emitter > 0 && gameState.inventory?.casing > 0);
@@ -525,149 +410,105 @@ export default function TheEntity() {
     return () => unsubscribe();
   }, []);
 
-  // --- ACCOUNT LINKING (Upgrade Anonymous to Google) ---
+  // --- ACCOUNT LINKING ---
   const handleLinkGoogle = async () => {
       if (!user) return;
       const provider = new GoogleAuthProvider();
-      try { 
-          await linkWithPopup(user, provider); 
-          alert("IDENTITY SECURED. Your progress is now saved to your Google Account."); 
-          setGameState(prev => ({ ...prev })); 
-      } catch (error) { 
-          if (error.code === 'auth/credential-already-in-use') { 
-             alert("Error: That Google account is already used by another player."); 
-          } else { 
-             console.error("Linking Error:", error); 
-             alert("Failed to link account: " + error.message); 
-          } 
-      }
+      try { await linkWithPopup(user, provider); alert("IDENTITY SECURED. Your progress is now saved to your Google Account."); setGameState(prev => ({ ...prev })); } catch (error) { if (error.code === 'auth/credential-already-in-use') { alert("Error: That Google account is already used by another player."); } else { alert("Failed to link account: " + error.message); } }
   };
 
-  // --- STRAVA TOKEN EXCHANGE & BACKFILL (Safe & Bulletproof) ---
+  // --- STRAVA TOKEN EXCHANGE & BACKFILL ---
   useEffect(() => {
     if (!user) return;
     const params = new URLSearchParams(window.location.search);
     const stravaCode = params.get('code');
-
     if (stravaCode && !hasExchangedCode.current) {
        hasExchangedCode.current = true;
        const exchangeToken = async () => {
           try {
              const clientId = import.meta.env.VITE_STRAVA_CLIENT_ID;
              const clientSecret = import.meta.env.VITE_STRAVA_CLIENT_SECRET;
-             
              const response = await fetch(`https://www.strava.com/oauth/token?client_id=${clientId}&client_secret=${clientSecret}&code=${stravaCode}&grant_type=authorization_code`, { method: 'POST' });
              const data = await response.json();
-             
              if (data.access_token) {
-                 // 1. FETCH THE TRUTH
                  const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
                  const docSnap = await getDoc(userDocRef);
-                 
                  const currentData = docSnap.exists() ? docSnap.data() : gameState;
                  const currentHistory = currentData.runHistory || [];
                  const currentTotal = currentData.totalKmRun || 0;
-
-                 // 2. Fetch Strava History
-                 const historyResponse = await fetch(`https://www.strava.com/api/v3/athlete/activities?per_page=30`, {
-                    headers: { 'Authorization': `Bearer ${data.access_token}` }
-                 });
+                 const historyResponse = await fetch(`https://www.strava.com/api/v3/athlete/activities?per_page=30`, { headers: { 'Authorization': `Bearer ${data.access_token}` } });
                  const historyData = await historyResponse.json();
-                 
                  let recoveredRuns = [];
                  let addedDistance = 0;
-                 
                  if (Array.isArray(historyData)) {
                      const recentRuns = historyData.filter(act => act.type === 'Run');
                      const rawStartDate = currentData.startDate || new Date().toISOString();
                      const gameStartDate = new Date(rawStartDate);
                      gameStartDate.setHours(0,0,0,0);
-
                      recentRuns.forEach(act => {
                          const runDate = new Date(act.start_date);
                          if (runDate < gameStartDate) return; 
-
                          const alreadyExists = currentHistory.some(r => r.stravaId === act.id || r.id === act.id);
                          if (!alreadyExists) {
                              const runKm = parseFloat((act.distance / 1000).toFixed(2));
-                             recoveredRuns.push({
-                                 id: Date.now() + Math.random(), 
-                                 date: act.start_date,
-                                 km: runKm,
-                                 notes: act.name,
-                                 type: 'survival', 
-                                 source: 'strava_backfill',
-                                 stravaId: act.id
-                             });
+                             recoveredRuns.push({ id: Date.now() + Math.random(), date: act.start_date, km: runKm, notes: act.name, type: 'survival', source: 'strava_backfill', stravaId: act.id });
                              addedDistance += runKm;
                          }
                      });
                  }
-
-                 // 3. SAVE SAFELY
                  const mergedHistory = [...recoveredRuns, ...currentHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
-
-                 await setDoc(userDocRef, { 
-                     isStravaLinked: true,
-                     stravaAccessToken: data.access_token,
-                     stravaRefreshToken: data.refresh_token,
-                     stravaExpiresAt: data.expires_at,
-                     runHistory: mergedHistory,
-                     totalKmRun: currentTotal + addedDistance
-                 }, { merge: true });
-
-                 await setDoc(doc(db, 'strava_mappings', data.athlete.id.toString()), {
-                    firebaseUid: user.uid,
-                    appId: appId
-                 });
-                 
+                 await setDoc(userDocRef, { isStravaLinked: true, stravaAccessToken: data.access_token, stravaRefreshToken: data.refresh_token, stravaExpiresAt: data.expires_at, runHistory: mergedHistory, totalKmRun: currentTotal + addedDistance }, { merge: true });
+                 await setDoc(doc(db, 'strava_mappings', data.athlete.id.toString()), { firebaseUid: user.uid, appId: appId });
                  window.history.replaceState({}, document.title, "/");
-                 
-                 if (recoveredRuns.length > 0) {
-                     alert(`SYNC COMPLETE.\n\nFound ${recoveredRuns.length} new runs totaling ${addedDistance.toFixed(2)}km.`);
-                 } else {
-                     alert("Strava Connected! No missing runs found.");
-                 }
+                 if (recoveredRuns.length > 0) alert(`SYNC COMPLETE.\n\nFound ${recoveredRuns.length} new runs totaling ${addedDistance.toFixed(2)}km.`);
+                 else alert("Strava Connected! No missing runs found.");
                  window.location.reload();
              }
-          } catch (error) {
-             console.error("Strava Auth Failed", error);
-          }
+          } catch (error) { console.error("Strava Auth Failed", error); }
        };
        exchangeToken();
     }
   }, [user]);
 
- // --- PAYMENT LISTENER ---
+  // --- PAYMENT LISTENER (CRASH PROOF) ---
   useEffect(() => {
-      // ... existing setup ...
-      if (purchaseType && user) {
+      if (loading || !user) return; 
+      const params = new URLSearchParams(window.location.search);
+      const purchaseType = params.get('purchase');
+
+      if (purchaseType) {
           const handlePurchase = async () => {
-              // ... existing database fetch ...
+              const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
+              const docSnap = await getDoc(userDocRef);
+              let currentSave = docSnap.exists() ? docSnap.data() : { ...gameState };
               
+              if (!currentSave.inventory) currentSave.inventory = { battery:0, emitter:0, casing:0, empCharges:0, boostCharges:0 };
+
+              let message = "";
               if (purchaseType === 'emp_success') {
-                  // ... existing EMP logic ...
+                  currentSave.inventory.empCharges = (currentSave.inventory.empCharges || 0) + 1;
+                  message = "PAYMENT CONFIRMED. +1 EMP Added to Inventory.";
               } 
               else if (purchaseType === 'boost_success') {
-                  // ... existing Boost logic ...
+                  currentSave.inventory.boostCharges = (currentSave.inventory.boostCharges || 0) + 1;
+                  message = "PAYMENT CONFIRMED. +1 Nitrous Boost Added to Inventory.";
               }
-              // --- NEW CONTINUE LOGIC ---
               else if (purchaseType === 'continue_success') {
-                  // Add 48 hours to the "Paused" timer. 
-                  // This subtracts 48 hours of movement from the Entity's calculation.
                   currentSave.totalPausedHours = (currentSave.totalPausedHours || 0) + 48;
                   currentSave.continuesUsed = (currentSave.continuesUsed || 0) + 1;
-                  
                   message = "ADRENALINE ADMINISTERED. Entity rewind: 48 Hours. Good luck, Runner.";
               }
 
               if (message) {
-                  // ... existing save logic ...
+                  await setDoc(userDocRef, currentSave, { merge: true });
+                  window.history.replaceState({}, document.title, window.location.pathname);
+                  alert(message);
+                  setGameState(prev => ({ ...prev, ...currentSave }));
               }
           };
           handlePurchase();
       }
-  }, [user, loading]);
+  }, [user, loading]); 
 
   // --- DATABASE LISTENER ---
   useEffect(() => {
@@ -688,63 +529,28 @@ export default function TheEntity() {
   // --- GAME LOOP & CLEANUP ---
   useEffect(() => {
       if (!user || loading) return;
-      
-      if (daysSinceStart < 5 && gameState.activeQuest) {
-          const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
-          setDoc(userDocRef, { ...gameState, activeQuest: null });
-          return;
-      }
-
-      if (daysSinceStart > 0 && daysSinceStart % 5 === 0 && daysSinceStart !== gameState.lastQuestGenerationDay) {
-          if (!gameState.activeQuest) {
-              const parts = ['battery', 'emitter', 'casing'];
-              const randomPart = parts[Math.floor(Math.random() * parts.length)];
-              const randomDist = Math.floor(Math.random() * 8) + 5; 
-              const newQuest = { id: Date.now(), title: `Scavenge Mission ${gameState.badges.length + 1}`, distance: randomDist, progress: 0, rewardPart: randomPart, status: 'available' };
-              const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
-              setDoc(userDocRef, { ...gameState, activeQuest: newQuest, lastQuestGenerationDay: daysSinceStart });
-          }
-      }
+      if (daysSinceStart < 5 && gameState.activeQuest) { const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'); setDoc(userDocRef, { ...gameState, activeQuest: null }); return; }
+      if (daysSinceStart > 0 && daysSinceStart % 5 === 0 && daysSinceStart !== gameState.lastQuestGenerationDay) { if (!gameState.activeQuest) { const parts = ['battery', 'emitter', 'casing']; const randomPart = parts[Math.floor(Math.random() * parts.length)]; const randomDist = Math.floor(Math.random() * 8) + 5; const newQuest = { id: Date.now(), title: `Scavenge Mission ${gameState.badges.length + 1}`, distance: randomDist, progress: 0, rewardPart: randomPart, status: 'available' }; const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'); setDoc(userDocRef, { ...gameState, activeQuest: newQuest, lastQuestGenerationDay: daysSinceStart }); } }
   }, [daysSinceStart, user, loading, gameState.activeQuest, gameState.lastQuestGenerationDay]);
 
   // --- FUNCTIONS ---
-  const calculateAdaptiveSpeed = (totalKm, activeDays, diff) => {
-    if (activeDays < 1) return MIN_ENTITY_SPEED;
-    const avgDaily = totalKm / activeDays;
-    const multiplier = DIFFICULTIES[diff || 'easy'].multiplier;
-    const calculatedSpeed = avgDaily * multiplier;
-    return parseFloat(Math.max(MIN_ENTITY_SPEED, calculatedSpeed).toFixed(2));
-  };
+  const calculateAdaptiveSpeed = (totalKm, activeDays, diff) => { if (activeDays < 1) return MIN_ENTITY_SPEED; const avgDaily = totalKm / activeDays; const multiplier = DIFFICULTIES[diff || 'easy'].multiplier; const calculatedSpeed = avgDaily * multiplier; return parseFloat(Math.max(MIN_ENTITY_SPEED, calculatedSpeed).toFixed(2)); };
   const getPartIcon = (partId) => { const part = EMP_PARTS.find(p => p.id === partId); return part ? part.icon : Wrench; };
   const handleLogout = async () => { await signOut(auth); window.location.reload(); };
-  const handleDeleteAccount = async () => {
-      if (!confirm("DELETE ACCOUNT?\n\nThis will permanently erase your progress. This cannot be undone.")) return;
-      try { await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save')); await deleteUser(user); window.location.reload(); } catch (error) { alert("Error deleting data: " + error.message); }
-  };
-  const handleStravaLogin = () => {
-      const clientId = import.meta.env.VITE_STRAVA_CLIENT_ID;
-      const redirectUri = window.location.origin; 
-      const scope = "activity:read_all";
-      window.location.href = `http://www.strava.com/oauth/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}&approval_prompt=force&scope=${scope}`;
-  };
-
+  const handleDeleteAccount = async () => { if (!confirm("DELETE ACCOUNT?\n\nThis will permanently erase your progress. This cannot be undone.")) return; try { await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save')); await deleteUser(user); window.location.reload(); } catch (error) { alert("Error deleting data: " + error.message); } };
+  
   const handleConvertRunToQuest = async (runId) => {
-      if (!user || !gameState.activeQuest || gameState.activeQuest.status !== 'active') {
-          alert("No active mission to assign this run to.");
-          return;
-      }
+      if (!user || !gameState.activeQuest || gameState.activeQuest.status !== 'active') { alert("No active mission to assign this run to."); return; }
       const runIndex = gameState.runHistory.findIndex(r => r.id === runId);
       if (runIndex === -1) return;
       const run = gameState.runHistory[runIndex];
       if (run.type === 'quest') return; 
       if (!confirm(`REROUTE SUPPLIES?\n\nConvert this ${run.km}km run to the Scavenge Mission?\n\nWARNING: This distance will be removed from your escape total. The Entity will get closer.`)) return;
-
       const newTotalKm = gameState.totalKmRun - run.km; 
       const newQuestProgress = gameState.activeQuest.progress + run.km;
       let updatedQuest = { ...gameState.activeQuest, progress: newQuestProgress };
       let newInventory = { ...gameState.inventory };
       let newBadges = [...gameState.badges];
-
       if (newQuestProgress >= gameState.activeQuest.distance) {
           updatedQuest.status = 'completed';
           newInventory[gameState.activeQuest.rewardPart]++;
@@ -763,73 +569,37 @@ export default function TheEntity() {
       const runToDelete = gameState.runHistory.find(r => r.id === runId);
       if (!runToDelete) return;
       if (!confirm(`DELETE ACTIVITY?\n\nRemove this ${runToDelete.km}km run?\n\nNOTE: This will reduce your total distance. The Entity will get closer.`)) return;
-
       let newTotalKm = gameState.totalKmRun;
       let newActiveQuest = gameState.activeQuest ? { ...gameState.activeQuest } : null;
-      
-      if (runToDelete.type === 'quest' || runToDelete.type === 'quest_partial') {
-          if (newActiveQuest && newActiveQuest.status === 'active') {
-              newActiveQuest.progress = Math.max(0, newActiveQuest.progress - runToDelete.km);
-          }
-      } else if (runToDelete.type === 'quest_complete') {
-          alert("Note: This run completed a mission. The reward item will remain in your inventory.");
-      } else {
-          newTotalKm = Math.max(0, newTotalKm - runToDelete.km);
-      }
-
+      if (runToDelete.type === 'quest' || runToDelete.type === 'quest_partial') { if (newActiveQuest && newActiveQuest.status === 'active') { newActiveQuest.progress = Math.max(0, newActiveQuest.progress - runToDelete.km); } } else if (runToDelete.type === 'quest_complete') { alert("Note: This run completed a mission. The reward item will remain in your inventory."); } else { newTotalKm = Math.max(0, newTotalKm - runToDelete.km); }
       const newRunHistory = gameState.runHistory.filter(r => r.id !== runId);
       const newState = { ...gameState, totalKmRun: newTotalKm, activeQuest: newActiveQuest, runHistory: newRunHistory };
       await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
   };
 
-  // --- UNLIMITED ITEM LOGIC (Stackable) ---
   const handleUseEMP = async () => {
     if (!user) return;
-    
     if (canDeployEmp) {
-        // DEPLOY LOGIC
         if (!confirm(`DEPLOY EMP?\n\n(You have ${empAmmo} in stock + ${playerHasCrafted ? 1 : 0} crafted + ${isEmpFree ? 1 : 0} free)`)) return;
-        
         let newInventory = { ...gameState.inventory };
-        // Priorities: Use Crafted -> Use Free -> Use Stock
-        if (playerHasCrafted) { 
-            newInventory.battery--; newInventory.emitter--; newInventory.casing--; 
-        } else if (isEmpFree) {
-            // Just mark usage, don't touch ammo (first one is free)
-        } else {
-            newInventory.empCharges = (newInventory.empCharges || 0) - 1;
-        }
-
-        const newState = { 
-            ...gameState, 
-            lastEmpUsage: new Date().toISOString(), 
-            totalPausedHours: (gameState.totalPausedHours || 0) + 25, 
-            empUsageCount: (gameState.empUsageCount || 0) + 1, 
-            inventory: newInventory 
-        };
+        if (playerHasCrafted) { newInventory.battery--; newInventory.emitter--; newInventory.casing--; } else if (isEmpFree) { } else { newInventory.empCharges = (newInventory.empCharges || 0) - 1; }
+        const newState = { ...gameState, lastEmpUsage: new Date().toISOString(), totalPausedHours: (gameState.totalPausedHours || 0) + 25, empUsageCount: (gameState.empUsageCount || 0) + 1, inventory: newInventory };
         await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
         alert("EMP DEPLOYED. The Entity is stunned.");
     } else {
-        // BUY LOGIC
         if (!confirm("PURCHASE EMP BURST?\n\nCost: $1.00\n\nYou will be redirected to secure checkout.")) return;
-        window.location.href = "https://buy.stripe.com/test_5kQ6oG8c0fk5cLZ8UA5J600";
+        window.location.href = "https://buy.stripe.com/test_5kQ6oG8c0fk5cLZ8UA5J600"; 
     }
   };
 
-  const handleBuyMoreEmp = () => {
-     window.location.href = "https://buy.stripe.com/test_5kQ6oG8c0fk5cLZ8UA5J600";
-  };
+  const handleBuyMoreEmp = () => { window.location.href = "https://buy.stripe.com/test_5kQ6oG8c0fk5cLZ8UA5J600"; };
 
   const handleUseBoost = async () => {
     if (!user) return;
-
     if (canDeployBoost) {
-        // USE LOGIC
         if (!confirm(`INJECT NITROUS?\n\n(You have ${boostAmmo} in stock + ${isBoostFree ? 1 : 0} free)`)) return;
-        
         let newInventory = { ...gameState.inventory };
         const boostVal = 3.0; 
-
         if (isBoostFree) {
             const startOfDay = new Date(); startOfDay.setHours(0,0,0,0);
             const todayRuns = gameState.runHistory.filter(run => new Date(run.date) >= startOfDay);
@@ -838,77 +608,28 @@ export default function TheEntity() {
         } else {
             newInventory.boostCharges = (newInventory.boostCharges || 0) - 1;
         }
-
         const newRun = { id: Date.now(), date: new Date().toISOString(), km: boostVal, notes: 'Nitrous Boost', type: 'boost' };
-        const newState = { 
-            ...gameState, 
-            totalKmRun: gameState.totalKmRun + boostVal, 
-            runHistory: [newRun, ...gameState.runHistory], 
-            boostUsageCount: (gameState.boostUsageCount || 0) + 1,
-            inventory: newInventory
-        };
+        const newState = { ...gameState, totalKmRun: gameState.totalKmRun + boostVal, runHistory: [newRun, ...gameState.runHistory], boostUsageCount: (gameState.boostUsageCount || 0) + 1, inventory: newInventory };
         await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
         alert(`BOOST ACTIVE. +${boostVal}km added.`);
     } else {
-        // BUY LOGIC
         if (!confirm("PURCHASE NITROUS BOOST?\n\nCost: $1.00\nEffect: Instant +3km distance.\n\nYou will be redirected to secure checkout.")) return;
         window.location.href = "https://buy.stripe.com/test_6oU7sK77Wb3PdQ3c6M5J601";
     }
   };
   
-  const handleBuyMoreBoost = () => {
-     window.location.href = "https://buy.stripe.com/test_6oU7sK77Wb3PdQ3c6M5J601";
+  const handleBuyMoreBoost = () => { window.location.href = "https://buy.stripe.com/test_6oU7sK77Wb3PdQ3c6M5J601"; };
+
+  const handleContinueGame = async () => {
+    if (!user) return;
+    if (!confirm("PURCHASE ADRENALINE SHOT?\n\nCost: $1.00\nEffect: Pushes the Entity back 48 hours. You survive.\n\nYou will be redirected to secure checkout.")) return;
+    window.location.href = "https://buy.stripe.com/test_4gw2cq9g41AN8UgbIJ"; 
   };
 
- const handleContinueGame = async () => {
-    if (!user) return;
-    
-    // STRIPE REDIRECT
-    if (!confirm("PURCHASE ADRENALINE SHOT?\n\nCost: $1.00\nEffect: Pushes the Entity back 48 hours. You survive.\n\nYou will be redirected to secure checkout.")) return;
-    
-    // REPLACE THIS WITH YOUR NEW STRIPE LINK
-    window.location.href = "https://buy.stripe.com/test_4gMfZg1NC2xj8vJ9YE5J602"; 
-  };
   const handleRestartGame = async () => {
      if (!user || !confirm("CONFIRM RESET?\n\nThis will restart the challenge from Day 1.")) return;
      const newState = { onboardingComplete: false, startDate: new Date().toISOString(), duration: 365, totalKmRun: 0, runHistory: [], totalPausedHours: 0, lastEmpUsage: null, empUsageCount: 0, boostUsageCount: 0, inventory: { battery: 0, emitter: 0, casing: 0 }, activeQuest: null, badges: [], continuesUsed: 0, entitySpeed: MIN_ENTITY_SPEED, lastSpeedUpdateDay: 0, difficulty: 'easy' };
      await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
-  };
-
-  const handleAddRun = async (km, notes, isQuestRun) => {
-    if (!user) return;
-    const dist = parseFloat(km);
-    let newState = { ...gameState };
-    if (isQuestRun && gameState.activeQuest && gameState.activeQuest.status === 'active') {
-        const newProgress = gameState.activeQuest.progress + dist;
-        let updatedQuest = { ...gameState.activeQuest, progress: newProgress };
-        let newInventory = { ...gameState.inventory };
-        let newBadges = [...gameState.badges];
-        if (newProgress >= gameState.activeQuest.distance) {
-            updatedQuest.status = 'completed';
-            newInventory[gameState.activeQuest.rewardPart]++;
-            newBadges.push({ id: Date.now(), title: gameState.activeQuest.title, date: new Date().toISOString() });
-            alert(`MISSION COMPLETE!\n\nAcquired: 1x ${EMP_PARTS.find(p => p.id === gameState.activeQuest.rewardPart).name}\nAwarded: Mission Badge`);
-            updatedQuest = null; 
-        }
-        const newRun = { id: Date.now(), date: new Date().toISOString(), km: dist, notes: notes || 'Side Quest Run', type: 'quest' };
-        newState = { ...gameState, activeQuest: updatedQuest, inventory: newInventory, badges: newBadges, runHistory: [newRun, ...gameState.runHistory] };
-    } else {
-        const newTotal = gameState.totalKmRun + dist;
-        let newSpeed = gameState.entitySpeed;
-        let newUpdateDay = gameState.lastSpeedUpdateDay;
-        if (gameState.adaptiveMode && daysSinceStart >= 4) {
-             if (daysSinceStart - gameState.lastSpeedUpdateDay >= 4) {
-                 const daysForCalc = Math.max(1, daysSinceStart); 
-                 newSpeed = calculateAdaptiveSpeed(newTotal, daysForCalc, gameState.difficulty);
-                 newUpdateDay = daysSinceStart; 
-             }
-        }
-        const newRun = { id: Date.now(), date: new Date().toISOString(), km: dist, notes: notes || 'Manual Log', type: 'survival' };
-        newState = { ...gameState, totalKmRun: newTotal, entitySpeed: newSpeed, lastSpeedUpdateDay: newUpdateDay, runHistory: [newRun, ...gameState.runHistory] };
-    }
-    await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
-    setShowLogModal(false);
   };
 
   const handleCompleteOnboarding = async (setupData) => {
@@ -923,18 +644,11 @@ export default function TheEntity() {
       await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), { ...gameState, activeQuest: updatedQuest });
   };
 
-  // --- UI RENDER: LOADING ---
   if (loading) return (<div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-500 animate-pulse"><Activity size={48} className="mb-4" /><p>Syncing with satellite...</p></div>);
-
-  // --- UI RENDER: ONBOARDING ---
-  if (!gameState.onboardingComplete) {
-      return <OnboardingWizard onComplete={handleCompleteOnboarding} />;
-  }
-
-  // --- UI RENDER: GAME OVER ---
+  if (!gameState.onboardingComplete) return <OnboardingWizard onComplete={handleCompleteOnboarding} />;
+  
   if (isCaught) return (<div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-1000"><div className="mb-8 relative"><div className="absolute inset-0 bg-red-600 blur-3xl opacity-20 animate-pulse"></div><Skull size={120} className="text-red-600 relative z-10 animate-bounce" /></div><h1 className="text-5xl font-black text-white uppercase tracking-widest mb-2" style={{textShadow: '0 0 20px red'}}>CAUGHT</h1><p className="text-red-400 font-bold text-lg mb-8 uppercase tracking-widest">Signal Lost &bull; Day {daysSinceStart}</p><div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-sm mb-8"><div className="flex justify-between items-center text-slate-400 text-sm mb-4 pb-4 border-b border-slate-800"><span>Distance Run</span><span className="text-white font-bold">{userDistance.toFixed(1)} km</span></div><div className="flex justify-between items-center text-slate-400 text-sm mb-4 pb-4 border-b border-slate-800"><span>Days Survived</span><span className="text-white font-bold">{daysSinceStart} days</span></div><div className="flex justify-between items-center text-slate-400 text-sm"><span>Entity Speed</span><span className="text-red-400 font-bold">{gameState.entitySpeed} km/day</span></div></div><div className="w-full max-w-sm space-y-4"><button onClick={handleContinueGame} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl text-lg flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(16,185,129,0.3)] transition-all transform hover:scale-105"><HeartPulse size={24} /> CONTINUE ($1.00)</button><p className="text-xs text-slate-500">Rewinds the Entity by 48 hours. Resume immediately.</p><button onClick={handleRestartGame} className="w-full bg-transparent border border-slate-700 text-slate-400 hover:text-white hover:border-slate-500 font-bold py-3 rounded-xl flex items-center justify-center gap-2 mt-4 transition-all"><RotateCcw size={18} /> ACCEPT FATE & RESTART</button></div></div>);
 
-  // --- UI RENDER: VICTORY ---
   if (isVictory) return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-1000">
         <style>{`.bg-stripes-slate {background-image: linear-gradient(45deg, #1e293b 25%, transparent 25%, transparent 50%, #1e293b 50%, #1e293b 75%, transparent 75%, transparent);background-size: 10px 10px;}`}</style>
@@ -945,23 +659,14 @@ export default function TheEntity() {
     </div>
   );
 
-  // --- UI RENDER: DASHBOARD ---
-  const UserAvatar = AVATARS[gameState.avatarId || 'sprinter'];
-  const maxDist = Math.max(userDistance, entityDistance) * 1.2 + 10; 
-  const userPct = Math.min((userDistance / maxDist) * 100, 100);
-  const entityPct = Math.min((entityDistance / maxDist) * 100, 100);
-  const hasCraftedEmp = gameState.inventory?.battery > 0 && gameState.inventory?.emitter > 0 && gameState.inventory?.casing > 0;
-  const diffLabel = DIFFICULTIES[gameState.difficulty]?.label || 'Standard';
   const activeQuestName = gameState.activeQuest?.rewardPart ? (EMP_PARTS.find(p => p.id === gameState.activeQuest.rewardPart)?.name || 'Unknown Part') : 'Unknown Part';
 
-  // DYNAMIC BANNER WITH CYBER CLOCK
   let BannerContent;
   if (isEmpActive) { 
     BannerContent = (<><div className="absolute inset-0 bg-cyan-500/10 animate-pulse pointer-events-none"></div><span className="text-cyan-400 uppercase text-xs font-bold tracking-widest mb-1 block flex items-center justify-center gap-1"><ZapOff size={12} /> Countermeasure Active</span><div className="text-2xl font-black text-white mb-1 uppercase tracking-wider">ENTITY STUNNED</div><p className="text-cyan-200 font-medium text-sm">The Entity is frozen. It will not move for the duration.</p></>);
   } else if (isGracePeriod) { 
     BannerContent = (<><div className="absolute inset-0 bg-emerald-600/5 pointer-events-none"></div><span className="text-slate-400 uppercase text-xs font-bold tracking-widest mb-1 block flex items-center justify-center gap-1"><ShieldCheck size={12} /> SAFETY PROTOCOL</span><CyberClock ms={timeUntilActive} label="ACTIVATION IN" color="text-emerald-400" /><p className="text-slate-400 font-medium text-sm mt-2">Time until Entity activation.</p></>);
   } else { 
-    // ACTIVE MODE: Toggle between Clock and Distance
     if (viewMode === 'clock') {
         BannerContent = (
             <>
