@@ -638,37 +638,31 @@ export default function TheEntity() {
     }
   }, [user]);
 
-  // --- PAYMENT LISTENER (Safe & Stockpile) ---
+ // --- PAYMENT LISTENER ---
   useEffect(() => {
-      if (loading || !user) return; 
-      
-      const params = new URLSearchParams(window.location.search);
-      const purchaseType = params.get('purchase');
-
-      if (purchaseType) {
+      // ... existing setup ...
+      if (purchaseType && user) {
           const handlePurchase = async () => {
-              const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
-              const docSnap = await getDoc(userDocRef);
+              // ... existing database fetch ...
               
-              let currentSave = docSnap.exists() ? docSnap.data() : { ...gameState };
-              if (!currentSave.inventory) currentSave.inventory = { battery:0, emitter:0, casing:0, empCharges:0, boostCharges:0 };
-
-              let message = "";
-
               if (purchaseType === 'emp_success') {
-                  currentSave.inventory.empCharges = (currentSave.inventory.empCharges || 0) + 1;
-                  message = "PAYMENT CONFIRMED. +1 EMP Added to Inventory.";
+                  // ... existing EMP logic ...
               } 
               else if (purchaseType === 'boost_success') {
-                  currentSave.inventory.boostCharges = (currentSave.inventory.boostCharges || 0) + 1;
-                  message = "PAYMENT CONFIRMED. +1 Nitrous Boost Added to Inventory.";
+                  // ... existing Boost logic ...
+              }
+              // --- NEW CONTINUE LOGIC ---
+              else if (purchaseType === 'continue_success') {
+                  // Add 48 hours to the "Paused" timer. 
+                  // This subtracts 48 hours of movement from the Entity's calculation.
+                  currentSave.totalPausedHours = (currentSave.totalPausedHours || 0) + 48;
+                  currentSave.continuesUsed = (currentSave.continuesUsed || 0) + 1;
+                  
+                  message = "ADRENALINE ADMINISTERED. Entity rewind: 48 Hours. Good luck, Runner.";
               }
 
               if (message) {
-                  await setDoc(userDocRef, currentSave, { merge: true });
-                  window.history.replaceState({}, document.title, window.location.pathname);
-                  alert(message);
-                  setGameState(prev => ({ ...prev, ...currentSave }));
+                  // ... existing save logic ...
               }
           };
           handlePurchase();
@@ -866,13 +860,15 @@ export default function TheEntity() {
      window.location.href = "https://buy.stripe.com/test_6oU7sK77Wb3PdQ3c6M5J601";
   };
 
-  const handleContinueGame = async () => {
+ const handleContinueGame = async () => {
     if (!user) return;
-    if (!confirm("ACTIVATE ADRENALINE SHOT?\n\nCost: $1.00\nEffect: Pushes the Entity back by 48 hours. You will survive... for now.")) return;
-    const newState = { ...gameState, totalPausedHours: (gameState.totalPausedHours || 0) + 48, continuesUsed: (gameState.continuesUsed || 0) + 1 };
-    await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
+    
+    // STRIPE REDIRECT
+    if (!confirm("PURCHASE ADRENALINE SHOT?\n\nCost: $1.00\nEffect: Pushes the Entity back 48 hours. You survive.\n\nYou will be redirected to secure checkout.")) return;
+    
+    // REPLACE THIS WITH YOUR NEW STRIPE LINK
+    window.location.href = "https://buy.stripe.com/test_4gMfZg1NC2xj8vJ9YE5J602"; 
   };
-
   const handleRestartGame = async () => {
      if (!user || !confirm("CONFIRM RESET?\n\nThis will restart the challenge from Day 1.")) return;
      const newState = { onboardingComplete: false, startDate: new Date().toISOString(), duration: 365, totalKmRun: 0, runHistory: [], totalPausedHours: 0, lastEmpUsage: null, empUsageCount: 0, boostUsageCount: 0, inventory: { battery: 0, emitter: 0, casing: 0 }, activeQuest: null, badges: [], continuesUsed: 0, entitySpeed: MIN_ENTITY_SPEED, lastSpeedUpdateDay: 0, difficulty: 'easy' };
