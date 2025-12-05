@@ -499,16 +499,13 @@ export default function TheEntity() {
   // --- UNLIMITED SHOP LOGIC ---
   const isEmpFree = (gameState.empUsageCount || 0) === 0;
   const isBoostFree = (gameState.boostUsageCount || 0) === 0;
-  
-  // Inventory Counts (Safe Check)
   const empAmmo = (gameState.inventory?.empCharges || 0);
   const boostAmmo = (gameState.inventory?.boostCharges || 0);
-  const playerHasCrafted = gameState.inventory.battery > 0 && gameState.inventory.emitter > 0 && gameState.inventory.casing > 0;
+  const playerHasCrafted = (gameState.inventory?.battery > 0 && gameState.inventory?.emitter > 0 && gameState.inventory?.casing > 0);
   
-  // Logic: Can we deploy right now?
   const canDeployEmp = empAmmo > 0 || playerHasCrafted || isEmpFree;
   const canDeployBoost = boostAmmo > 0 || isBoostFree;
-
+  
   const daysUntilCaught = distanceGap > 0 ? Math.floor(distanceGap / gameState.entitySpeed) : 0;
   const hoursUntilCatch = distanceGap > 0 ? (distanceGap / speedPerHour) : 0;
   const msUntilCatch = hoursUntilCatch * 60 * 60 * 1000;
@@ -528,7 +525,7 @@ export default function TheEntity() {
     return () => unsubscribe();
   }, []);
 
-  // --- ACCOUNT LINKING ---
+  // --- ACCOUNT LINKING (Upgrade Anonymous to Google) ---
   const handleLinkGoogle = async () => {
       if (!user) return;
       const provider = new GoogleAuthProvider();
@@ -546,7 +543,7 @@ export default function TheEntity() {
       }
   };
 
-  // --- STRAVA TOKEN EXCHANGE & BACKFILL ---
+  // --- STRAVA TOKEN EXCHANGE & BACKFILL (Safe & Bulletproof) ---
   useEffect(() => {
     if (!user) return;
     const params = new URLSearchParams(window.location.search);
@@ -654,7 +651,6 @@ export default function TheEntity() {
               const docSnap = await getDoc(userDocRef);
               
               let currentSave = docSnap.exists() ? docSnap.data() : { ...gameState };
-              // Ensure inventory exists
               if (!currentSave.inventory) currentSave.inventory = { battery:0, emitter:0, casing:0, empCharges:0, boostCharges:0 };
 
               let message = "";
@@ -792,7 +788,7 @@ export default function TheEntity() {
       await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
   };
 
-  // --- UNLIMITED ITEM LOGIC ---
+  // --- UNLIMITED ITEM LOGIC (Stackable) ---
   const handleUseEMP = async () => {
     if (!user) return;
     
@@ -805,7 +801,7 @@ export default function TheEntity() {
         if (playerHasCrafted) { 
             newInventory.battery--; newInventory.emitter--; newInventory.casing--; 
         } else if (isEmpFree) {
-            // Just mark usage, don't touch ammo
+            // Just mark usage, don't touch ammo (first one is free)
         } else {
             newInventory.empCharges = (newInventory.empCharges || 0) - 1;
         }
@@ -958,7 +954,7 @@ export default function TheEntity() {
   const maxDist = Math.max(userDistance, entityDistance) * 1.2 + 10; 
   const userPct = Math.min((userDistance / maxDist) * 100, 100);
   const entityPct = Math.min((entityDistance / maxDist) * 100, 100);
-  const hasCraftedEmp = gameState.inventory.battery > 0 && gameState.inventory.emitter > 0 && gameState.inventory.casing > 0;
+  const hasCraftedEmp = gameState.inventory?.battery > 0 && gameState.inventory?.emitter > 0 && gameState.inventory?.casing > 0;
   const diffLabel = DIFFICULTIES[gameState.difficulty]?.label || 'Standard';
   const activeQuestName = gameState.activeQuest?.rewardPart ? (EMP_PARTS.find(p => p.id === gameState.activeQuest.rewardPart)?.name || 'Unknown Part') : 'Unknown Part';
 
@@ -969,6 +965,7 @@ export default function TheEntity() {
   } else if (isGracePeriod) { 
     BannerContent = (<><div className="absolute inset-0 bg-emerald-600/5 pointer-events-none"></div><span className="text-slate-400 uppercase text-xs font-bold tracking-widest mb-1 block flex items-center justify-center gap-1"><ShieldCheck size={12} /> SAFETY PROTOCOL</span><CyberClock ms={timeUntilActive} label="ACTIVATION IN" color="text-emerald-400" /><p className="text-slate-400 font-medium text-sm mt-2">Time until Entity activation.</p></>);
   } else { 
+    // ACTIVE MODE: Toggle between Clock and Distance
     if (viewMode === 'clock') {
         BannerContent = (
             <>
@@ -1068,7 +1065,8 @@ export default function TheEntity() {
                 <h3 className="text-[10px] uppercase font-bold text-slate-500 mb-2 tracking-wider">EMP Components</h3>
                 <div className="flex justify-between items-center px-1">
                     {EMP_PARTS.map(part => {
-                        const count = gameState.inventory[part.id]; 
+                        // SAFETY FIX: Ensure inventory exists before accessing
+                        const count = gameState.inventory?.[part.id] || 0; 
                         const hasPart = count > 0; 
                         const Icon = part.icon; 
                         return (
