@@ -84,7 +84,7 @@ const formatDuration = (ms) => {
 
 // --- SUB-COMPONENTS ---
 
-// 1. Cyberpunk Digital Clock
+// 1. Cyberpunk Digital Clock (With Panic Mode)
 const CyberClock = ({ ms, label, color = "text-white" }) => {
     if (ms <= 0) ms = 0;
     const d = Math.floor(ms / (1000 * 60 * 60 * 24));
@@ -93,7 +93,7 @@ const CyberClock = ({ ms, label, color = "text-white" }) => {
     const s = Math.floor((ms / 1000) % 60);
     const pad = (n) => n.toString().padStart(2, '0');
 
-    const isPanic = ms < 3600000; 
+    const isPanic = ms < 3600000; // < 1 Hour
 
     return (
       <div className={`flex flex-col items-center w-full ${isPanic ? 'animate-pulse' : ''}`}>
@@ -111,16 +111,19 @@ const CyberClock = ({ ms, label, color = "text-white" }) => {
                 <span className="text-xl text-slate-700 pb-4 mx-1">:</span>
                 </>
             )}
+
              <div className="flex flex-col items-center">
                 <div className={`bg-slate-950 border ${isPanic ? 'border-red-500 text-red-500' : 'border-slate-800 text-white'} rounded px-2 sm:px-3 py-2 text-2xl sm:text-4xl font-black tracking-widest shadow-lg`}>{pad(h)}</div>
                 <span className="text-[8px] uppercase text-slate-500 mt-1 tracking-wider">Hr</span>
             </div>
             <span className={`text-xl pb-4 mx-1 ${isPanic ? 'text-red-600 animate-ping' : 'text-slate-700 animate-pulse'}`}>:</span>
+
              <div className="flex flex-col items-center">
                 <div className={`bg-slate-950 border ${isPanic ? 'border-red-500 text-red-500' : 'border-slate-800 text-white'} rounded px-2 sm:px-3 py-2 text-2xl sm:text-4xl font-black tracking-widest shadow-lg`}>{pad(m)}</div>
                 <span className="text-[8px] uppercase text-slate-500 mt-1 tracking-wider">Min</span>
             </div>
             <span className={`text-xl pb-4 mx-1 ${isPanic ? 'text-red-600 animate-ping' : 'text-slate-700 animate-pulse'}`}>:</span>
+
              <div className="flex flex-col items-center">
                 <div className={`border rounded px-2 sm:px-3 py-2 text-2xl sm:text-4xl font-black tracking-widest shadow-lg ${isPanic ? 'bg-red-600 border-red-600 text-black' : 'bg-slate-950 border-slate-800 text-white'}`}>
                     {pad(s)}
@@ -176,20 +179,40 @@ const SecretStore = ({ duration, onClose }) => {
     return (
         <div className="fixed inset-0 z-[60] bg-black flex flex-col animate-in fade-in duration-500 overflow-hidden">
             <div className={`p-6 border-b border-slate-800 flex justify-between items-center ${theme.bg}`}>
-                <div><div className={`text-[10px] uppercase tracking-[0.2em] text-white/60 mb-1`}>Clearance Level: {duration} Days</div><h2 className={`text-2xl font-black uppercase tracking-wider ${theme.color} flex items-center gap-2`}><Lock size={20} className="mb-1" /> {theme.title}</h2></div>
-                <button onClick={onClose} className="p-2 bg-black/30 rounded-full text-white hover:bg-white/10 transition-colors"><X size={24}/></button>
+                <div>
+                    <div className={`text-[10px] uppercase tracking-[0.2em] text-white/60 mb-1`}>Clearance Level: {duration} Days</div>
+                    <h2 className={`text-2xl font-black uppercase tracking-wider ${theme.color} flex items-center gap-2`}>
+                        <Lock size={20} className="mb-1" /> {theme.title}
+                    </h2>
+                </div>
+                <button onClick={onClose} className="p-2 bg-black/30 rounded-full text-white hover:bg-white/10 transition-colors">
+                    <X size={24}/>
+                </button>
             </div>
             <div className="flex-1 overflow-y-auto p-6 bg-slate-950">
                 <div className="grid grid-cols-1 gap-4">
                     {theme.items.map(item => (
                         <div key={item.id} className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center gap-4 group hover:border-slate-600 transition-all">
-                            <div className={`w-16 h-16 rounded-lg ${theme.bg} ${theme.border} border flex items-center justify-center shrink-0`}><ItemIcon type={item.icon} /></div>
-                            <div className="flex-1"><div className="flex justify-between items-start"><h3 className="text-white font-bold uppercase tracking-wide">{item.name}</h3><span className="text-slate-400 font-mono text-sm">{item.price}</span></div><p className="text-xs text-slate-500 mt-1">{item.desc}</p></div>
-                            <a href={item.link} target="_blank" rel="noopener noreferrer" className={`px-4 py-2 rounded-lg font-bold text-xs uppercase bg-slate-800 text-white hover:${theme.bg} transition-colors border border-slate-700 flex flex-col items-center justify-center`}>BUY</a>
+                            <div className={`w-16 h-16 rounded-lg ${theme.bg} ${theme.border} border flex items-center justify-center shrink-0`}>
+                                <ItemIcon type={item.icon} />
+                            </div>
+                            <div className="flex-1">
+                                <div className="flex justify-between items-start">
+                                    <h3 className="text-white font-bold uppercase tracking-wide">{item.name}</h3>
+                                    <span className="text-slate-400 font-mono text-sm">{item.price}</span>
+                                </div>
+                                <p className="text-xs text-slate-500 mt-1">{item.desc}</p>
+                            </div>
+                            <a href={item.link} target="_blank" rel="noopener noreferrer" className={`px-4 py-2 rounded-lg font-bold text-xs uppercase bg-slate-800 text-white hover:${theme.bg} transition-colors border border-slate-700 flex flex-col items-center justify-center`}>
+                                BUY
+                            </a>
                         </div>
                     ))}
                 </div>
-                <div className="mt-8 p-6 rounded-xl border border-dashed border-slate-800 text-center"><p className="text-slate-500 text-xs mb-2">ACCESS CODE: ENTITY-{duration}-VICTOR</p><p className="text-slate-600 text-[10px]">This store is hidden from the public. Only survivors with verified completion logs can access these items.</p></div>
+                <div className="mt-8 p-6 rounded-xl border border-dashed border-slate-800 text-center">
+                    <p className="text-slate-500 text-xs mb-2">ACCESS CODE: ENTITY-{duration}-VICTOR</p>
+                    <p className="text-slate-600 text-[10px]">This store is hidden from the public. Only survivors with verified completion logs can access these items.</p>
+                </div>
             </div>
         </div>
     );
@@ -206,12 +229,71 @@ const OnboardingWizard = ({ onComplete }) => {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950 p-6">
         <div className="w-full max-w-lg">
-          <div className="mb-8 text-center"><h1 className="text-3xl font-black text-white italic uppercase tracking-wider mb-2 flex items-center justify-center gap-2"><Skull className="text-purple-500" /> The Entity</h1><p className="text-slate-500">Setup your escape protocol.</p></div>
+          <div className="mb-8 text-center">
+              <h1 className="text-3xl font-black text-white italic uppercase tracking-wider mb-2 flex items-center justify-center gap-2">
+                  <Skull className="text-purple-500" /> The Entity
+              </h1>
+              <p className="text-slate-500">Setup your escape protocol.</p>
+          </div>
+          
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
-            {step === 1 && (<div className="animate-in fade-in slide-in-from-right-8 duration-300"><h2 className="text-xl font-bold text-white mb-6">1. Choose Challenge Duration</h2><div className="grid grid-cols-1 gap-4 mb-8">{[30, 90, 365].map(d => (<button key={d} onClick={() => setDuration(d)} className={`p-4 rounded-xl border-2 text-left transition-all flex justify-between items-center ${duration === d ? 'border-purple-500 bg-purple-900/20' : 'border-slate-700 bg-slate-800 hover:border-slate-600'}`}><div><div className="font-bold text-lg text-white">{d === 365 ? '1 Year' : `${d} Days`}</div><div className="text-sm text-slate-400">Survival Goal</div></div>{duration === d && <CheckCircle2 className="text-purple-500" />}</button>))}</div><button onClick={() => setStep(2)} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">Next Step <ChevronRight size={20} /></button></div>)}
-            {step === 2 && (<div className="animate-in fade-in slide-in-from-right-8 duration-300"><h2 className="text-xl font-bold text-white mb-6">2. Select Difficulty</h2><div className="grid grid-cols-1 gap-4 mb-8">{Object.values(DIFFICULTIES).map(diff => (<button key={diff.id} onClick={() => setDifficulty(diff.id)} className={`p-4 rounded-xl border-2 text-left transition-all flex justify-between items-center ${difficulty === diff.id ? 'border-purple-500 bg-purple-900/20' : 'border-slate-700 bg-slate-800 hover:border-slate-600'}`}><div><div className={`font-bold text-lg ${diff.color}`}>{diff.label}</div><div className="text-sm text-slate-400">{diff.desc}</div></div>{difficulty === diff.id && <CheckCircle2 className="text-purple-500" />}</button>))}</div><div className="flex gap-3"><button onClick={() => setStep(1)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button><button onClick={() => setStep(3)} className="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">Next Step <ChevronRight size={20} /></button></div></div>)}
-            {step === 3 && (<div className="animate-in fade-in slide-in-from-right-8 duration-300"><h2 className="text-xl font-bold text-white mb-6">3. Operative Codename</h2><input type="text" value={codename} onChange={(e) => setCodename(e.target.value)} placeholder="Enter your alias..." className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-white text-center text-lg focus:ring-2 focus:ring-purple-500 outline-none mb-8 uppercase tracking-widest" /><div className="flex gap-3"><button onClick={() => setStep(2)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button><button disabled={!codename} onClick={() => setStep(4)} className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">Next Step <ChevronRight size={20} /></button></div></div>)}
-            {step === 4 && (<div className="animate-in fade-in slide-in-from-right-8 duration-300"><h2 className="text-xl font-bold text-white mb-6">4. Select Your Runner</h2><div className="grid grid-cols-2 gap-4 mb-8">{Object.values(AVATARS).map((av) => {const Icon = av.icon; const isSelected = avatarId === av.id; return (<button key={av.id} onClick={() => setAvatarId(av.id)} className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center text-center gap-2 ${isSelected ? 'border-purple-500 bg-purple-900/20' : 'border-slate-700 bg-slate-800 hover:border-slate-600'}`}><div className={`p-3 rounded-full ${isSelected ? av.bg : 'bg-slate-700'} text-white transition-colors`}><Icon size={24} /></div><div><div className="font-bold text-white text-sm">{av.name}</div><div className="text-[10px] text-slate-400 leading-tight mt-1">{av.desc}</div></div></button>)})}</div><div className="flex gap-3"><button onClick={() => setStep(3)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button><button onClick={() => onComplete({ duration, avatarId, difficulty, username: codename })} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">INITIATE PROTOCOL</button></div></div>)}
+            {step === 1 && (
+                <div className="animate-in fade-in slide-in-from-right-8 duration-300">
+                    <h2 className="text-xl font-bold text-white mb-6">1. Choose Challenge Duration</h2>
+                    <div className="grid grid-cols-1 gap-4 mb-8">
+                        {[30, 90, 365].map(d => (
+                            <button key={d} onClick={() => setDuration(d)} className={`p-4 rounded-xl border-2 text-left transition-all flex justify-between items-center ${duration === d ? 'border-purple-500 bg-purple-900/20' : 'border-slate-700 bg-slate-800 hover:border-slate-600'}`}>
+                                <div>
+                                    <div className="font-bold text-lg text-white">{d === 365 ? '1 Year' : `${d} Days`}</div>
+                                    <div className="text-sm text-slate-400">Survival Goal</div>
+                                </div>
+                                {duration === d && <CheckCircle2 className="text-purple-500" />}
+                            </button>
+                        ))}
+                    </div>
+                    <button onClick={() => setStep(2)} className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">
+                        Next Step <ChevronRight size={20} />
+                    </button>
+                </div>
+            )}
+
+            {step === 2 && (
+                <div className="animate-in fade-in slide-in-from-right-8 duration-300">
+                    <h2 className="text-xl font-bold text-white mb-6">2. Select Difficulty</h2>
+                    <div className="grid grid-cols-1 gap-4 mb-8">
+                        {Object.values(DIFFICULTIES).map(diff => (
+                            <button key={diff.id} onClick={() => setDifficulty(diff.id)} className={`p-4 rounded-xl border-2 text-left transition-all flex justify-between items-center ${difficulty === diff.id ? 'border-purple-500 bg-purple-900/20' : 'border-slate-700 bg-slate-800 hover:border-slate-600'}`}>
+                                <div>
+                                    <div className={`font-bold text-lg ${diff.color}`}>{diff.label}</div>
+                                    <div className="text-sm text-slate-400">{diff.desc}</div>
+                                </div>
+                                {difficulty === diff.id && <CheckCircle2 className="text-purple-500" />}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="flex gap-3">
+                        <button onClick={() => setStep(1)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button>
+                        <button onClick={() => setStep(3)} className="flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">Next Step <ChevronRight size={20} /></button>
+                    </div>
+                </div>
+            )}
+
+            {step === 3 && (
+                <div className="animate-in fade-in slide-in-from-right-8 duration-300">
+                    <h2 className="text-xl font-bold text-white mb-6">3. Operative Codename</h2>
+                    <input type="text" value={codename} onChange={(e) => setCodename(e.target.value)} placeholder="Enter your alias..." className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-white text-center text-lg focus:ring-2 focus:ring-purple-500 outline-none mb-8 uppercase tracking-widest" />
+                    <div className="flex gap-3">
+                        <button onClick={() => setStep(2)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button>
+                        <button disabled={!codename} onClick={() => setStep(4)} className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">Next Step <ChevronRight size={20} /></button>
+                    </div>
+                </div>
+            )}
+
+            {step === 4 && (
+                <div className="animate-in fade-in slide-in-from-right-8 duration-300">
+                    <h2 className="text-xl font-bold text-white mb-6">4. Select Your Runner</h2>
+                    <div className="grid grid-cols-2 gap-4 mb-8">
+                        {Object.values(AVATARS).map((av) => {const Icon = av.icon; const isSelected = avatarId === av.id; return (<button key={av.id} onClick={() => setAvatarId(av.id)} className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center text-center gap-2 ${isSelected ? 'border-purple-500 bg-purple-900/20' : 'border-slate-700 bg-slate-800 hover:border-slate-600'}`}><div className={`p-3 rounded-full ${isSelected ? av.bg : 'bg-slate-700'} text-white transition-colors`}><Icon size={24} /></div><div><div className="font-bold text-white text-sm">{av.name}</div><div className="text-[10px] text-slate-400 leading-tight mt-1">{av.desc}</div></div></button>)})}</div><div className="flex gap-3"><button onClick={() => setStep(3)} className="px-6 py-4 rounded-xl font-bold text-slate-400 hover:text-white">Back</button><button onClick={() => onComplete({ duration, avatarId, difficulty, username: codename })} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2">INITIATE PROTOCOL</button></div></div>)}
           </div></div></div>
     );
 };
@@ -264,10 +346,8 @@ const LogRunModal = ({ onClose, onSave, activeQuest }) => {
     );
 };
   
-// 5. Settings Modal (With Android-Only Google Link)
+// 5. Settings Modal
 const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnectStrava, onLinkGoogle }) => {
-    
-    // DETECT ANDROID (Simple User Agent Check)
     const isAndroid = /Android/i.test(navigator.userAgent);
 
     return (
@@ -297,6 +377,7 @@ const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnect
                         onClick={onLinkGoogle}
                         className="w-full bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold py-3 rounded-lg border border-slate-700 flex items-center justify-center gap-2 transition-all"
                     >
+                        {/* Simple Google G Icon */}
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z"/></svg>
                         Link Google Account
                     </button>
@@ -362,7 +443,7 @@ export default function TheEntity() {
   const [showLogModal, setShowLogModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showStore, setShowStore] = useState(false);
-  const [viewMode, setViewMode] = useState('clock'); // Toggle: 'clock' or 'distance'
+  const [viewMode, setViewMode] = useState('clock');
   const hasExchangedCode = useRef(false);
   
   // Game Data State
@@ -416,16 +497,14 @@ export default function TheEntity() {
   const isVictory = daysSinceStart >= gameState.duration && !isCaught;
   
   const EMP_DURATION_HOURS = 25;
-  const EMP_COOLDOWN_DAYS = 90;
   const lastEmpDate = gameState.lastEmpUsage ? new Date(gameState.lastEmpUsage) : null;
   const isEmpActive = lastEmpDate && (today.getTime() - lastEmpDate.getTime()) < (EMP_DURATION_HOURS * 3600000);
-  const daysSinceEmp = lastEmpDate ? (today.getTime() - lastEmpDate.getTime()) / 86400000 : 999;
-  const isEmpAvailable = daysSinceEmp >= EMP_COOLDOWN_DAYS;
-  const empCooldownRemaining = Math.max(0, Math.ceil(EMP_COOLDOWN_DAYS - daysSinceEmp));
   
-  // CHANGED: EMP and Boost are always available (Unlimited)
+  // --- UNLIMITED SHOP LOGIC ---
   const isEmpFree = (gameState.empUsageCount || 0) === 0;
   const isBoostFree = (gameState.boostUsageCount || 0) === 0;
+  const isEmpAvailable = true; // Always available
+  const empCooldownRemaining = 0; 
   
   const daysUntilCaught = distanceGap > 0 ? Math.floor(distanceGap / gameState.entitySpeed) : 0;
   const hoursUntilCatch = distanceGap > 0 ? (distanceGap / speedPerHour) : 0;
@@ -464,7 +543,7 @@ export default function TheEntity() {
       }
   };
 
-  // --- STRAVA TOKEN EXCHANGE ---
+  // --- STRAVA TOKEN EXCHANGE & BACKFILL (Safe) ---
   useEffect(() => {
     if (!user) return;
     const params = new URLSearchParams(window.location.search);
@@ -481,6 +560,7 @@ export default function TheEntity() {
              const data = await response.json();
              
              if (data.access_token) {
+                 // 1. FETCH THE TRUTH
                  const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
                  const docSnap = await getDoc(userDocRef);
                  
@@ -488,6 +568,7 @@ export default function TheEntity() {
                  const currentHistory = currentData.runHistory || [];
                  const currentTotal = currentData.totalKmRun || 0;
 
+                 // 2. Fetch Strava History
                  const historyResponse = await fetch(`https://www.strava.com/api/v3/athlete/activities?per_page=30`, {
                     headers: { 'Authorization': `Bearer ${data.access_token}` }
                  });
@@ -541,7 +622,7 @@ export default function TheEntity() {
                  window.history.replaceState({}, document.title, "/");
                  
                  if (recoveredRuns.length > 0) {
-                     alert(`SYNC COMPLETE.\n\nAdded ${recoveredRuns.length} runs.`);
+                     alert(`SYNC COMPLETE.\n\nFound ${recoveredRuns.length} new runs totaling ${addedDistance.toFixed(2)}km.`);
                  } else {
                      alert("Strava Connected! No new runs found.");
                  }
@@ -606,11 +687,14 @@ export default function TheEntity() {
   // --- GAME LOOP & CLEANUP ---
   useEffect(() => {
       if (!user || loading) return;
+      
+      // 1. CLEANUP: Kill zombie quests
       if (daysSinceStart < 5 && gameState.activeQuest) {
           const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
           setDoc(userDocRef, { ...gameState, activeQuest: null });
           return;
       }
+
       if (daysSinceStart > 0 && daysSinceStart % 5 === 0 && daysSinceStart !== gameState.lastQuestGenerationDay) {
           if (!gameState.activeQuest) {
               const parts = ['battery', 'emitter', 'casing'];
@@ -948,8 +1032,28 @@ export default function TheEntity() {
         <div className="grid grid-cols-2 gap-2 mb-8">
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-3"><h3 className="text-[10px] uppercase font-bold text-slate-500 mb-2 tracking-wider">EMP Components</h3><div className="flex justify-between items-center px-1">{EMP_PARTS.map(part => {const count = gameState.inventory[part.id]; const hasPart = count > 0; const Icon = part.icon; return (<div key={part.id} className={`flex flex-col items-center gap-1 ${hasPart ? 'text-white' : 'text-slate-700'}`}><div className={`w-8 h-8 rounded-full border flex items-center justify-center relative ${hasPart ? `bg-slate-800 ${part.color||'text-white'} border-slate-600` : 'bg-slate-950 border-slate-800'}`}><Icon size={16} />{count > 1 && <span className="absolute -top-1 -right-1 bg-white text-black text-[9px] w-3 h-3 flex items-center justify-center rounded-full font-bold">{count}</span>}</div></div>)})}</div>{hasCraftedEmp && <div className="mt-2 text-center text-[10px] text-emerald-400 animate-pulse font-bold">COMPONENTS ASSEMBLED</div>}</div>
             <div className="space-y-2">
-                 <button onClick={handleBuyEMP} disabled={!isEmpAvailable || isGracePeriod} className={`w-full p-2 rounded-lg font-bold text-xs flex flex-col items-center justify-center gap-1 transition-all ${!isEmpAvailable || isGracePeriod ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-cyan-950 text-cyan-400 hover:bg-cyan-900'}`}>{isEmpAvailable ? (<><div className="flex items-center gap-1"><ZapOff size={14} /> EMP Burst</div><span className="text-[9px] bg-slate-950 px-1.5 py-0.5 rounded text-slate-300 border border-slate-800 uppercase tracking-wider">{hasCraftedEmp ? "CRAFTED" : isEmpFree ? "FREE" : "$1.00"}</span></>) : (<><Lock size={14} /> <span className="text-[9px]">{empCooldownRemaining}d Left</span></>)}</button>
-                <button onClick={handleBuyBoost} className="w-full p-2 rounded-lg font-bold text-xs flex flex-col items-center justify-center gap-1 transition-all bg-yellow-950 text-yellow-400 hover:bg-yellow-900"><div className="flex items-center gap-1"><Rocket size={14} /> Boost 15%</div><span className="text-[9px] bg-slate-950 px-1.5 py-0.5 rounded text-slate-300 border border-slate-800 uppercase tracking-wider">{isBoostFree ? "FREE" : "$1.00"}</span></button>
+                 {/* EMP BUTTON */}
+                 <button 
+                    onClick={handleBuyEMP} 
+                    disabled={isGracePeriod} 
+                    className={`w-full p-2 rounded-lg font-bold text-xs flex flex-col items-center justify-center gap-1 transition-all ${isGracePeriod ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-cyan-950 text-cyan-400 hover:bg-cyan-900'}`}
+                 >
+                    <div className="flex items-center gap-1"><ZapOff size={14} /> EMP Burst</div>
+                    <span className="text-[9px] bg-slate-950 px-1.5 py-0.5 rounded text-slate-300 border border-slate-800 uppercase tracking-wider">
+                        {hasCraftedEmp ? "CRAFTED" : isEmpFree ? "FREE" : "$1.00"}
+                    </span>
+                 </button>
+
+                {/* BOOST BUTTON */}
+                <button 
+                    onClick={handleBuyBoost} 
+                    className="w-full p-2 rounded-lg font-bold text-xs flex flex-col items-center justify-center gap-1 transition-all bg-yellow-950 text-yellow-400 hover:bg-yellow-900"
+                >
+                    <div className="flex items-center gap-1"><Rocket size={14} /> Nitrous Boost</div>
+                    <span className="text-[9px] bg-slate-950 px-1.5 py-0.5 rounded text-slate-300 border border-slate-800 uppercase tracking-wider">
+                        {isBoostFree ? "FREE" : "$1.00"}
+                    </span>
+                </button>
             </div>
         </div>
 
