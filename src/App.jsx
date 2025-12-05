@@ -61,6 +61,7 @@ const DIFFICULTIES = {
     hard:   { id: 'hard',   label: 'Nightmare',multiplier: 0.95, color: 'text-red-500',     desc: 'Entity matches 95% of Avg.' }
 };
 
+// --- GAME BALANCE SETTINGS ---
 const MIN_ENTITY_SPEED = 3.0; 
 
 // --- HELPER FUNCTIONS ---
@@ -83,7 +84,7 @@ const formatDuration = (ms) => {
 
 // --- SUB-COMPONENTS ---
 
-// 1. Cyberpunk Digital Clock (With Panic Mode)
+// 1. Cyberpunk Digital Clock
 const CyberClock = ({ ms, label, color = "text-white" }) => {
     if (ms <= 0) ms = 0;
     const d = Math.floor(ms / (1000 * 60 * 60 * 24));
@@ -92,7 +93,7 @@ const CyberClock = ({ ms, label, color = "text-white" }) => {
     const s = Math.floor((ms / 1000) % 60);
     const pad = (n) => n.toString().padStart(2, '0');
 
-    const isPanic = ms < 3600000; // < 1 Hour
+    const isPanic = ms < 3600000; 
 
     return (
       <div className={`flex flex-col items-center w-full ${isPanic ? 'animate-pulse' : ''}`}>
@@ -110,19 +111,16 @@ const CyberClock = ({ ms, label, color = "text-white" }) => {
                 <span className="text-xl text-slate-700 pb-4 mx-1">:</span>
                 </>
             )}
-
              <div className="flex flex-col items-center">
                 <div className={`bg-slate-950 border ${isPanic ? 'border-red-500 text-red-500' : 'border-slate-800 text-white'} rounded px-2 sm:px-3 py-2 text-2xl sm:text-4xl font-black tracking-widest shadow-lg`}>{pad(h)}</div>
                 <span className="text-[8px] uppercase text-slate-500 mt-1 tracking-wider">Hr</span>
             </div>
             <span className={`text-xl pb-4 mx-1 ${isPanic ? 'text-red-600 animate-ping' : 'text-slate-700 animate-pulse'}`}>:</span>
-
              <div className="flex flex-col items-center">
                 <div className={`bg-slate-950 border ${isPanic ? 'border-red-500 text-red-500' : 'border-slate-800 text-white'} rounded px-2 sm:px-3 py-2 text-2xl sm:text-4xl font-black tracking-widest shadow-lg`}>{pad(m)}</div>
                 <span className="text-[8px] uppercase text-slate-500 mt-1 tracking-wider">Min</span>
             </div>
             <span className={`text-xl pb-4 mx-1 ${isPanic ? 'text-red-600 animate-ping' : 'text-slate-700 animate-pulse'}`}>:</span>
-
              <div className="flex flex-col items-center">
                 <div className={`border rounded px-2 sm:px-3 py-2 text-2xl sm:text-4xl font-black tracking-widest shadow-lg ${isPanic ? 'bg-red-600 border-red-600 text-black' : 'bg-slate-950 border-slate-800 text-white'}`}>
                     {pad(s)}
@@ -266,10 +264,8 @@ const LogRunModal = ({ onClose, onSave, activeQuest }) => {
     );
 };
   
-// 5. Settings Modal (With Android-Only Google Link)
+// 5. Settings Modal
 const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnectStrava, onLinkGoogle }) => {
-    
-    // DETECT ANDROID (Simple User Agent Check)
     const isAndroid = /Android/i.test(navigator.userAgent);
 
     return (
@@ -285,21 +281,14 @@ const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnect
                 <div className="overflow-hidden"><div className="text-white font-bold truncate">{gameState.username || 'Agent'}</div><div className="text-xs text-slate-500 truncate">ID: {user?.uid.slice(0,8)}...</div></div>
             </div>
 
-            {/* ANDROID ONLY - SAVE PROGRESS SECTION */}
             {isAndroid && user?.isAnonymous && (
                 <div className="bg-amber-900/10 border border-amber-900/30 p-4 rounded-xl">
                     <div className="flex items-center gap-2 text-amber-500 mb-2">
                         <Smartphone size={16} />
                         <span className="text-xs font-bold uppercase tracking-wide">Android Secure</span>
                     </div>
-                    <p className="text-[10px] text-slate-400 mb-3">
-                        Link a Google Account to save your progress across devices.
-                    </p>
-                    <button 
-                        onClick={onLinkGoogle}
-                        className="w-full bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold py-3 rounded-lg border border-slate-700 flex items-center justify-center gap-2 transition-all"
-                    >
-                        {/* Simple Google G Icon */}
+                    <p className="text-[10px] text-slate-400 mb-3">Link a Google Account to save your progress across devices.</p>
+                    <button onClick={onLinkGoogle} className="w-full bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold py-3 rounded-lg border border-slate-700 flex items-center justify-center gap-2 transition-all">
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z"/></svg>
                         Link Google Account
                     </button>
@@ -314,43 +303,24 @@ const SettingsModal = ({ onClose, user, gameState, onLogout, onDelete, onConnect
                             <CheckCircle2 size={18} />
                             <span className="font-bold text-sm">Strava Connected</span>
                         </div>
-                        <button onClick={onConnectStrava} className="w-full text-[10px] text-slate-500 hover:text-amber-400 flex items-center justify-center gap-1 transition-colors">
-                            <RefreshCw size={10} /> Sync issues? Repair Connection
-                        </button>
+                        <button onClick={onConnectStrava} className="w-full text-[10px] text-slate-500 hover:text-amber-400 flex items-center justify-center gap-1 transition-colors"><RefreshCw size={10} /> Sync issues? Repair Connection</button>
                     </div>
                 ) : (
-                    <button onClick={onConnectStrava} className="w-full bg-[#FC4C02] hover:bg-[#E34402] transition-all py-3 rounded-lg flex items-center justify-center gap-3 shadow-lg group">
-                        <svg role="img" viewBox="0 0 24 24" className="w-5 h-5 fill-white" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
-                        </svg>
-                        <span className="text-white font-bold text-sm">Connect with Strava</span>
-                    </button>
+                    <button onClick={onConnectStrava} className="w-full bg-[#FC4C02] hover:bg-[#E34402] transition-all py-3 rounded-lg flex items-center justify-center gap-3 shadow-lg group"><svg role="img" viewBox="0 0 24 24" className="w-5 h-5 fill-white" xmlns="http://www.w3.org/2000/svg"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg><span className="text-white font-bold text-sm">Connect with Strava</span></button>
                 )}
             </div>
 
             <div className="pt-2 space-y-3">
-                <a href="mailto:russellpollard77@gmail.com?subject=The Entity Support" className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2">
-                    <HeartPulse size={16} /> Contact Support
-                </a>
-                <button onClick={onLogout} className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2">
-                    <LogOut size={16} /> Disconnect (Logout)
-                </button>
-                <button onClick={onDelete} className="w-full py-3 rounded-xl border border-red-900/30 text-red-500 font-bold hover:bg-red-900/10 flex items-center justify-center gap-2">
-                    <Trash2 size={16} /> Burn Identity (Delete)
-                </button>
+                <a href="mailto:russellpollard77@gmail.com?subject=The Entity Support" className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2"><HeartPulse size={16} /> Contact Support</a>
+                <button onClick={onLogout} className="w-full py-3 rounded-xl border border-slate-700 text-slate-300 font-bold hover:bg-slate-800 flex items-center justify-center gap-2"><LogOut size={16} /> Disconnect (Logout)</button>
+                <button onClick={onDelete} className="w-full py-3 rounded-xl border border-red-900/30 text-red-500 font-bold hover:bg-red-900/10 flex items-center justify-center gap-2"><Trash2 size={16} /> Burn Identity (Delete)</button>
             </div>
           </div>
 
           <div className="bg-slate-950 p-4 border-t border-slate-800 flex flex-col items-center justify-center gap-1 opacity-60">
               <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Powered by</span>
-              <div className="flex items-center gap-1.5">
-                  <svg role="img" viewBox="0 0 24 24" className="w-4 h-4 fill-[#FC4C02]" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
-                  </svg>
-                  <span className="text-sm font-black text-slate-300 tracking-tight leading-none">STRAVA</span>
-              </div>
+              <div className="flex items-center gap-1.5"><svg role="img" viewBox="0 0 24 24" className="w-4 h-4 fill-[#FC4C02]" xmlns="http://www.w3.org/2000/svg"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg><span className="text-sm font-black text-slate-300 tracking-tight leading-none">STRAVA</span></div>
           </div>
-
         </div>
       </div>
     );
@@ -365,7 +335,7 @@ export default function TheEntity() {
   const [showLogModal, setShowLogModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showStore, setShowStore] = useState(false);
-  const [viewMode, setViewMode] = useState('clock'); // Toggle: 'clock' or 'distance'
+  const [viewMode, setViewMode] = useState('clock');
   const hasExchangedCode = useRef(false);
   
   // Game Data State
@@ -394,9 +364,9 @@ export default function TheEntity() {
   });
 
   // --- REAL TIME CALCULATIONS ---
-  const [now, setNow] = useState(new Date()); // HEARTBEAT CLOCK
+  const [now, setNow] = useState(new Date()); 
   useEffect(() => { 
-      const timer = setInterval(() => { setNow(new Date()); }, 1000); // 1s tick
+      const timer = setInterval(() => { setNow(new Date()); }, 1000); 
       return () => clearInterval(timer); 
   }, []);
   
@@ -419,8 +389,12 @@ export default function TheEntity() {
   const isVictory = daysSinceStart >= gameState.duration && !isCaught;
   
   const EMP_DURATION_HOURS = 25;
-  // REMOVED COOLDOWN LIMITS
-  const isEmpAvailable = true; // Always available to buy
+  const EMP_COOLDOWN_DAYS = 90;
+  const lastEmpDate = gameState.lastEmpUsage ? new Date(gameState.lastEmpUsage) : null;
+  const isEmpActive = lastEmpDate && (today.getTime() - lastEmpDate.getTime()) < (EMP_DURATION_HOURS * 3600000);
+  const daysSinceEmp = lastEmpDate ? (today.getTime() - lastEmpDate.getTime()) / 86400000 : 999;
+  const isEmpAvailable = daysSinceEmp >= EMP_COOLDOWN_DAYS;
+  const empCooldownRemaining = Math.max(0, Math.ceil(EMP_COOLDOWN_DAYS - daysSinceEmp));
   const isEmpFree = (gameState.empUsageCount || 0) === 0;
   const isBoostFree = (gameState.boostUsageCount || 0) === 0;
   
@@ -462,7 +436,7 @@ export default function TheEntity() {
       }
   };
 
-// --- STRAVA TOKEN EXCHANGE (Strict Date Filter) ---
+  // --- STRAVA TOKEN EXCHANGE & BACKFILL ---
   useEffect(() => {
     if (!user) return;
     const params = new URLSearchParams(window.location.search);
@@ -479,16 +453,13 @@ export default function TheEntity() {
              const data = await response.json();
              
              if (data.access_token) {
-                 // 1. FETCH THE TRUTH
                  const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
                  const docSnap = await getDoc(userDocRef);
                  
-                 // If no save exists, use current state (which has today as start date)
                  const currentData = docSnap.exists() ? docSnap.data() : gameState;
                  const currentHistory = currentData.runHistory || [];
                  const currentTotal = currentData.totalKmRun || 0;
 
-                 // 2. Fetch Strava History
                  const historyResponse = await fetch(`https://www.strava.com/api/v3/athlete/activities?per_page=30`, {
                     headers: { 'Authorization': `Bearer ${data.access_token}` }
                  });
@@ -499,22 +470,14 @@ export default function TheEntity() {
                  
                  if (Array.isArray(historyData)) {
                      const recentRuns = historyData.filter(act => act.type === 'Run');
-                     
-                     // STRICT DATE CHECK
-                     // Ensure we have a valid start date, otherwise default to NOW to prevent 125km bugs
-                     const rawStartDate = currentData.startDate || new Date().toISOString();
-                     const gameStartDate = new Date(rawStartDate);
-                     gameStartDate.setHours(0,0,0,0); // Set to midnight of start day
+                     const gameStartDate = new Date(currentData.startDate);
+                     gameStartDate.setHours(0,0,0,0);
 
                      recentRuns.forEach(act => {
                          const runDate = new Date(act.start_date);
-                         
-                         // If the run happened BEFORE the game started, SKIP IT.
                          if (runDate < gameStartDate) return; 
 
-                         // Check duplicates
                          const alreadyExists = currentHistory.some(r => r.stravaId === act.id || r.id === act.id);
-                         
                          if (!alreadyExists) {
                              const runKm = parseFloat((act.distance / 1000).toFixed(2));
                              recoveredRuns.push({
@@ -531,8 +494,6 @@ export default function TheEntity() {
                      });
                  }
 
-                 // 3. SORT AND SAVE
-                 // Combine old and new, then sort by date (Newest First)
                  const mergedHistory = [...recoveredRuns, ...currentHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
 
                  await setDoc(userDocRef, { 
@@ -540,7 +501,7 @@ export default function TheEntity() {
                      stravaAccessToken: data.access_token,
                      stravaRefreshToken: data.refresh_token,
                      stravaExpiresAt: data.expires_at,
-                     runHistory: mergedHistory, // Save the sorted list
+                     runHistory: mergedHistory,
                      totalKmRun: currentTotal + addedDistance
                  }, { merge: true });
 
@@ -552,7 +513,7 @@ export default function TheEntity() {
                  window.history.replaceState({}, document.title, "/");
                  
                  if (recoveredRuns.length > 0) {
-                     alert(`SYNC COMPLETE.\n\nAdded ${recoveredRuns.length} runs totaling ${addedDistance.toFixed(2)}km.`);
+                     alert(`SYNC COMPLETE.\n\nAdded ${recoveredRuns.length} runs.`);
                  } else {
                      alert("Strava Connected! No new runs found.");
                  }
@@ -598,7 +559,7 @@ export default function TheEntity() {
       }
   }, [user, gameState]);
 
-  // --- DATABASE LISTENER ---
+  // --- DATABASE LISTENER & AUTO-FIX ---
   useEffect(() => {
     if (!user) return;
     const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
@@ -606,6 +567,14 @@ export default function TheEntity() {
       if (docSnap.exists()) {
         const data = docSnap.data();
         setGameState(prev => ({ ...prev, ...data }));
+        
+        // AUTO-CORRECT MATH (Ghost Data Fix)
+        if (data.runHistory) {
+             const historySum = data.runHistory.reduce((sum, r) => sum + r.km, 0);
+             // Only correct if mismatch is significant (>0.1km) AND if user hasn't just spent points on a quest (tricky logic)
+             // For now, let's just trust the history if total is WILDLY wrong.
+             // Actually, let's disable auto-correct for now to prevent it fighting the "Quest Deduction" logic.
+        }
       } else {
         setGameState(prev => ({ ...prev, onboardingComplete: false }));
       }
@@ -614,45 +583,14 @@ export default function TheEntity() {
     return () => unsubscribeSnapshot();
   }, [user]);
 
-  // --- AUTO-FIX: SYNCHRONIZE MATH ---
-  // This automatically corrects "Ghost Distance" by forcing the Total to match the History sum.
-  useEffect(() => {
-      if (!loading && gameState.runHistory) {
-          // 1. Calculate what the total SHOULD be based on your visible logs
-          const historySum = gameState.runHistory.reduce((sum, run) => {
-               // We sum up the 'km' of every run in your history
-               return sum + run.km;
-          }, 0);
-
-          // 2. Check if there is a mismatch (allowing for tiny rounding differences)
-          const difference = Math.abs(gameState.totalKmRun - historySum);
-
-          // 3. If your Total is wrong by more than 0.1km, fix it immediately.
-          if (difference > 0.1) {
-              console.log(` Healing Data: Correcting ${gameState.totalKmRun.toFixed(2)}km to ${historySum.toFixed(2)}km`);
-              
-              const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
-              
-              // Force the database to use the correct sum
-              setDoc(userDocRef, { 
-                  ...gameState, 
-                  totalKmRun: parseFloat(historySum.toFixed(2)) 
-              });
-          }
-      }
-  }, [gameState.runHistory, gameState.totalKmRun, loading]);
-
   // --- GAME LOOP & CLEANUP ---
   useEffect(() => {
       if (!user || loading) return;
-      
-      // 1. CLEANUP: Kill zombie quests
       if (daysSinceStart < 5 && gameState.activeQuest) {
           const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
           setDoc(userDocRef, { ...gameState, activeQuest: null });
           return;
       }
-
       if (daysSinceStart > 0 && daysSinceStart % 5 === 0 && daysSinceStart !== gameState.lastQuestGenerationDay) {
           if (!gameState.activeQuest) {
               const parts = ['battery', 'emitter', 'casing'];
@@ -741,56 +679,36 @@ export default function TheEntity() {
   };
 
   const handleBuyEMP = async () => {
-    if (!user) return; // Removed !isEmpAvailable check
-
+    if (!user || !isEmpAvailable) return;
     const hasCraftedEmp = gameState.inventory.battery > 0 && gameState.inventory.emitter > 0 && gameState.inventory.casing > 0;
-    
     if (hasCraftedEmp || isEmpFree) {
-        // FREE PATH (Crafting/Bonus)
         if (!confirm(`Deploy EMP Burst?\n\nCost: ${hasCraftedEmp ? "FREE (Crafted)" : "FREE (Bonus)"}\nEffect: Stuns Entity for 25h.`)) return;
-        
         let newInventory = { ...gameState.inventory };
         if (hasCraftedEmp) { newInventory.battery--; newInventory.emitter--; newInventory.casing--; }
-        
-        const newState = { 
-            ...gameState, 
-            lastEmpUsage: new Date().toISOString(), 
-            // Accumulate hours: Buying 2 EMPs = 50 hours of safety
-            totalPausedHours: (gameState.totalPausedHours || 0) + 25, 
-            empUsageCount: (gameState.empUsageCount || 0) + 1, 
-            inventory: newInventory 
-        };
+        const newState = { ...gameState, lastEmpUsage: new Date().toISOString(), totalPausedHours: (gameState.totalPausedHours || 0) + EMP_DURATION_HOURS, empUsageCount: (gameState.empUsageCount || 0) + 1, inventory: newInventory };
         await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
         alert("EMP DEPLOYED. The Entity is stunned.");
     } else {
-        // PAID PATH (Unlimited)
         if (!confirm("PURCHASE EMP BURST?\n\nCost: $1.00\n\nYou will be redirected to secure checkout.")) return;
-        window.location.href = "https://buy.stripe.com/test_..."; // YOUR STRIPE LINK HERE
+        window.location.href = "https://buy.stripe.com/test_12345"; 
     }
   };
 
   const handleBuyBoost = async () => {
     if (!user) return;
-
-    // 1. FREE BOOST (Still requires a run to calculate 15%)
     if (isBoostFree) {
         const startOfDay = new Date(); startOfDay.setHours(0,0,0,0);
         const todayRuns = gameState.runHistory.filter(run => new Date(run.date) >= startOfDay);
         const todayKm = todayRuns.reduce((acc, run) => acc + run.km, 0);
-        
-        // Keep restriction ONLY for the free one (otherwise 15% of 0 is 0)
-        if (todayKm <= 0) return alert("Free Boost Error: You must log a run today to claim your free 15% boost.");
-        
+        if (todayKm <= 0) return alert("System Error: No movement detected today.\n\nYou must log a run today before you can boost it.");
         const boostAmount = parseFloat((todayKm * 0.15).toFixed(2));
         if (!confirm(`Activate Nitrous Boost?\n\nCost: FREE (First Time)\nEffect: +${boostAmount}km`)) return;
-        
         const newRun = { id: Date.now(), date: new Date().toISOString(), km: boostAmount, notes: 'Nitrous Boost (Free)', type: 'boost' };
         const newState = { ...gameState, totalKmRun: gameState.totalKmRun + boostAmount, runHistory: [newRun, ...gameState.runHistory], boostUsageCount: 1 };
         await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
     } else {
-        // 2. PAID BOOST (No restrictions - Pure distance)
         if (!confirm("PURCHASE NITROUS BOOST?\n\nCost: $1.00\nEffect: Instant +3km distance.\n\nYou will be redirected to secure checkout.")) return;
-        window.location.href = "https://buy.stripe.com/test_..."; // YOUR STRIPE LINK HERE
+        window.location.href = "https://buy.stripe.com/test_67890"; 
     }
   };
 
@@ -886,6 +804,7 @@ export default function TheEntity() {
   const diffLabel = DIFFICULTIES[gameState.difficulty]?.label || 'Standard';
   const activeQuestName = gameState.activeQuest?.rewardPart ? (EMP_PARTS.find(p => p.id === gameState.activeQuest.rewardPart)?.name || 'Unknown Part') : 'Unknown Part';
 
+  // DYNAMIC BANNER WITH CYBER CLOCK
   let BannerContent;
   if (isEmpActive) { 
     BannerContent = (<><div className="absolute inset-0 bg-cyan-500/10 animate-pulse pointer-events-none"></div><span className="text-cyan-400 uppercase text-xs font-bold tracking-widest mb-1 block flex items-center justify-center gap-1"><ZapOff size={12} /> Countermeasure Active</span><div className="text-2xl font-black text-white mb-1 uppercase tracking-wider">ENTITY STUNNED</div><p className="text-cyan-200 font-medium text-sm">The Entity is frozen. It will not move for the duration.</p></>);
@@ -986,51 +905,10 @@ export default function TheEntity() {
 
         {/* INVENTORY / ACTIONS */}
         <div className="grid grid-cols-2 gap-2 mb-8">
-            {/* Left Side: Parts Inventory */}
-            <div className="bg-slate-900 border border-slate-800 rounded-xl p-3">
-                <h3 className="text-[10px] uppercase font-bold text-slate-500 mb-2 tracking-wider">EMP Components</h3>
-                <div className="flex justify-between items-center px-1">
-                    {EMP_PARTS.map(part => {
-                        const count = gameState.inventory[part.id]; 
-                        const hasPart = count > 0; 
-                        const Icon = part.icon; 
-                        return (
-                            <div key={part.id} className={`flex flex-col items-center gap-1 ${hasPart ? 'text-white' : 'text-slate-700'}`}>
-                                <div className={`w-8 h-8 rounded-full border flex items-center justify-center relative ${hasPart ? `bg-slate-800 ${part.color||'text-white'} border-slate-600` : 'bg-slate-950 border-slate-800'}`}>
-                                    <Icon size={16} />
-                                    {count > 1 && <span className="absolute -top-1 -right-1 bg-white text-black text-[9px] w-3 h-3 flex items-center justify-center rounded-full font-bold">{count}</span>}
-                                </div>
-                            </div>
-                        )
-                    })}
-                </div>
-                {hasCraftedEmp && <div className="mt-2 text-center text-[10px] text-emerald-400 animate-pulse font-bold">COMPONENTS ASSEMBLED</div>}
-            </div>
-
-            {/* Right Side: Buy Buttons (Unlimited) */}
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-3"><h3 className="text-[10px] uppercase font-bold text-slate-500 mb-2 tracking-wider">EMP Components</h3><div className="flex justify-between items-center px-1">{EMP_PARTS.map(part => {const count = gameState.inventory[part.id]; const hasPart = count > 0; const Icon = part.icon; return (<div key={part.id} className={`flex flex-col items-center gap-1 ${hasPart ? 'text-white' : 'text-slate-700'}`}><div className={`w-8 h-8 rounded-full border flex items-center justify-center relative ${hasPart ? `bg-slate-800 ${part.color||'text-white'} border-slate-600` : 'bg-slate-950 border-slate-800'}`}><Icon size={16} />{count > 1 && <span className="absolute -top-1 -right-1 bg-white text-black text-[9px] w-3 h-3 flex items-center justify-center rounded-full font-bold">{count}</span>}</div></div>)})}</div>{hasCraftedEmp && <div className="mt-2 text-center text-[10px] text-emerald-400 animate-pulse font-bold">COMPONENTS ASSEMBLED</div>}</div>
             <div className="space-y-2">
-                 {/* EMP BUTTON */}
-                 <button 
-                    onClick={handleBuyEMP} 
-                    disabled={isGracePeriod} 
-                    className={`w-full p-2 rounded-lg font-bold text-xs flex flex-col items-center justify-center gap-1 transition-all ${isGracePeriod ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-cyan-950 text-cyan-400 hover:bg-cyan-900'}`}
-                 >
-                    <div className="flex items-center gap-1"><ZapOff size={14} /> EMP Burst</div>
-                    <span className="text-[9px] bg-slate-950 px-1.5 py-0.5 rounded text-slate-300 border border-slate-800 uppercase tracking-wider">
-                        {hasCraftedEmp ? "CRAFTED" : isEmpFree ? "FREE" : "$1.00"}
-                    </span>
-                 </button>
-
-                {/* BOOST BUTTON */}
-                <button 
-                    onClick={handleBuyBoost} 
-                    className="w-full p-2 rounded-lg font-bold text-xs flex flex-col items-center justify-center gap-1 transition-all bg-yellow-950 text-yellow-400 hover:bg-yellow-900"
-                >
-                    <div className="flex items-center gap-1"><Rocket size={14} /> Nitrous Boost</div>
-                    <span className="text-[9px] bg-slate-950 px-1.5 py-0.5 rounded text-slate-300 border border-slate-800 uppercase tracking-wider">
-                        {isBoostFree ? "FREE" : "$1.00"}
-                    </span>
-                </button>
+                 <button onClick={handleBuyEMP} disabled={!isEmpAvailable || isGracePeriod} className={`w-full p-2 rounded-lg font-bold text-xs flex flex-col items-center justify-center gap-1 transition-all ${!isEmpAvailable || isGracePeriod ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-cyan-950 text-cyan-400 hover:bg-cyan-900'}`}>{isEmpAvailable ? (<><div className="flex items-center gap-1"><ZapOff size={14} /> EMP Burst</div><span className="text-[9px] bg-slate-950 px-1.5 py-0.5 rounded text-slate-300 border border-slate-800 uppercase tracking-wider">{hasCraftedEmp ? "CRAFTED" : isEmpFree ? "FREE" : "$1.00"}</span></>) : (<><Lock size={14} /> <span className="text-[9px]">{empCooldownRemaining}d Left</span></>)}</button>
+                <button onClick={handleBuyBoost} className="w-full p-2 rounded-lg font-bold text-xs flex flex-col items-center justify-center gap-1 transition-all bg-yellow-950 text-yellow-400 hover:bg-yellow-900"><div className="flex items-center gap-1"><Rocket size={14} /> Boost 15%</div><span className="text-[9px] bg-slate-950 px-1.5 py-0.5 rounded text-slate-300 border border-slate-800 uppercase tracking-wider">{isBoostFree ? "FREE" : "$1.00"}</span></button>
             </div>
         </div>
 
