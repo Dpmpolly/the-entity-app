@@ -645,7 +645,7 @@ export default function TheEntity() {
           }
       }
   }, [gameState.runHistory, gameState.totalKmRun, loading]);
-  
+
   // --- GAME LOOP & CLEANUP ---
   useEffect(() => {
       if (!user || loading) return;
@@ -756,7 +756,7 @@ export default function TheEntity() {
         alert("EMP DEPLOYED. The Entity is stunned.");
     } else {
         if (!confirm("PURCHASE EMP BURST?\n\nCost: $1.00\n\nYou will be redirected to secure checkout.")) return;
-        window.location.href = "https://buy.stripe.com/test_12345"; 
+        window.location.href = "https://buy.stripe.com/test_5kQ6oG8c0fk5cLZ8UA5J600"; 
     }
   };
 
@@ -774,7 +774,7 @@ export default function TheEntity() {
         await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
     } else {
         if (!confirm("PURCHASE NITROUS BOOST?\n\nCost: $1.00\nEffect: Instant +3km distance.\n\nYou will be redirected to secure checkout.")) return;
-        window.location.href = "https://buy.stripe.com/test_67890"; 
+        window.location.href = "https://buy.stripe.com/test_6oU7sK77Wb3PdQ3c6M5J601"; 
     }
   };
 
