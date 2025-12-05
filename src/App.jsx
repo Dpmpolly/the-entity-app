@@ -84,7 +84,7 @@ const formatDuration = (ms) => {
 
 // --- SUB-COMPONENTS ---
 
-// 1. Cyberpunk Digital Clock (With Panic Mode)
+// 1. Cyberpunk Digital Clock
 const CyberClock = ({ ms, label, color = "text-white" }) => {
     if (ms <= 0) ms = 0;
     const d = Math.floor(ms / (1000 * 60 * 60 * 24));
@@ -93,7 +93,7 @@ const CyberClock = ({ ms, label, color = "text-white" }) => {
     const s = Math.floor((ms / 1000) % 60);
     const pad = (n) => n.toString().padStart(2, '0');
 
-    const isPanic = ms < 3600000; // < 1 Hour
+    const isPanic = ms < 3600000; 
 
     return (
       <div className={`flex flex-col items-center w-full ${isPanic ? 'animate-pulse' : ''}`}>
@@ -543,7 +543,7 @@ export default function TheEntity() {
       }
   };
 
-  // --- STRAVA TOKEN EXCHANGE & BACKFILL (Safe) ---
+  // --- STRAVA TOKEN EXCHANGE & BACKFILL (Safe & Bulletproof) ---
   useEffect(() => {
     if (!user) return;
     const params = new URLSearchParams(window.location.search);
@@ -560,7 +560,7 @@ export default function TheEntity() {
              const data = await response.json();
              
              if (data.access_token) {
-                 // 1. FETCH THE TRUTH
+                 // 1. FETCH THE TRUTH (Read DB directly)
                  const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
                  const docSnap = await getDoc(userDocRef);
                  
@@ -579,7 +579,10 @@ export default function TheEntity() {
                  
                  if (Array.isArray(historyData)) {
                      const recentRuns = historyData.filter(act => act.type === 'Run');
-                     const gameStartDate = new Date(currentData.startDate);
+                     
+                     // "Start of Day" Logic: Allow runs from the morning of the start date
+                     const rawStartDate = currentData.startDate || new Date().toISOString();
+                     const gameStartDate = new Date(rawStartDate);
                      gameStartDate.setHours(0,0,0,0);
 
                      recentRuns.forEach(act => {
@@ -603,6 +606,7 @@ export default function TheEntity() {
                      });
                  }
 
+                 // 3. SAVE SAFELY
                  const mergedHistory = [...recoveredRuns, ...currentHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
 
                  await setDoc(userDocRef, { 
@@ -624,7 +628,7 @@ export default function TheEntity() {
                  if (recoveredRuns.length > 0) {
                      alert(`SYNC COMPLETE.\n\nFound ${recoveredRuns.length} new runs totaling ${addedDistance.toFixed(2)}km.`);
                  } else {
-                     alert("Strava Connected! No new runs found.");
+                     alert("Strava Connected! No missing runs found.");
                  }
                  window.location.reload();
              }
@@ -636,37 +640,53 @@ export default function TheEntity() {
     }
   }, [user]);
 
-  // --- PAYMENT LISTENER ---
+  // --- PAYMENT LISTENER (Safe & Bulletproof) ---
   useEffect(() => {
+      if (loading || !user) return; 
+      
       const params = new URLSearchParams(window.location.search);
       const purchaseType = params.get('purchase');
-      if (purchaseType && user) {
+
+      if (purchaseType) {
           const handlePurchase = async () => {
-              let newState = { ...gameState };
+              // 1. Get the latest data from DB
+              const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
+              const docSnap = await getDoc(userDocRef);
+              
+              let currentSave = docSnap.exists() ? docSnap.data() : { ...gameState };
               let message = "";
+
               if (purchaseType === 'emp_success') {
-                  newState.lastEmpUsage = new Date().toISOString();
-                  newState.totalPausedHours = (newState.totalPausedHours || 0) + 25;
-                  newState.empUsageCount = (newState.empUsageCount || 0) + 1;
+                  currentSave.lastEmpUsage = new Date().toISOString();
+                  currentSave.totalPausedHours = (currentSave.totalPausedHours || 0) + 25;
+                  currentSave.empUsageCount = (currentSave.empUsageCount || 0) + 1;
                   message = "PAYMENT CONFIRMED. EMP DEPLOYED. Entity Stunned for 25h.";
               } 
               else if (purchaseType === 'boost_success') {
                   const boostKm = 3.0; 
-                  newState.totalKmRun = (newState.totalKmRun || 0) + boostKm;
-                  newState.runHistory = [{ id: Date.now(), date: new Date().toISOString(), km: boostKm, notes: 'Nitrous Boost (Paid)', type: 'boost' }, ...newState.runHistory];
-                  newState.boostUsageCount = (newState.boostUsageCount || 0) + 1;
+                  currentSave.totalKmRun = (currentSave.totalKmRun || 0) + boostKm;
+                  currentSave.runHistory = [{ 
+                      id: Date.now(), 
+                      date: new Date().toISOString(), 
+                      km: boostKm, 
+                      notes: 'Nitrous Boost (Paid)', 
+                      type: 'boost' 
+                  }, ...(currentSave.runHistory || [])];
+                  currentSave.boostUsageCount = (currentSave.boostUsageCount || 0) + 1;
                   message = `PAYMENT CONFIRMED. NITROUS INJECTED (+${boostKm}km).`;
               }
+
               if (message) {
-                  await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
-                  alert(message);
+                  // Save the merge
+                  await setDoc(userDocRef, currentSave, { merge: true });
                   window.history.replaceState({}, document.title, window.location.pathname);
-                  setGameState(prev => ({ ...prev, ...newState }));
+                  alert(message);
+                  setGameState(prev => ({ ...prev, ...currentSave }));
               }
           };
           handlePurchase();
       }
-  }, [user, gameState]);
+  }, [user, loading]);
 
   // --- DATABASE LISTENER ---
   useEffect(() => {
@@ -805,7 +825,7 @@ export default function TheEntity() {
         await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save'), newState);
         alert("EMP DEPLOYED. The Entity is stunned.");
     } else {
-        // PAID PATH
+        // PAID PATH - UNLIMITED
         if (!confirm("PURCHASE EMP BURST?\n\nCost: $1.00\n\nYou will be redirected to secure checkout.")) return;
         window.location.href = "https://buy.stripe.com/test_5kQ6oG8c0fk5cLZ8UA5J600"; 
     }
