@@ -466,7 +466,7 @@ export default function TheEntity() {
       }
   };
 
-// --- STRAVA TOKEN EXCHANGE (With Sorting & Backfill) ---
+// --- STRAVA TOKEN EXCHANGE (Strict Date Filter) ---
   useEffect(() => {
     if (!user) return;
     const params = new URLSearchParams(window.location.search);
@@ -483,13 +483,16 @@ export default function TheEntity() {
              const data = await response.json();
              
              if (data.access_token) {
+                 // 1. FETCH THE TRUTH
                  const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save');
                  const docSnap = await getDoc(userDocRef);
+                 
+                 // If no save exists, use current state (which has today as start date)
                  const currentData = docSnap.exists() ? docSnap.data() : gameState;
                  const currentHistory = currentData.runHistory || [];
                  const currentTotal = currentData.totalKmRun || 0;
 
-                 // Fetch History (Last 30 runs)
+                 // 2. Fetch Strava History
                  const historyResponse = await fetch(`https://www.strava.com/api/v3/athlete/activities?per_page=30`, {
                     headers: { 'Authorization': `Bearer ${data.access_token}` }
                  });
@@ -500,11 +503,20 @@ export default function TheEntity() {
                  
                  if (Array.isArray(historyData)) {
                      const recentRuns = historyData.filter(act => act.type === 'Run');
-                     // Remove the date filter so ALL 30 previous runs are imported
-                     // const gameStartDate = new Date(currentData.startDate); 
+                     
+                     // STRICT DATE CHECK
+                     // Ensure we have a valid start date, otherwise default to NOW to prevent 125km bugs
+                     const rawStartDate = currentData.startDate || new Date().toISOString();
+                     const gameStartDate = new Date(rawStartDate);
+                     gameStartDate.setHours(0,0,0,0); // Set to midnight of start day
 
                      recentRuns.forEach(act => {
-                         // Check against BOTH ID types (Strava ID and our internal ID)
+                         const runDate = new Date(act.start_date);
+                         
+                         // If the run happened BEFORE the game started, SKIP IT.
+                         if (runDate < gameStartDate) return; 
+
+                         // Check duplicates
                          const alreadyExists = currentHistory.some(r => r.stravaId === act.id || r.id === act.id);
                          
                          if (!alreadyExists) {
@@ -523,16 +535,16 @@ export default function TheEntity() {
                      });
                  }
 
-                 // --- THE FIX: SORT BY DATE (Newest First) ---
-                 const unsortedHistory = [...recoveredRuns, ...currentHistory];
-                 const sortedHistory = unsortedHistory.sort((a, b) => new Date(b.date) - new Date(a.date));
+                 // 3. SORT AND SAVE
+                 // Combine old and new, then sort by date (Newest First)
+                 const mergedHistory = [...recoveredRuns, ...currentHistory].sort((a, b) => new Date(b.date) - new Date(a.date));
 
                  await setDoc(userDocRef, { 
                      isStravaLinked: true,
                      stravaAccessToken: data.access_token,
                      stravaRefreshToken: data.refresh_token,
                      stravaExpiresAt: data.expires_at,
-                     runHistory: sortedHistory, // <--- SAVING SORTED LIST
+                     runHistory: mergedHistory, // Save the sorted list
                      totalKmRun: currentTotal + addedDistance
                  }, { merge: true });
 
@@ -544,9 +556,9 @@ export default function TheEntity() {
                  window.history.replaceState({}, document.title, "/");
                  
                  if (recoveredRuns.length > 0) {
-                     alert(`SYNC COMPLETE.\n\nImported ${recoveredRuns.length} historic runs.`);
+                     alert(`SYNC COMPLETE.\n\nAdded ${recoveredRuns.length} runs totaling ${addedDistance.toFixed(2)}km.`);
                  } else {
-                     alert("Strava Connected! List is up to date.");
+                     alert("Strava Connected! No new runs found.");
                  }
                  window.location.reload();
              }
