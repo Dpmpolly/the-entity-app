@@ -880,7 +880,7 @@ export default function TheEntity() {
   const handleContinueGame = async () => {
     if (!user) return;
     if (!confirm("PURCHASE ADRENALINE SHOT?\n\nCost: $1.00\nEffect: Pushes the Entity back 48 hours. You survive.\n\nYou will be redirected to secure checkout.")) return;
-    window.location.href = "https://buy.stripe.com/test_4gw2cq9g41AN8UgbIJ"; 
+    window.location.href = "https://buy.stripe.com/test_4gMfZg1NC2xj8vJ9YE5J602"; 
   };
 
   const handleRestartGame = async () => {

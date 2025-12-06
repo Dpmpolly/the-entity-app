@@ -21,7 +21,16 @@ exports.stravaWebhook = onRequest(
   },
   async (req, res) => {
 
-  // 1. VERIFICATION (SECURE VERSION)
+  // --- 1. KEEP WARM HANDLING (NEW) ---
+  // If the message is just "keep_warm", say OK and go back to sleep.
+  if (req.body && req.body.type === 'keep_warm') {
+      console.log("Keeping warm...");
+      res.sendStatus(200);
+      return;
+  }
+  // -----------------------------------
+
+  // 2. VERIFICATION (Existing code...)
   const mode = req.query['hub.mode'];
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
