@@ -2,8 +2,9 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 // Import your pages
-import LandingPage from './LandingPage';
-import TheEntity from './TheEntity'; // This loads your game logic
+// Make sure these files exist in your 'src' folder with these exact names!
+import LandingPage from './Welcome';
+import TheEntity from './TheEntity'; 
 
 function App() {
   return (
