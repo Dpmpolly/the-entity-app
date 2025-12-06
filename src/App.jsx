@@ -4,7 +4,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 // Import your pages
 import LandingPage from './Welcome'; 
 import TheEntity from './TheEntity'; 
-import Help from './Help';     
+import Help from './Help';  
+import Store from './Store';   
 
 function App() {
   return (
@@ -20,8 +21,7 @@ function App() {
         <Route path="/support" element={<Help />} />
 
         {/* Future Pages */}
-        <Route path="/store" element={<div className="bg-slate-950 min-h-screen text-white p-10 flex items-center justify-center font-mono">ARMORY UNDER CONSTRUCTION</div>} />
-
+        <Route path="/store" element={<Store />} />
         {/* Catch-all */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
