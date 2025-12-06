@@ -82,8 +82,15 @@ export default function LandingPage() {
           <p>&copy; {new Date().getFullYear()} THE ENTITY PROJECT. ALL RIGHTS RESERVED.</p>
           <div className="flex justify-center gap-4 mt-4">
               <Link to="/support" className="hover:text-white">SUPPORT</Link>
-              {/* Use a standard 'a' tag for static HTML files */}
-<a href="/privacy.html" className="hover:text-white">PRIVACY</a>
+              {/* Use target="_blank" to force browser to load the static HTML file */}
+<a 
+  href="/privacy.html" 
+  target="_blank" 
+  rel="noopener noreferrer" 
+  className="hover:text-white"
+>
+  PRIVACY POLICY
+</a>
           </div>
       </footer>
 
