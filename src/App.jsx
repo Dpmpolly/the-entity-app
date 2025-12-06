@@ -2,25 +2,27 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 // Import your pages
-// Make sure these files exist in your 'src' folder with these exact names!
-import LandingPage from './Welcome';
+import LandingPage from './Welcome'; 
 import TheEntity from './TheEntity'; 
+import Help from './Help';     
 
 function App() {
   return (
     <Router>
       <Routes>
-        {/* SCENARIO 1: User visits the root domain (/) -> Show Landing Page */}
+        {/* SCENARIO 1: User visits the root domain */}
         <Route path="/" element={<LandingPage />} />
 
-        {/* SCENARIO 2: User clicks "Initialize" (/game) -> Show The Game */}
+        {/* SCENARIO 2: User clicks Initialize */}
         <Route path="/game" element={<TheEntity />} />
 
-        {/* Future Pages (Placeholders for now) */}
-        <Route path="/store" element={<div className="bg-slate-950 min-h-screen text-white p-10 flex items-center justify-center font-mono">ARMORY UNDER CONSTRUCTION</div>} />
-        <Route path="/support" element={<div className="bg-slate-950 min-h-screen text-white p-10 flex items-center justify-center font-mono">SECURE CHANNEL OPEN</div>} />
+        {/* SCENARIO 3: User needs help */}
+        <Route path="/support" element={<Help />} />
 
-        {/* Catch-all: If they type a weird URL, send them back to Home */}
+        {/* Future Pages */}
+        <Route path="/store" element={<div className="bg-slate-950 min-h-screen text-white p-10 flex items-center justify-center font-mono">ARMORY UNDER CONSTRUCTION</div>} />
+
+        {/* Catch-all */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
