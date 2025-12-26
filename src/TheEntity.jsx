@@ -946,8 +946,36 @@ export default function TheEntity() {
   }
 
   // --- UI RENDER: GAME OVER ---
-  if (isCaught) return (<div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-1000"><div className="mb-8 relative"><div className="absolute inset-0 bg-red-600 blur-3xl opacity-20 animate-pulse"></div><Skull size={120} className="text-red-600 relative z-10 animate-bounce" /></div><h1 className="text-5xl font-black text-white uppercase tracking-widest mb-2" style={{textShadow: '0 0 20px red'}}>CAUGHT</h1><p className="text-red-400 font-bold text-lg mb-8 uppercase tracking-widest">Signal Lost &bull; Day {daysSinceStart}</p><div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-sm mb-8"><div className="flex justify-between items-center text-slate-400 text-sm mb-4 pb-4 border-b border-slate-800"><span>Distance Run</span><span className="text-white font-bold">{userDistance.toFixed(1)} km</span></div><div className="flex justify-between items-center text-slate-400 text-sm mb-4 pb-4 border-b border-slate-800"><span>Days Survived</span><span className="text-white font-bold">{daysSinceStart} days</span></div><div className="flex justify-between items-center text-slate-400 text-sm"><span>Entity Speed</span><span className="text-red-400 font-bold">{gameState.entitySpeed} km/day</span></div></div><div className="w-full max-w-sm space-y-4"><button onClick={handleContinueGame} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl text-lg flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(16,185,129,0.3)] transition-all transform hover:scale-105"><HeartPulse size={24} /> CONTINUE ($1.00)</button><p className="text-xs text-slate-500">Rewinds the Entity by 48 hours. Resume immediately.</p><button onClick={handleRestartGame} className="w-full bg-transparent border border-slate-700 text-slate-400 hover:text-white hover:border-slate-500 font-bold py-3 rounded-xl flex items-center justify-center gap-2 mt-4 transition-all"><RotateCcw size={18} /> ACCEPT FATE & RESTART</button></div></div>);
+  if (isCaught) return (
+    <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-1000">
+        <div className="mb-8 relative">
+            <div className="absolute inset-0 bg-red-600 blur-3xl opacity-20 animate-pulse"></div>
+            <Skull size={120} className="text-red-600 relative z-10 animate-bounce" />
+        </div>
+        <h1 className="text-5xl font-black text-white uppercase tracking-widest mb-2" style={{textShadow: '0 0 20px red'}}>CAUGHT</h1>
+        <p className="text-red-400 font-bold text-lg mb-8 uppercase tracking-widest">Signal Lost &bull; Day {daysSinceStart}</p>
+        
+        {/* Stats Box */}
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-sm mb-8">
+            <div className="flex justify-between items-center text-slate-400 text-sm mb-4 pb-4 border-b border-slate-800">
+                <span>Distance Run</span><span className="text-white font-bold">{userDistance.toFixed(1)} km</span>
+            </div>
+            <div className="flex justify-between items-center text-slate-400 text-sm mb-4 pb-4 border-b border-slate-800">
+                <span>Days Survived</span><span className="text-white font-bold">{daysSinceStart} days</span>
+            </div>
+            <div className="flex justify-between items-center text-slate-400 text-sm">
+                <span>Entity Speed</span><span className="text-red-400 font-bold">{gameState.entitySpeed} km/day</span>
+            </div>
+        </div>
 
+        {/* ACTIONS - NO CONTINUE BUTTON */}
+        <div className="w-full max-w-sm space-y-4">
+            <button onClick={handleRestartGame} className="w-full bg-red-600 hover:bg-red-700 text-white font-black py-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-[0_0_20px_rgba(220,38,38,0.5)]">
+                <RotateCcw size={20} /> ACCEPT FATE & RESTART
+            </button>
+        </div>
+    </div>
+  );
   // --- UI RENDER: VICTORY ---
   if (isVictory) return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-1000">
