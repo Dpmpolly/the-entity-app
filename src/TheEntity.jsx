@@ -738,12 +738,17 @@ export default function TheEntity() {
       if (!confirm("DELETE ACCOUNT?\n\nThis will permanently erase your progress. This cannot be undone.")) return;
       try { await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'game_data', 'main_save')); await deleteUser(user); window.location.reload(); } catch (error) { alert("Error deleting data: " + error.message); }
   };
-  const handleStravaLogin = () => {
+    const handleStravaLogin = () => {
       const clientId = import.meta.env.VITE_STRAVA_CLIENT_ID;
-      const redirectUri = window.location.origin; 
+      
+      // DELETE THIS LINE: const redirectUri = window.location.origin;
+      // ADD THIS LINE INSTEAD:
+      const redirectUri = "https://theentity.app"; 
+
       const scope = "activity:read_all";
       window.location.href = `http://www.strava.com/oauth/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}&approval_prompt=force&scope=${scope}`;
   };
+
 
   const handleConvertRunToQuest = async (runId) => {
       if (!user || !gameState.activeQuest || gameState.activeQuest.status !== 'active') {
