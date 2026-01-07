@@ -56,9 +56,9 @@ const EMP_PARTS = [
 ];
 
 const DIFFICULTIES = {
-    easy:   { id: 'easy',   label: 'Standard', multiplier: 0.85, color: 'text-emerald-400', desc: 'Entity matches 85% of Avg.' },
-    medium: { id: 'medium', label: 'Intense',  multiplier: 0.90, color: 'text-yellow-400',  desc: 'Entity matches 90% of Avg.' },
-    hard:   { id: 'hard',   label: 'Nightmare',multiplier: 0.95, color: 'text-red-500',     desc: 'Entity matches 95% of Avg.' }
+    easy:   { id: 'easy',   label: 'Recruit', multiplier: 0.85, color: 'text-emerald-400', desc: 'Entity matches 85% of Avg.' },
+    medium: { id: 'medium', label: 'Agent',  multiplier: 0.90, color: 'text-yellow-400',  desc: 'Entity matches 90% of Avg.' },
+    hard:   { id: 'hard',   label: 'Operator',multiplier: 0.95, color: 'text-red-500',     desc: 'Entity matches 95% of Avg.' }
 };
 
 const MIN_ENTITY_SPEED = 3.0; 

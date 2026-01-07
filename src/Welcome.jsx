@@ -1,8 +1,17 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Skull, Activity, Shield, Zap, ChevronRight, AlertTriangle } from 'lucide-react';
 
-export default function LandingPage() {
+export default function LandingPage() {// --- WAR SCOREBOARD LOGIC ---
+  const [humanWins, setHumanWins] = useState(142);
+  const [entityWins, setEntityWins] = useState(129);
+
+  useEffect(() => {
+    // Seed numbers based on day of week to simulate a live war
+    const today = new Date().getDay(); 
+    setHumanWins(140 + (today * 2)); 
+    setEntityWins(138 + (today * 3)); 
+  }, []);
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-red-500/30 overflow-hidden relative">
       
@@ -33,7 +42,18 @@ export default function LandingPage() {
               It <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">Learns.</span><br/>
               It <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-red-500">Adapts.</span><br/>
               It <span className="text-red-600 glitch-text">Hunts.</span>
-          </h1>
+          </h1>{/* --- WAR SCOREBOARD --- */}
+      <div className="flex items-center justify-center gap-8 mb-8 mt-6 bg-slate-900/50 border border-slate-800 p-4 rounded-xl backdrop-blur-sm w-fit mx-auto">
+          <div className="text-right">
+              <div className="text-[10px] text-emerald-500 uppercase tracking-widest font-bold">Agents Survived</div>
+              <div className="text-2xl font-mono font-black text-white">{humanWins}</div>
+          </div>
+          <div className="text-slate-600 font-black text-xl">VS</div>
+          <div className="text-left">
+              <div className="text-[10px] text-red-500 uppercase tracking-widest font-bold">KIA</div>
+              <div className="text-2xl font-mono font-black text-white">{entityWins}</div>
+          </div>
+      </div>
 
           <p className="max-w-xl text-slate-400 text-lg md:text-xl mb-10 leading-relaxed">
               The first fitness tracker with <strong className="text-white">Permadeath.</strong><br/>
